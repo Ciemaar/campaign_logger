@@ -20,13 +20,13 @@ Overview
     :target: https://campaign_logger.readthedocs.io/
     :alt: Documentation Status
 
-.. |github-actions| image:: https://github.com/andriod/campaign_logger/actions/workflows/github-actions.yml/badge.svg
+.. |github-actions| image:: https://github.com/Ciemaar/campaign_logger/actions/workflows/github-actions.yml/badge.svg
     :alt: GitHub Actions Build Status
     :target: https://github.com/Ciemaar/campaign_logger/actions
 
 .. |requires| image:: https://requires.io/github/Ciemaar/campaign_logger/requirements.svg?branch=main
-    :alt: Requirements Status
-    :target: https://requires.io/github/Ciemaar/campaign_logger/requirements/?branch=main
+     :target: https://requires.io/github/Ciemaar/campaign_logger/requirements/?branch=main
+     :alt: Requirements Status
 
 .. |coveralls| image:: https://coveralls.io/repos/Ciemaar/campaign_logger/badge.svg?branch=main&service=github
     :alt: Coverage Status
