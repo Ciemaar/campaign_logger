@@ -36,7 +36,6 @@ Overview
     :alt: Coverage Status
     :target: https://codecov.io/github/Ciemaar/campaign_logger
 
-(https://www.codacy.com/gh/Ciemaar/campaign_logger/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Ciemaar/campaign_logger&amp;utm_campaign=Badge_Grade)
 .. |codacy| image:: https://img.shields.io/codacy/grade/ab86dd91d20d43e0bc3c2a023e5ee061.svg
     :target: https://www.codacy.com/app/Ciemaar/campaign_logger
     :alt: Codacy Code Quality Status
