@@ -27,7 +27,7 @@ default_context:
     c_extension_test_pypi:     'no'
     c_extension_test_pypi_username: 'andriod'
     codacy:                    'yes'
-    codacy_projectid:          '[Get ID from https://app.codacy.com/gh/Ciemaar/campaign_logger/settings]'
+    codacy_projectid:          'ab86dd91d20d43e0bc3c2a023e5ee061'
     codeclimate:               'yes'
     codecov:                   'yes'
     command_line_interface:    'click'
