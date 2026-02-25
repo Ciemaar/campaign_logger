@@ -209,6 +209,9 @@ jobs:
         architecture: ${{ matrix.python_arch }}
     - name: install dependencies
       run: |
+        if [ "$RUNNER_OS" == "macOS" ]; then
+            brew install gettext
+        fi
         python -mpip install --progress-bar=off -r ci/requirements.txt
         virtualenv --version
         pip --version
