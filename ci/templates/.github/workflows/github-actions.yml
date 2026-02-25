@@ -51,6 +51,7 @@ jobs:
       with:
         python-version: {{ '${{ matrix.python }}' }}
         architecture: {{ '${{ matrix.python_arch }}' }}
+        allow-prereleases: true
     - name: install dependencies
       run: |
         if [ "$RUNNER_OS" == "macOS" ]; then
