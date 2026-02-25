@@ -14,7 +14,13 @@ def client():
 
 def test_list_generators(client):
     with requests_mock.Mocker() as m:
-        m.get(f"{BASE_URL}/api2/generators", json=[{"id": "gen1", "name": "Generator 1"}, {"id": "gen2", "name": "Generator 2"}])
+        m.get(
+            f"{BASE_URL}/api2/generators",
+            json=[
+                {"id": "gen1", "name": "Generator 1"},
+                {"id": "gen2", "name": "Generator 2"},
+            ],
+        )
         generators = client.list_generators()
         assert len(generators) == 2
         assert generators[0].id == "gen1"
@@ -32,7 +38,7 @@ def test_get_generator(client):
 def test_create_generator(client):
     with requests_mock.Mocker() as m:
         m.post(f"{BASE_URL}/api2/generators", json={"id": "new_gen", "name": "New Generator"})
-        model = FullGeneratorModel(name="New Generator")
+        model = FullGeneratorModel(id="new_gen", name="New Generator")  # pyright: ignore
         created = client.create_generator(model)
         assert created.id == "new_gen"
         assert created.name == "New Generator"
@@ -40,8 +46,11 @@ def test_create_generator(client):
 
 def test_update_generator(client):
     with requests_mock.Mocker() as m:
-        m.put(f"{BASE_URL}/api2/generators/gen1", json={"id": "gen1", "name": "Updated Generator"})
-        model = FullGeneratorModel(id="gen1", name="Updated Generator")
+        m.put(
+            f"{BASE_URL}/api2/generators/gen1",
+            json={"id": "gen1", "name": "Updated Generator"},
+        )
+        model = FullGeneratorModel(id="gen1", name="Updated Generator")  # pyright: ignore
         updated = client.update_generator("gen1", model)
         assert updated.name == "Updated Generator"
 
@@ -56,7 +65,7 @@ def test_delete_generator(client):
 def test_validate_generator(client):
     with requests_mock.Mocker() as m:
         m.post(f"{BASE_URL}/api2/generators/validate", status_code=200)
-        model = FullGeneratorModel(name="Test")
+        model = FullGeneratorModel(id="gen1", name="Test")  # pyright: ignore
         client.validate_generator(model)
         assert m.called
 
@@ -64,7 +73,7 @@ def test_validate_generator(client):
 def test_generate_random(client):
     with requests_mock.Mocker() as m:
         m.post(f"{BASE_URL}/api2/generators/generate", json={"result": "random result"})
-        model = FullGeneratorModel(name="Test")
+        model = FullGeneratorModel(id="gen1", name="Test")  # pyright: ignore
         result = client.generate_random(model)
         assert result == {"result": "random result"}
 

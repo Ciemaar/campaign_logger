@@ -1,5 +1,6 @@
 from typing import Dict
 from typing import List
+from typing import Optional
 
 import requests
 
@@ -8,7 +9,11 @@ from .models import FullGeneratorModel
 
 class GeneratorClient:
     def __init__(
-        self, base_url: str = "https://generator.campaign-logger.com", token: str = None, client_id: str = None, client_secret: str = None
+        self,
+        base_url: str = "https://generator.campaign-logger.com",
+        token: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()

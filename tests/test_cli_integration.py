@@ -18,10 +18,13 @@ def mock_client(mocker):
     mock_instance = MagicMock()
 
     # Configure default returns
-    mock_instance.list_generators.return_value = [FullGeneratorModel(id="1", name="Gen 1"), FullGeneratorModel(id="2", name="Gen 2")]
-    mock_instance.get_generator.return_value = FullGeneratorModel(id="1", name="Gen 1")
-    mock_instance.create_generator.return_value = FullGeneratorModel(id="3", name="New Gen")
-    mock_instance.update_generator.return_value = FullGeneratorModel(id="1", name="Updated Gen")
+    mock_instance.list_generators.return_value = [
+        FullGeneratorModel(id="1", name="Gen 1"),  # pyright: ignore
+        FullGeneratorModel(id="2", name="Gen 2"),  # pyright: ignore
+    ]
+    mock_instance.get_generator.return_value = FullGeneratorModel(id="1", name="Gen 1")  # pyright: ignore
+    mock_instance.create_generator.return_value = FullGeneratorModel(id="3", name="New Gen")  # pyright: ignore
+    mock_instance.update_generator.return_value = FullGeneratorModel(id="1", name="Updated Gen")  # pyright: ignore
     mock_instance.generate_random.return_value = {"result": "random"}
     mock_instance.execute_operation.return_value = {"result": "op result"}
 

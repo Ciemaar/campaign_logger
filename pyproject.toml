@@ -17,3 +17,7 @@ force-single-line = true
 known-first-party = ["campaign_logger"]
 forced-separate = ["test_campaign_logger"]
 default-section = "third-party"
+
+[tool.pyright]
+pythonVersion = "3.9"
+typeCheckingMode = "basic"
