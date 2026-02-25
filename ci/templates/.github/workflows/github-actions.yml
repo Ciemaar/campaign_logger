@@ -55,6 +55,7 @@ jobs:
       run: |
         if [ "$RUNNER_OS" == "macOS" ]; then
             brew install gettext
+            brew link --force gettext
         fi
         python -mpip install --progress-bar=off -r ci/requirements.txt
         virtualenv --version
