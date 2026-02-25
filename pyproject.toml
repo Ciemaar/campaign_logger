@@ -4,7 +4,16 @@ requires = [
     "wheel",
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 140
-target-version = ['py27']
-skip-string-normalization = true
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[tool.ruff.lint.isort]
+force-single-line = true
+known-first-party = ["campaign_logger"]
+forced-separate = ["test_campaign_logger"]
+default-section = "third-party"
