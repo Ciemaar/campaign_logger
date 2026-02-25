@@ -1,17 +1,36 @@
 """
 Module that contains the command line app.
 """
-import click
 import json
 import os
+
+import click
+
 from .api import GeneratorClient
 from .models import FullGeneratorModel
 
+
 @click.group()
-@click.option('--url', default='https://generator.campaign-logger.com', help='API Base URL')
-@click.option('--token', envvar='CL_GENERATOR_TOKEN', help='Bearer Token')
-@click.option('--client-id', envvar='CL_GENERATOR_CLIENT_ID', help='Client ID for API Key auth')
-@click.option('--client-secret', envvar='CL_GENERATOR_CLIENT_SECRET', help='Client Secret for API Key auth')
+@click.option(
+    '--url',
+    default='https://generator.campaign-logger.com',
+    help='API Base URL'
+)
+@click.option(
+    '--token',
+    envvar='CL_GENERATOR_TOKEN',
+    help='Bearer Token'
+)
+@click.option(
+    '--client-id',
+    envvar='CL_GENERATOR_CLIENT_ID',
+    help='Client ID for API Key auth'
+)
+@click.option(
+    '--client-secret',
+    envvar='CL_GENERATOR_CLIENT_SECRET',
+    help='Client Secret for API Key auth'
+)
 @click.pass_context
 def main(ctx, url, token, client_id, client_secret):
     ctx.ensure_object(dict)
@@ -21,6 +40,7 @@ def main(ctx, url, token, client_id, client_secret):
         client_id=client_id,
         client_secret=client_secret
     )
+
 
 @main.command(name='list')
 @click.pass_context
@@ -34,6 +54,7 @@ def list_generators(ctx):
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
+
 @main.command(name='get')
 @click.argument('id')
 @click.pass_context
@@ -45,6 +66,7 @@ def get_generator(ctx, id):
         click.echo(generator.model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
+
 
 @main.command(name='create')
 @click.argument('json_file', type=click.File('r'))
@@ -59,6 +81,7 @@ def create_generator(ctx, json_file):
         click.echo(created.model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
+
 
 @main.command(name='update')
 @click.argument('id')
@@ -75,6 +98,7 @@ def update_generator(ctx, id, json_file):
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
+
 @main.command(name='delete')
 @click.argument('id')
 @click.pass_context
@@ -86,6 +110,7 @@ def delete_generator(ctx, id):
         click.echo(f"Generator {id} deleted.")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
+
 
 @main.command(name='generate')
 @click.argument('target')
@@ -105,6 +130,7 @@ def generate(ctx, target):
         click.echo(json.dumps(result, indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
+
 
 @main.command(name='validate')
 @click.argument('target')

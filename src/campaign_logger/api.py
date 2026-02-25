@@ -1,9 +1,19 @@
+from typing import Dict
+from typing import List
+
 import requests
-from typing import List, Optional, Union, Dict
-from .models import FullGeneratorModel, GeneratorModelContainer
+
+from .models import FullGeneratorModel
+
 
 class GeneratorClient:
-    def __init__(self, base_url: str = "https://generator.campaign-logger.com", token: str = None, client_id: str = None, client_secret: str = None):
+    def __init__(
+        self,
+        base_url: str = "https://generator.campaign-logger.com",
+        token: str = None,
+        client_id: str = None,
+        client_secret: str = None
+    ):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
 
@@ -32,17 +42,34 @@ class GeneratorClient:
         response.raise_for_status()
         return FullGeneratorModel(**response.json())
 
-    def create_generator(self, model: FullGeneratorModel) -> FullGeneratorModel:
+    def create_generator(
+        self,
+        model: FullGeneratorModel
+    ) -> FullGeneratorModel:
         """Stores the generator provided in the body of the request."""
         url = f"{self.base_url}/api2/generators"
-        response = self.session.post(url, json=model.model_dump(exclude_unset=True))
+        response = self.session.post(
+            url,
+            json=model.model_dump(exclude_unset=True)
+        )
         response.raise_for_status()
         return FullGeneratorModel(**response.json())
 
-    def update_generator(self, generator_id: str, model: FullGeneratorModel) -> FullGeneratorModel:
-        """Updates the generator identified by {id} overwriting it with the request body."""
+    def update_generator(
+        self,
+        generator_id: str,
+        model: FullGeneratorModel
+    ) -> FullGeneratorModel:
+        """
+        Updates the generator identified by {id}.
+
+        Overwrites it with the request body.
+        """
         url = f"{self.base_url}/api2/generators/{generator_id}"
-        response = self.session.put(url, json=model.model_dump(exclude_unset=True))
+        response = self.session.put(
+            url,
+            json=model.model_dump(exclude_unset=True)
+        )
         response.raise_for_status()
         return FullGeneratorModel(**response.json())
 
@@ -55,13 +82,19 @@ class GeneratorClient:
     def validate_generator(self, model: FullGeneratorModel) -> None:
         """Executes validate on the generator provided in the body."""
         url = f"{self.base_url}/api2/generators/validate"
-        response = self.session.post(url, json=model.model_dump(exclude_unset=True))
+        response = self.session.post(
+            url,
+            json=model.model_dump(exclude_unset=True)
+        )
         response.raise_for_status()
 
     def generate_random(self, model: FullGeneratorModel) -> Dict:
         """Executes generate on the generator provided in the body."""
         url = f"{self.base_url}/api2/generators/generate"
-        response = self.session.post(url, json=model.model_dump(exclude_unset=True))
+        response = self.session.post(
+            url,
+            json=model.model_dump(exclude_unset=True)
+        )
         response.raise_for_status()
         return response.json()
 
@@ -90,6 +123,9 @@ class GeneratorClient:
 
     def delete_execute_token(self, generator_id: str, token: str) -> None:
         """Deletes the execute-token {token} for the generator identified by {id}."""
-        url = f"{self.base_url}/api2/generators/{generator_id}/execute-tokens/{token}"
+        url = (
+            f"{self.base_url}/api2/generators/{generator_id}/"
+            f"execute-tokens/{token}"
+        )
         response = self.session.delete(url)
         response.raise_for_status()
