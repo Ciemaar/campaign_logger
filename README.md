@@ -2,7 +2,8 @@
 
 Python interface to Campaign Logger.
 
-This library provides a Python client and CLI for the [Campaign Logger Generator API](https://generator.campaign-logger.com/).
+This library provides a Python client and CLI for the
+[Campaign Logger Generator API](https://generator.campaign-logger.com/).
 
 ## Features
 
@@ -18,7 +19,8 @@ pip install campaign-logger
 
 ## CLI Usage
 
-The CLI tool allows you to list, get, create, update, delete, generate, and validate generators.
+The CLI tool allows you to list, get, create, update, delete, generate,
+and validate generators.
 
 ```bash
 # Set your API token (or use --token option)
