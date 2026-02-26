@@ -72,7 +72,8 @@ Overview
 
 .. end-badges
 
-A module to support interaction with campaign logger https://campaign-logger.com/.
+A module to support interaction with `Campaign Logger <https://campaign-logger.com/>`_.
+This library provides a Python client and CLI for the `Generator API <https://generator.campaign-logger.com/>`_.
 
 * Free software: GNU Lesser General Public License v3 or later (LGPLv3+)
 
