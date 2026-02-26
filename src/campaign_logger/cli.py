@@ -36,13 +36,13 @@ def list_generators(ctx):
 
 
 @main.command(name="get")
-@click.argument("id")
+@click.argument("generator_id")
 @click.pass_context
-def get_generator(ctx, id):
+def get_generator(ctx, generator_id):
     """Get a generator by ID."""
     client = ctx.obj["client"]
     try:
-        generator = client.get_generator(id)
+        generator = client.get_generator(generator_id)
         click.echo(generator.model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -64,30 +64,30 @@ def create_generator(ctx, json_file):
 
 
 @main.command(name="update")
-@click.argument("id")
+@click.argument("generator_id")
 @click.argument("json_file", type=click.File("r"))
 @click.pass_context
-def update_generator(ctx, id, json_file):
+def update_generator(ctx, generator_id, json_file):
     """Update an existing generator from a JSON file."""
     client = ctx.obj["client"]
     try:
         data = json.load(json_file)
         model = FullGeneratorModel(**data)
-        updated = client.update_generator(id, model)
+        updated = client.update_generator(generator_id, model)
         click.echo(updated.model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
 
 @main.command(name="delete")
-@click.argument("id")
+@click.argument("generator_id")
 @click.pass_context
-def delete_generator(ctx, id):
+def delete_generator(ctx, generator_id):
     """Delete a generator."""
     client = ctx.obj["client"]
     try:
-        client.delete_generator(id)
-        click.echo(f"Generator {id} deleted.")
+        client.delete_generator(generator_id)
+        click.echo(f"Generator {generator_id} deleted.")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 

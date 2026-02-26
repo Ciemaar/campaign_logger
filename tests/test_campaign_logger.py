@@ -7,5 +7,5 @@ def test_main():
     runner = CliRunner()
     result = runner.invoke(main, ["--help"])
 
-    assert result.exit_code == 0
-    assert "Usage: main [OPTIONS] COMMAND [ARGS]..." in result.output
+    assert result.exit_code == 0  # nosec
+    assert "Usage: main [OPTIONS] COMMAND [ARGS]..." in result.output  # nosec
