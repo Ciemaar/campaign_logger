@@ -8,21 +8,28 @@ import os
 import click
 
 from .api import GeneratorClient
+from .api import LoggerClient
 from .models import FullGeneratorModel
 
 
 @click.group()
+@click.pass_context
+def main(ctx):
+    ctx.ensure_object(dict)
+
+
+@main.group()
 @click.option("--url", default="https://generator.campaign-logger.com", help="API Base URL")
 @click.option("--token", envvar="CL_GENERATOR_TOKEN", help="Bearer Token")
 @click.option("--client-id", envvar="CL_GENERATOR_CLIENT_ID", help="Client ID for API Key auth")
 @click.option("--client-secret", envvar="CL_GENERATOR_CLIENT_SECRET", help="Client Secret for API Key auth")
 @click.pass_context
-def main(ctx, url, token, client_id, client_secret):
-    ctx.ensure_object(dict)
+def generator(ctx, url, token, client_id, client_secret):
+    """Generator API commands."""
     ctx.obj["client"] = GeneratorClient(base_url=url, token=token, client_id=client_id, client_secret=client_secret)
 
 
-@main.command(name="list")
+@generator.command(name="list")
 @click.pass_context
 def list_generators(ctx):
     """List all generators."""
@@ -35,20 +42,20 @@ def list_generators(ctx):
         click.echo(f"Error: {e}", err=True)
 
 
-@main.command(name="get")
+@generator.command(name="get")
 @click.argument("generator_id")
 @click.pass_context
 def get_generator(ctx, generator_id):
     """Get a generator by ID."""
     client = ctx.obj["client"]
     try:
-        generator = client.get_generator(generator_id)
-        click.echo(generator.model_dump_json(indent=2))
+        generator_obj = client.get_generator(generator_id)
+        click.echo(generator_obj.model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
 
-@main.command(name="create")
+@generator.command(name="create")
 @click.argument("json_file", type=click.File("r"))
 @click.pass_context
 def create_generator(ctx, json_file):
@@ -63,7 +70,7 @@ def create_generator(ctx, json_file):
         click.echo(f"Error: {e}", err=True)
 
 
-@main.command(name="update")
+@generator.command(name="update")
 @click.argument("generator_id")
 @click.argument("json_file", type=click.File("r"))
 @click.pass_context
@@ -79,7 +86,7 @@ def update_generator(ctx, generator_id, json_file):
         click.echo(f"Error: {e}", err=True)
 
 
-@main.command(name="delete")
+@generator.command(name="delete")
 @click.argument("generator_id")
 @click.pass_context
 def delete_generator(ctx, generator_id):
@@ -92,7 +99,7 @@ def delete_generator(ctx, generator_id):
         click.echo(f"Error: {e}", err=True)
 
 
-@main.command(name="generate")
+@generator.command(name="generate")
 @click.argument("target")
 @click.pass_context
 def generate(ctx, target):
@@ -112,7 +119,7 @@ def generate(ctx, target):
         click.echo(f"Error: {e}", err=True)
 
 
-@main.command(name="validate")
+@generator.command(name="validate")
 @click.argument("target")
 @click.pass_context
 def validate(ctx, target):
@@ -129,5 +136,273 @@ def validate(ctx, target):
             # Assuming validating by ID uses the same execute_operation endpoint
             client.execute_operation(target, "validate")
             click.echo(f"Generator {target} is valid.")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@main.group()
+@click.option("--url", default="https://logger.campaign-logger.com", help="API Base URL")
+@click.option("--token", envvar="CL_LOGGER_TOKEN", help="Bearer Token")
+@click.pass_context
+def logger(ctx, url, token):
+    """Main Campaign Logger API commands."""
+    ctx.obj["client"] = LoggerClient(base_url=url, token=token)
+
+
+# --- Campaign Commands ---
+@logger.group()
+def campaign():
+    """Manage campaigns."""
+    pass
+
+
+@campaign.command(name="list")
+@click.pass_context
+def list_campaigns(ctx):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_campaigns(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@campaign.command(name="get")
+@click.argument("campaign_id")
+@click.pass_context
+def get_campaign(ctx, campaign_id):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_campaign(campaign_id), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@campaign.command(name="create")
+@click.argument("title")
+@click.option("--description", default="", help="Description of the campaign")
+@click.pass_context
+def create_campaign(ctx, title, description):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.create_campaign(title, description), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@campaign.command(name="update")
+@click.argument("campaign_id")
+@click.option("--title", help="New title")
+@click.option("--description", help="New description")
+@click.pass_context
+def update_campaign(ctx, campaign_id, title, description):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.update_campaign(campaign_id, title, description), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@campaign.command(name="delete")
+@click.argument("campaign_id")
+@click.pass_context
+def delete_campaign(ctx, campaign_id):
+    client = ctx.obj["client"]
+    try:
+        client.delete_campaign(campaign_id)
+        click.echo(f"Campaign {campaign_id} deleted.")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+# --- Log Commands ---
+@logger.group()
+def log():
+    """Manage logs."""
+    pass
+
+
+@log.command(name="list")
+@click.pass_context
+def list_logs(ctx):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_logs(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@log.command(name="get")
+@click.argument("log_id")
+@click.pass_context
+def get_log(ctx, log_id):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_log(log_id), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@log.command(name="create")
+@click.argument("campaign_id")
+@click.argument("title")
+@click.option("--description", default="", help="Description of the log")
+@click.pass_context
+def create_log(ctx, campaign_id, title, description):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.create_log(campaign_id, title, description), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@log.command(name="update")
+@click.argument("log_id")
+@click.option("--title", help="New title")
+@click.option("--description", help="New description")
+@click.pass_context
+def update_log(ctx, log_id, title, description):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.update_log(log_id, title, description), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@log.command(name="delete")
+@click.argument("log_id")
+@click.pass_context
+def delete_log(ctx, log_id):
+    client = ctx.obj["client"]
+    try:
+        client.delete_log(log_id)
+        click.echo(f"Log {log_id} deleted.")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+# --- Entry Commands ---
+@logger.group()
+def entry():
+    """Manage log entries."""
+    pass
+
+
+@entry.command(name="list")
+@click.pass_context
+def list_entries(ctx):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_log_entries(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@entry.command(name="get")
+@click.argument("entry_id")
+@click.pass_context
+def get_entry(ctx, entry_id):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_log_entry(entry_id), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@entry.command(name="create")
+@click.argument("log_id")
+@click.argument("text")
+@click.pass_context
+def create_entry(ctx, log_id, text):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.create_log_entry(log_id, text), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@entry.command(name="update")
+@click.argument("entry_id")
+@click.argument("text")
+@click.pass_context
+def update_entry(ctx, entry_id, text):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.update_log_entry(entry_id, text), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@entry.command(name="delete")
+@click.argument("entry_id")
+@click.pass_context
+def delete_entry(ctx, entry_id):
+    client = ctx.obj["client"]
+    try:
+        client.delete_log_entry(entry_id)
+        click.echo(f"Entry {entry_id} deleted.")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+# --- Page Commands ---
+@logger.group()
+def page():
+    """Manage pages (campaign entries)."""
+    pass
+
+
+@page.command(name="list")
+@click.pass_context
+def list_pages(ctx):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_campaign_entries(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@page.command(name="get")
+@click.argument("page_id")
+@click.pass_context
+def get_page(ctx, page_id):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_campaign_entry(page_id), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@page.command(name="create")
+@click.argument("campaign_id")
+@click.argument("text")
+@click.pass_context
+def create_page(ctx, campaign_id, text):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.create_campaign_entry(campaign_id, text), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@page.command(name="update")
+@click.argument("page_id")
+@click.argument("text")
+@click.pass_context
+def update_page(ctx, page_id, text):
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.update_campaign_entry(page_id, text), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@page.command(name="delete")
+@click.argument("page_id")
+@click.pass_context
+def delete_page(ctx, page_id):
+    client = ctx.obj["client"]
+    try:
+        client.delete_campaign_entry(page_id)
+        click.echo(f"Page {page_id} deleted.")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)

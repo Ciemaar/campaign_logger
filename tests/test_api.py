@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 import requests_mock
 
@@ -9,7 +11,7 @@ BASE_URL = "https://generator.campaign-logger.com"
 
 @pytest.fixture
 def client():
-    return GeneratorClient(base_url=BASE_URL, token="fake_token")
+    return GeneratorClient(base_url=BASE_URL, token=secrets.token_hex(16))
 
 
 def test_list_generators(client):
