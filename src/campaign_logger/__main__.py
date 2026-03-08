@@ -1,3 +1,5 @@
+"""Entry point for the campaign logger application."""
+
 if __name__ == "__main__":
     from campaign_logger.cli import main
 

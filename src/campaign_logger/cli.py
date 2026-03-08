@@ -1,6 +1,4 @@
-"""
-Module that contains the command line app.
-"""
+"""Module that contains the command line app."""
 
 import json
 import os
@@ -15,6 +13,7 @@ from .models import FullGeneratorModel
 @click.group()
 @click.pass_context
 def main(ctx):
+    """Campaign Logger command line interface."""
     ctx.ensure_object(dict)
 
 
@@ -159,9 +158,10 @@ def campaign():
 @campaign.command(name="list")
 @click.pass_context
 def list_campaigns(ctx):
+    """List all campaigns."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_campaigns(), indent=2))
+        click.echo(client.get_campaigns().model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -170,9 +170,10 @@ def list_campaigns(ctx):
 @click.argument("campaign_id")
 @click.pass_context
 def get_campaign(ctx, campaign_id):
+    """Get a campaign by ID."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_campaign(campaign_id), indent=2))
+        click.echo(client.get_campaign(campaign_id).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -182,9 +183,10 @@ def get_campaign(ctx, campaign_id):
 @click.option("--description", default="", help="Description of the campaign")
 @click.pass_context
 def create_campaign(ctx, title, description):
+    """Create a new campaign."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.create_campaign(title, description), indent=2))
+        click.echo(client.create_campaign(title, description).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -195,9 +197,10 @@ def create_campaign(ctx, title, description):
 @click.option("--description", help="New description")
 @click.pass_context
 def update_campaign(ctx, campaign_id, title, description):
+    """Update an existing campaign."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.update_campaign(campaign_id, title, description), indent=2))
+        click.echo(client.update_campaign(campaign_id, title, description).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -206,6 +209,7 @@ def update_campaign(ctx, campaign_id, title, description):
 @click.argument("campaign_id")
 @click.pass_context
 def delete_campaign(ctx, campaign_id):
+    """Delete a campaign."""
     client = ctx.obj["client"]
     try:
         client.delete_campaign(campaign_id)
@@ -224,9 +228,10 @@ def log():
 @log.command(name="list")
 @click.pass_context
 def list_logs(ctx):
+    """List all logs."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_logs(), indent=2))
+        click.echo(client.get_logs().model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -235,9 +240,10 @@ def list_logs(ctx):
 @click.argument("log_id")
 @click.pass_context
 def get_log(ctx, log_id):
+    """Get a log by ID."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_log(log_id), indent=2))
+        click.echo(client.get_log(log_id).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -248,9 +254,10 @@ def get_log(ctx, log_id):
 @click.option("--description", default="", help="Description of the log")
 @click.pass_context
 def create_log(ctx, campaign_id, title, description):
+    """Create a new log."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.create_log(campaign_id, title, description), indent=2))
+        click.echo(client.create_log(campaign_id, title, description).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -261,9 +268,10 @@ def create_log(ctx, campaign_id, title, description):
 @click.option("--description", help="New description")
 @click.pass_context
 def update_log(ctx, log_id, title, description):
+    """Update an existing log."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.update_log(log_id, title, description), indent=2))
+        click.echo(client.update_log(log_id, title, description).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -272,6 +280,7 @@ def update_log(ctx, log_id, title, description):
 @click.argument("log_id")
 @click.pass_context
 def delete_log(ctx, log_id):
+    """Delete a log."""
     client = ctx.obj["client"]
     try:
         client.delete_log(log_id)
@@ -290,9 +299,10 @@ def entry():
 @entry.command(name="list")
 @click.pass_context
 def list_entries(ctx):
+    """List all log entries."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_log_entries(), indent=2))
+        click.echo(client.get_log_entries().model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -301,9 +311,10 @@ def list_entries(ctx):
 @click.argument("entry_id")
 @click.pass_context
 def get_entry(ctx, entry_id):
+    """Get a log entry by ID."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_log_entry(entry_id), indent=2))
+        click.echo(client.get_log_entry(entry_id).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -313,9 +324,10 @@ def get_entry(ctx, entry_id):
 @click.argument("text")
 @click.pass_context
 def create_entry(ctx, log_id, text):
+    """Create a new log entry."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.create_log_entry(log_id, text), indent=2))
+        click.echo(client.create_log_entry(log_id, text).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -325,9 +337,10 @@ def create_entry(ctx, log_id, text):
 @click.argument("text")
 @click.pass_context
 def update_entry(ctx, entry_id, text):
+    """Update an existing log entry."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.update_log_entry(entry_id, text), indent=2))
+        click.echo(client.update_log_entry(entry_id, text).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -336,6 +349,7 @@ def update_entry(ctx, entry_id, text):
 @click.argument("entry_id")
 @click.pass_context
 def delete_entry(ctx, entry_id):
+    """Delete a log entry."""
     client = ctx.obj["client"]
     try:
         client.delete_log_entry(entry_id)
@@ -354,9 +368,10 @@ def page():
 @page.command(name="list")
 @click.pass_context
 def list_pages(ctx):
+    """List all pages."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_campaign_entries(), indent=2))
+        click.echo(client.get_campaign_entries().model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -365,9 +380,10 @@ def list_pages(ctx):
 @click.argument("page_id")
 @click.pass_context
 def get_page(ctx, page_id):
+    """Get a page by ID."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_campaign_entry(page_id), indent=2))
+        click.echo(client.get_campaign_entry(page_id).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -377,9 +393,10 @@ def get_page(ctx, page_id):
 @click.argument("text")
 @click.pass_context
 def create_page(ctx, campaign_id, text):
+    """Create a new page."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.create_campaign_entry(campaign_id, text), indent=2))
+        click.echo(client.create_campaign_entry(campaign_id, text).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -389,9 +406,10 @@ def create_page(ctx, campaign_id, text):
 @click.argument("text")
 @click.pass_context
 def update_page(ctx, page_id, text):
+    """Update an existing page."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.update_campaign_entry(page_id, text), indent=2))
+        click.echo(client.update_campaign_entry(page_id, text).model_dump_json(indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -400,6 +418,7 @@ def update_page(ctx, page_id, text):
 @click.argument("page_id")
 @click.pass_context
 def delete_page(ctx, page_id):
+    """Delete a page."""
     client = ctx.obj["client"]
     try:
         client.delete_campaign_entry(page_id)

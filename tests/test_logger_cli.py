@@ -11,28 +11,42 @@ def runner():
     return CliRunner()
 
 
+class MockResource:
+    def __init__(self, data):
+        self._data = data
+
+    def model_dump_json(self, **kwargs):
+        import json
+        return json.dumps(self._data)
+
+
 @pytest.fixture
 def mock_logger_client(mocker):
     mock_instance = MagicMock()
-    mock_instance.get_campaigns.return_value = {"data": [{"id": "c1"}]}
-    mock_instance.get_campaign.return_value = {"data": {"id": "c1"}}
-    mock_instance.create_campaign.return_value = {"data": {"id": "c1"}}
-    mock_instance.update_campaign.return_value = {"data": {"id": "c1"}}
+    mock_c1 = MockResource({"id": "c1"})
+    mock_l1 = MockResource({"id": "l1"})
+    mock_le1 = MockResource({"id": "le1"})
+    mock_ce1 = MockResource({"id": "ce1"})
 
-    mock_instance.get_logs.return_value = {"data": [{"id": "l1"}]}
-    mock_instance.get_log.return_value = {"data": {"id": "l1"}}
-    mock_instance.create_log.return_value = {"data": {"id": "l1"}}
-    mock_instance.update_log.return_value = {"data": {"id": "l1"}}
+    mock_instance.get_campaigns.return_value = [mock_c1]
+    mock_instance.get_campaign.return_value = mock_c1
+    mock_instance.create_campaign.return_value = mock_c1
+    mock_instance.update_campaign.return_value = mock_c1
 
-    mock_instance.get_log_entries.return_value = {"data": [{"id": "le1"}]}
-    mock_instance.get_log_entry.return_value = {"data": {"id": "le1"}}
-    mock_instance.create_log_entry.return_value = {"data": {"id": "le1"}}
-    mock_instance.update_log_entry.return_value = {"data": {"id": "le1"}}
+    mock_instance.get_logs.return_value = [mock_l1]
+    mock_instance.get_log.return_value = mock_l1
+    mock_instance.create_log.return_value = mock_l1
+    mock_instance.update_log.return_value = mock_l1
 
-    mock_instance.get_campaign_entries.return_value = {"data": [{"id": "ce1"}]}
-    mock_instance.get_campaign_entry.return_value = {"data": {"id": "ce1"}}
-    mock_instance.create_campaign_entry.return_value = {"data": {"id": "ce1"}}
-    mock_instance.update_campaign_entry.return_value = {"data": {"id": "ce1"}}
+    mock_instance.get_log_entries.return_value = [mock_le1]
+    mock_instance.get_log_entry.return_value = mock_le1
+    mock_instance.create_log_entry.return_value = mock_le1
+    mock_instance.update_log_entry.return_value = mock_le1
+
+    mock_instance.get_campaign_entries.return_value = [mock_ce1]
+    mock_instance.get_campaign_entry.return_value = mock_ce1
+    mock_instance.create_campaign_entry.return_value = mock_ce1
+    mock_instance.update_campaign_entry.return_value = mock_ce1
 
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
     return mock_instance

@@ -9,8 +9,17 @@ line-length = 140
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+select = ["E", "F", "W", "I", "D"]
 ignore = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D100", "D103", "D104"]
+"ci/*" = ["D"]
+"setup.py" = ["D"]
+"docs/conf.py" = ["D"]
 
 [tool.ruff.lint.isort]
 force-single-line = true
