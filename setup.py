@@ -22,7 +22,7 @@ def read(*names, **kwargs):
 
 setup(
     name="campaign-logger",
-    version="0.0.0",
+    version="0.0.1",
     license="LGPL-3.0-or-later",
     description="A module to support interaction with campaign logger https://campaign-logger.com/.",
     long_description="{}\n{}".format(

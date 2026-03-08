@@ -20,7 +20,7 @@ project = "Campaign Logger"
 year = "2022"
 author = "Andy Fundinger"
 copyright = "{0}, {1}".format(year, author)  # pylint: disable=redefined-builtin
-version = release = "0.0.0"
+version = release = "0.0.1"
 
 pygments_style = "trac"
 templates_path = ["."]
