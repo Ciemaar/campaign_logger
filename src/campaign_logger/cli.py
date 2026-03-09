@@ -152,7 +152,6 @@ def logger(ctx, url, token):
 @logger.group()
 def campaign():
     """Manage campaigns."""
-    pass
 
 
 @campaign.command(name="list")
@@ -222,7 +221,6 @@ def delete_campaign(ctx, campaign_id):
 @logger.group()
 def log():
     """Manage logs."""
-    pass
 
 
 @log.command(name="list")
@@ -293,7 +291,6 @@ def delete_log(ctx, log_id):
 @logger.group()
 def entry():
     """Manage log entries."""
-    pass
 
 
 @entry.command(name="list")
@@ -362,7 +359,6 @@ def delete_entry(ctx, entry_id):
 @logger.group()
 def page():
     """Manage pages (campaign entries)."""
-    pass
 
 
 @page.command(name="list")

@@ -56,8 +56,6 @@ class FullGeneratorModel(BaseModel):
 class GeneratorModelContainer(BaseModel):
     """Container for generator models."""
 
-    pass
-
 
 # JSON:API Models
 
