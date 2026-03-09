@@ -88,3 +88,37 @@ def test_validate_from_id(runner, mock_client):
     assert result.exit_code == 0  # nosec
     assert "Generator 1 is valid." in result.output  # nosec
     mock_client.execute_operation.assert_called_once_with("1", "validate")
+
+
+def test_generator_cli_error_handling(runner, mock_client):
+    mock_client.list_generators.side_effect = Exception("API is down")
+    result = runner.invoke(main, ["generator", "list"])
+    assert result.exit_code == 0  # click's default behavior for caught errors here
+    assert "Error: API is down" in result.output  # nosec
+
+    mock_client.get_generator.side_effect = Exception("Not found")
+    result = runner.invoke(main, ["generator", "get", "1"])
+    assert "Error: Not found" in result.output  # nosec
+
+    with runner.isolated_filesystem():
+        with open("new.json", "w") as f:
+            f.write('{"name": "New Gen"}')
+        mock_client.create_generator.side_effect = Exception("Create failed")
+        result = runner.invoke(main, ["generator", "create", "new.json"])
+        assert "Error: Create failed" in result.output  # nosec
+
+        mock_client.update_generator.side_effect = Exception("Update failed")
+        result = runner.invoke(main, ["generator", "update", "1", "new.json"])
+        assert "Error: Update failed" in result.output  # nosec
+
+    mock_client.delete_generator.side_effect = Exception("Delete failed")
+    result = runner.invoke(main, ["generator", "delete", "1"])
+    assert "Error: Delete failed" in result.output  # nosec
+
+    mock_client.execute_operation.side_effect = Exception("Generate failed")
+    result = runner.invoke(main, ["generator", "generate", "1"])
+    assert "Error: Generate failed" in result.output  # nosec
+
+    mock_client.execute_operation.side_effect = Exception("Validate failed")
+    result = runner.invoke(main, ["generator", "validate", "1"])
+    assert "Error: Validate failed" in result.output  # nosec
