@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 import requests_mock
 
@@ -8,7 +10,7 @@ BASE_URL = "https://logger.campaign-logger.com"
 
 @pytest.fixture
 def client():
-    return LoggerClient(base_url=BASE_URL, token="fake_token")
+    return LoggerClient(base_url=BASE_URL, token=secrets.token_hex(16))
 
 
 def test_get_campaigns(client):

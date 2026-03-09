@@ -12,11 +12,16 @@ def runner():
 
 
 class MockResource:
+    """Mock for JSON API Resource."""
+
     def __init__(self, data):
+        """Initialize MockResource."""
         self._data = data
 
     def model_dump_json(self, **kwargs):
+        """Return JSON representation."""
         import json
+
         return json.dumps(self._data)
 
 
