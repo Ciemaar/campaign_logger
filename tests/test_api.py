@@ -86,6 +86,9 @@ def test_execute_operation(client):
         result = client.execute_operation("gen1", "generate")
         assert result == {"result": "executed"}  # nosec
 
+    with pytest.raises(ValueError):
+        client.execute_operation("gen1", "invalid_operation")
+
 
 def test_get_execute_tokens(client):
     with requests_mock.Mocker() as m:

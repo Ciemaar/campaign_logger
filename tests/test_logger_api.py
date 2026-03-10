@@ -44,6 +44,12 @@ def test_update_campaign(client):
         result = client.update_campaign("c1", title="New Title")
         assert result.data.id == "c1"  # nosec
 
+        result2 = client.update_campaign("c1", description="New Desc")
+        assert result2.data.id == "c1"  # nosec
+
+        result3 = client.update_campaign("c1")
+        assert result3.data.id == "c1"  # nosec
+
 
 def test_delete_campaign(client):
     with requests_mock.Mocker() as m:
@@ -75,6 +81,12 @@ def test_update_log(client):
         m.patch(f"{BASE_URL}/logs/l1", json={"data": {"id": "l1", "type": "logs"}})
         result = client.update_log("l1", title="New Title")
         assert result.data.id == "l1"  # nosec
+
+        result2 = client.update_log("l1", description="New Desc")
+        assert result2.data.id == "l1"  # nosec
+
+        result3 = client.update_log("l1")
+        assert result3.data.id == "l1"  # nosec
 
 
 def test_delete_log(client):

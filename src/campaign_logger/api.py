@@ -86,7 +86,7 @@ class GeneratorClient:
     def execute_operation(self, generator_id: str, operation: str) -> Dict[str, Any]:
         """Executes {operation} on the generator identified by {id}."""
         if operation not in ["validate", "generate"]:
-            raise ValueError("Operation must be 'validate' or 'generate'")  # pragma: no cover
+            raise ValueError("Operation must be 'validate' or 'generate'")
         url = f"{self.base_url}/api2/generators/{generator_id}/{operation}"
         response = self.session.get(url)
         response.raise_for_status()
@@ -179,9 +179,9 @@ class LoggerClient:
         """Update an existing campaign."""
         url = f"{self.base_url}/campaigns/{campaign_id}"
         attributes: Dict[str, Any] = {}
-        if title is not None:  # pragma: no cover
+        if title is not None:
             attributes["title"] = title
-        if description is not None:  # pragma: no cover
+        if description is not None:
             attributes["description"] = description
 
         payload = {"data": {"type": "campaigns", "id": campaign_id, "attributes": attributes}}
@@ -224,9 +224,9 @@ class LoggerClient:
         """Update an existing log."""
         url = f"{self.base_url}/logs/{log_id}"
         attributes: Dict[str, Any] = {}
-        if title is not None:  # pragma: no cover
+        if title is not None:
             attributes["title"] = title
-        if description is not None:  # pragma: no cover
+        if description is not None:
             attributes["description"] = description
 
         payload = {"data": {"type": "logs", "id": log_id, "attributes": attributes}}
