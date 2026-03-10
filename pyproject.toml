@@ -30,3 +30,45 @@ default-section = "third-party"
 [tool.pyright]
 pythonVersion = "3.9"
 typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+norecursedirs = [
+    ".git",
+    ".tox",
+    ".env",
+    "dist",
+    "build",
+    "migrations"
+]
+python_files = [
+    "test_*.py",
+    "*_test.py",
+    "tests.py"
+]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--ignore=docs/conf.py",
+    "--ignore=setup.py",
+    "--ignore=ci",
+    "--ignore=.eggs",
+    "--doctest-modules",
+    "--doctest-glob=\\*.rst",
+    "--tb=short",
+    "--pyargs",
+    "--cov=campaign_logger",
+    "--cov-report=term-missing",
+    "--cov-fail-under=95"
+]
+testpaths = [
+    "campaign_logger",
+    "tests/"
+]
+
+[tool.coverage.run]
+branch = true
+source = ["campaign_logger"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 95

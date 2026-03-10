@@ -22,6 +22,32 @@ documents usage for the main
 pip install campaign-logger
 ```
 
+## Development Setup
+
+To set up a local development environment, clone the repository and install the
+package with testing dependencies:
+
+```bash
+git clone https://github.com/Ciemaar/campaign_logger.git
+cd campaign_logger
+
+# Create and activate a virtual environment using standard tools
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -e ".[test]"
+
+# Alternatively, using uv for faster installation
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[test]"
+```
+
+Run tests across environments using `tox`:
+
+```bash
+tox
+```
+
 ## CLI Usage (Generators)
 
 The CLI tool allows you to list, get, create, update, delete, generate, and
@@ -32,7 +58,7 @@ validate generators.
 export CL_GENERATOR_TOKEN="your_api_token"
 
 # List all generators
-campaign-logger list
+campaign-logger generator list
 
 # Get a generator by ID
 campaign-logger get <generator_id>
