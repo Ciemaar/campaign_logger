@@ -4,12 +4,18 @@ This file contains instructions for AI agents working on this repository.
 
 ## Core Constraints
 
-1. **Python Version:** Supports Python 3.9 through 3.14. Do not use features newer than 3.9 without fallbacks.
-1. **Linting:** The project uses `ruff` for both linting and formatting. Run `ruff check .` and `ruff format .`.
-1. **Type Checking:** The project uses `pyright`. Run `pyright .` to verify types.
-1. **Testing:** Use `tox` to run tests across environments. `tox -e py312-cover` (or similar) is preferred for fast feedback.
-1. **Build System:** Uses `setuptools`. Configuration is in `setup.py` and `setup.cfg`.
-1. **CI/CD:** Configuration is generated via `ci/bootstrap.py`. If you modify `setup.cfg` or `ci/templates/`, run `python ci/bootstrap.py`.
+1. **Python Version:** Supports Python 3.9 through 3.14. Do not use features
+   newer than 3.9 without fallbacks.
+1. **Linting:** The project uses `ruff` for both linting and formatting. Run
+   `ruff check .` and `ruff format .`.
+1. **Type Checking:** The project uses `pyright`. Run `pyright .` to verify
+   types.
+1. **Testing:** Use `tox` to run tests across environments. `tox -e py312-cover`
+   (or similar) is preferred for fast feedback.
+1. **Build System:** Uses `setuptools`. Configuration is in `setup.py` and
+   `setup.cfg`.
+1. **CI/CD:** Configuration is generated via `ci/bootstrap.py`. If you modify
+   `setup.cfg` or `ci/templates/`, run `python ci/bootstrap.py`.
 
 ## Code Style
 

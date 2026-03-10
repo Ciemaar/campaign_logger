@@ -1,7 +1,7 @@
 # GitHub Copilot Instructions
 
-This repository uses **Ruff** for linting/formatting and **Pyright** for type checking.
-All Python code must be compatible with Python 3.9 through 3.14.
+This repository uses **Ruff** for linting/formatting and **Pyright** for type
+checking. All Python code must be compatible with Python 3.9 through 3.14.
 
 ## Key Directives
 
