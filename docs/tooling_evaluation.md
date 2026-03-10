@@ -18,6 +18,11 @@ Date: March 8, 2026
 - **Alternative: Mypy:**
   - **Suitability:** Strong industry standard. Tested locally on the codebase: `mypy src/ tests/`. It passed cleanly (after installing `types-requests`). However, Pyright's speed and strictness out of the box make it preferable for this project's current footprint.
 
+* **Alternative: ty (Astral):**
+  - **Suitability:** A blazing-fast Rust-based type checker from the creators of Ruff. Tested `ty check src/ tests/` and it performed identically to Pyright but instantly. A very strong contender, though slightly less mature in editor integrations than Pyright.
+* **Alternative: Pyrefly (Meta):**
+  - **Suitability:** Meta's fast type checker. Tested `pyrefly check src/ tests/` and it worked perfectly. Similar to `ty`, it's incredibly fast but Pyright is currently the established standard for Node-based fast checking in VS Code.
+
 ## Testing and Matrix Orchestration
 
 - **Tox** (Currently Used):
