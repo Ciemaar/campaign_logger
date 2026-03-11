@@ -21,3 +21,4 @@ include AGENTS.md
 
 
 global-exclude *.py[cod] __pycache__/* *.so *.dylib
+include SESSION_INSTRUCTIONS.md
