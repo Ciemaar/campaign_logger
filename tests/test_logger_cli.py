@@ -18,11 +18,9 @@ class MockResource:
         """Initialize MockResource."""
         self._data = data
 
-    def model_dump_json(self, **kwargs):
-        """Return JSON representation."""
-        import json
-
-        return json.dumps(self._data)
+    def to_dict(self):
+        """Return dict representation."""
+        return self._data
 
 
 @pytest.fixture

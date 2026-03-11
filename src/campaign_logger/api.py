@@ -7,8 +7,13 @@ from typing import Optional
 
 import requests
 
+from .models import Campaign
+from .models import CampaignEntry
 from .models import FullGeneratorModel
+from .models import JsonApiResource
 from .models import JsonApiResponse
+from .models import Log
+from .models import LogEntry
 
 
 class GeneratorClient:
@@ -150,16 +155,66 @@ class LoggerClient:
         response = self.session.delete(url)
         response.raise_for_status()
 
+    def _parse_campaign(self, resource: JsonApiResource) -> Campaign:
+        attrs = resource.attributes or {}
+        camp = Campaign(
+            id=str(resource.id),
+            type=resource.type,
+            title=str(attrs.get("title", "")),
+            description=str(attrs.get("description", "")),
+        )
+        camp._client = self
+        return camp
+
+    def _parse_log(self, resource: JsonApiResource) -> Log:
+        attrs = resource.attributes or {}
+        log_obj = Log(
+            id=str(resource.id),
+            type=resource.type,
+            title=str(attrs.get("title", "")),
+            description=str(attrs.get("description", "")),
+            campaign_id=str(attrs.get("campaignId", "")),
+        )
+        log_obj._client = self
+        return log_obj
+
+    def _parse_log_entry(self, resource: JsonApiResource) -> LogEntry:
+        attrs = resource.attributes or {}
+        entry = LogEntry(
+            id=str(resource.id),
+            type=resource.type,
+            raw_text=str(attrs.get("rawText", "")),
+            log_id=str(attrs.get("logId", "")),
+        )
+        entry._client = self
+        return entry
+
+    def _parse_campaign_entry(self, resource: JsonApiResource) -> CampaignEntry:
+        attrs = resource.attributes or {}
+        entry = CampaignEntry(
+            id=str(resource.id),
+            type=resource.type,
+            raw_text=str(attrs.get("rawText", "")),
+            campaign_id=str(attrs.get("campaignId", "")),
+        )
+        entry._client = self
+        return entry
+
     # --- Campaigns ---
-    def get_campaigns(self) -> JsonApiResponse:
+    def get_campaigns(self) -> List[Campaign]:
         """Get all campaigns."""
-        return self._get("campaigns")
+        response = self._get("campaigns")
+        data = response.data if isinstance(response.data, list) else [response.data]
+        return [self._parse_campaign(r) for r in data]
 
-    def get_campaign(self, campaign_id: str) -> JsonApiResponse:
+    def get_campaign(self, campaign_id: str) -> Campaign:
         """Get a campaign by ID."""
-        return self._get("campaigns", campaign_id)
+        response = self._get("campaigns", campaign_id)
+        if isinstance(response.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_campaign(response.data)
 
-    def create_campaign(self, title: str, description: str = "") -> JsonApiResponse:
+    def create_campaign(self, title: str, description: str = "") -> Campaign:
         """Create a new campaign."""
         url = f"{self.base_url}/campaigns"
         payload = {
@@ -173,9 +228,12 @@ class LoggerClient:
         }
         response = self.session.post(url, json=payload)
         response.raise_for_status()
-        return JsonApiResponse(**response.json())
+        json_resp = JsonApiResponse(**response.json())
+        if isinstance(json_resp.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_campaign(json_resp.data)
 
-    def update_campaign(self, campaign_id: str, title: Optional[str] = None, description: Optional[str] = None) -> JsonApiResponse:
+    def update_campaign(self, campaign_id: str, title: Optional[str] = None, description: Optional[str] = None) -> Campaign:
         """Update an existing campaign."""
         url = f"{self.base_url}/campaigns/{campaign_id}"
         attributes: Dict[str, Any] = {}
@@ -187,22 +245,30 @@ class LoggerClient:
         payload = {"data": {"type": "campaigns", "id": campaign_id, "attributes": attributes}}
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
-        return JsonApiResponse(**response.json())
+        json_resp = JsonApiResponse(**response.json())
+        if isinstance(json_resp.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_campaign(json_resp.data)
 
     def delete_campaign(self, campaign_id: str) -> None:
         """Delete a campaign."""
         self._delete("campaigns", campaign_id)
 
     # --- Logs ---
-    def get_logs(self) -> JsonApiResponse:
+    def get_logs(self) -> List[Log]:
         """Get all logs."""
-        return self._get("logs")
+        response = self._get("logs")
+        data = response.data if isinstance(response.data, list) else [response.data]
+        return [self._parse_log(r) for r in data]
 
-    def get_log(self, log_id: str) -> JsonApiResponse:
+    def get_log(self, log_id: str) -> Log:
         """Get a log by ID."""
-        return self._get("logs", log_id)
+        response = self._get("logs", log_id)
+        if isinstance(response.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_log(response.data)
 
-    def create_log(self, campaign_id: str, title: str, description: str = "") -> JsonApiResponse:
+    def create_log(self, campaign_id: str, title: str, description: str = "") -> Log:
         """Create a new log."""
         url = f"{self.base_url}/logs"
         payload = {
@@ -218,9 +284,12 @@ class LoggerClient:
         }
         response = self.session.post(url, json=payload)
         response.raise_for_status()
-        return JsonApiResponse(**response.json())
+        json_resp = JsonApiResponse(**response.json())
+        if isinstance(json_resp.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_log(json_resp.data)
 
-    def update_log(self, log_id: str, title: Optional[str] = None, description: Optional[str] = None) -> JsonApiResponse:
+    def update_log(self, log_id: str, title: Optional[str] = None, description: Optional[str] = None) -> Log:
         """Update an existing log."""
         url = f"{self.base_url}/logs/{log_id}"
         attributes: Dict[str, Any] = {}
@@ -232,22 +301,30 @@ class LoggerClient:
         payload = {"data": {"type": "logs", "id": log_id, "attributes": attributes}}
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
-        return JsonApiResponse(**response.json())
+        json_resp = JsonApiResponse(**response.json())
+        if isinstance(json_resp.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_log(json_resp.data)
 
     def delete_log(self, log_id: str) -> None:
         """Delete a log."""
         self._delete("logs", log_id)
 
     # --- Log Entries ---
-    def get_log_entries(self) -> JsonApiResponse:
+    def get_log_entries(self) -> List[LogEntry]:
         """Get all log entries."""
-        return self._get("log-entries")
+        response = self._get("log-entries")
+        data = response.data if isinstance(response.data, list) else [response.data]
+        return [self._parse_log_entry(r) for r in data]
 
-    def get_log_entry(self, entry_id: str) -> JsonApiResponse:
+    def get_log_entry(self, entry_id: str) -> LogEntry:
         """Get a log entry by ID."""
-        return self._get("log-entries", entry_id)
+        response = self._get("log-entries", entry_id)
+        if isinstance(response.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_log_entry(response.data)
 
-    def create_log_entry(self, log_id: str, raw_text: str) -> JsonApiResponse:
+    def create_log_entry(self, log_id: str, raw_text: str) -> LogEntry:
         """Create a new log entry."""
         url = f"{self.base_url}/log-entries"
         payload = {
@@ -262,9 +339,12 @@ class LoggerClient:
         }
         response = self.session.post(url, json=payload)
         response.raise_for_status()
-        return JsonApiResponse(**response.json())
+        json_resp = JsonApiResponse(**response.json())
+        if isinstance(json_resp.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_log_entry(json_resp.data)
 
-    def update_log_entry(self, entry_id: str, raw_text: str) -> JsonApiResponse:
+    def update_log_entry(self, entry_id: str, raw_text: str) -> LogEntry:
         """Update an existing log entry."""
         url = f"{self.base_url}/log-entries/{entry_id}"
         payload = {
@@ -278,22 +358,30 @@ class LoggerClient:
         }
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
-        return JsonApiResponse(**response.json())
+        json_resp = JsonApiResponse(**response.json())
+        if isinstance(json_resp.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_log_entry(json_resp.data)
 
     def delete_log_entry(self, entry_id: str) -> None:
         """Delete a log entry."""
         self._delete("log-entries", entry_id)
 
     # --- Campaign Entries (Pages) ---
-    def get_campaign_entries(self) -> JsonApiResponse:
+    def get_campaign_entries(self) -> List[CampaignEntry]:
         """Get all campaign entries."""
-        return self._get("campaign-entries")
+        response = self._get("campaign-entries")
+        data = response.data if isinstance(response.data, list) else [response.data]
+        return [self._parse_campaign_entry(r) for r in data]
 
-    def get_campaign_entry(self, entry_id: str) -> JsonApiResponse:
+    def get_campaign_entry(self, entry_id: str) -> CampaignEntry:
         """Get a campaign entry by ID."""
-        return self._get("campaign-entries", entry_id)
+        response = self._get("campaign-entries", entry_id)
+        if isinstance(response.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_campaign_entry(response.data)
 
-    def create_campaign_entry(self, campaign_id: str, raw_text: str) -> JsonApiResponse:
+    def create_campaign_entry(self, campaign_id: str, raw_text: str) -> CampaignEntry:
         """Creates a page (Campaign Entry) in a campaign."""
         url = f"{self.base_url}/campaign-entries"
         payload = {
@@ -308,9 +396,12 @@ class LoggerClient:
         }
         response = self.session.post(url, json=payload)
         response.raise_for_status()
-        return JsonApiResponse(**response.json())
+        json_resp = JsonApiResponse(**response.json())
+        if isinstance(json_resp.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_campaign_entry(json_resp.data)
 
-    def update_campaign_entry(self, entry_id: str, raw_text: str) -> JsonApiResponse:
+    def update_campaign_entry(self, entry_id: str, raw_text: str) -> CampaignEntry:
         """Update an existing campaign entry."""
         url = f"{self.base_url}/campaign-entries/{entry_id}"
         payload = {
@@ -324,7 +415,10 @@ class LoggerClient:
         }
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
-        return JsonApiResponse(**response.json())
+        json_resp = JsonApiResponse(**response.json())
+        if isinstance(json_resp.data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_campaign_entry(json_resp.data)
 
     def delete_campaign_entry(self, entry_id: str) -> None:
         """Delete a campaign entry."""
