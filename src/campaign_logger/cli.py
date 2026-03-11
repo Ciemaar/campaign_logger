@@ -29,7 +29,7 @@ def generator(ctx, url, token):
 @generator.command(name="list")
 @click.pass_context
 def list_generators(ctx):
-    """List all generators."""
+    """Retrieve and display a list of all user generators."""
     client = ctx.obj["client"]
     try:
         generators = client.list_generators()
@@ -43,7 +43,7 @@ def list_generators(ctx):
 @click.argument("generator_id")
 @click.pass_context
 def get_generator(ctx, generator_id):
-    """Get a generator by ID."""
+    """Fetch the configuration of a specific generator by its ID."""
     client = ctx.obj["client"]
     try:
         generator_obj = client.get_generator(generator_id)
@@ -56,7 +56,7 @@ def get_generator(ctx, generator_id):
 @click.argument("json_file", type=click.File("r"))
 @click.pass_context
 def create_generator(ctx, json_file):
-    """Create a new generator from a JSON file."""
+    """Create and save a new generator using a provided JSON file."""
     client = ctx.obj["client"]
     try:
         data = json.load(json_file)
@@ -72,7 +72,7 @@ def create_generator(ctx, json_file):
 @click.argument("json_file", type=click.File("r"))
 @click.pass_context
 def update_generator(ctx, generator_id, json_file):
-    """Update an existing generator from a JSON file."""
+    """Overwrite an existing generator's configuration with a JSON file."""
     client = ctx.obj["client"]
     try:
         data = json.load(json_file)
@@ -87,7 +87,7 @@ def update_generator(ctx, generator_id, json_file):
 @click.argument("generator_id")
 @click.pass_context
 def delete_generator(ctx, generator_id):
-    """Delete a generator."""
+    """Permanently delete a generator by its ID."""
     client = ctx.obj["client"]
     try:
         client.delete_generator(generator_id)
@@ -100,7 +100,7 @@ def delete_generator(ctx, generator_id):
 @click.argument("target")
 @click.pass_context
 def generate(ctx, target):
-    """Generate result from a generator ID or JSON file."""
+    """Generate a random outcome from a generator ID or local JSON file."""
     client = ctx.obj["client"]
     try:
         if os.path.isfile(target):
@@ -120,7 +120,7 @@ def generate(ctx, target):
 @click.argument("target")
 @click.pass_context
 def validate(ctx, target):
-    """Validate a generator ID or JSON file."""
+    """Validate the syntax of a generator ID or local JSON file."""
     client = ctx.obj["client"]
     try:
         if os.path.isfile(target):
@@ -156,7 +156,7 @@ def campaign():
 @campaign.command(name="list")
 @click.pass_context
 def list_campaigns(ctx):
-    """List all campaigns."""
+    """Retrieve and print all user campaigns in JSON format."""
     client = ctx.obj["client"]
     try:
         res = client.get_campaigns()
@@ -169,7 +169,7 @@ def list_campaigns(ctx):
 @click.argument("campaign_id")
 @click.pass_context
 def get_campaign(ctx, campaign_id):
-    """Get a campaign by ID."""
+    """Fetch and print a specific campaign by its ID."""
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.get_campaign(campaign_id).to_dict(), indent=2))
@@ -182,7 +182,7 @@ def get_campaign(ctx, campaign_id):
 @click.option("--description", default="", help="Description of the campaign")
 @click.pass_context
 def create_campaign(ctx, title, description):
-    """Create a new campaign."""
+    """Create a new top-level campaign with an optional description."""
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_campaign(title, description).to_dict(), indent=2))
@@ -196,7 +196,7 @@ def create_campaign(ctx, title, description):
 @click.option("--description", help="New description")
 @click.pass_context
 def update_campaign(ctx, campaign_id, title, description):
-    """Update an existing campaign."""
+    """Modify the metadata attributes (title/description) of a campaign."""
     client = ctx.obj["client"]
     try:
         camp = client.get_campaign(campaign_id)
@@ -213,7 +213,7 @@ def update_campaign(ctx, campaign_id, title, description):
 @click.argument("campaign_id")
 @click.pass_context
 def delete_campaign(ctx, campaign_id):
-    """Delete a campaign."""
+    """Permanently delete a campaign by its ID."""
     client = ctx.obj["client"]
     try:
         client.delete_campaign(campaign_id)
@@ -231,7 +231,7 @@ def log():
 @log.command(name="list")
 @click.pass_context
 def list_logs(ctx):
-    """List all logs."""
+    """Retrieve and print all logs across all campaigns."""
     client = ctx.obj["client"]
     try:
         res = client.get_logs()
@@ -244,7 +244,7 @@ def list_logs(ctx):
 @click.argument("log_id")
 @click.pass_context
 def get_log(ctx, log_id):
-    """Get a log by ID."""
+    """Fetch and print a specific log by its ID."""
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.get_log(log_id).to_dict(), indent=2))
@@ -258,7 +258,7 @@ def get_log(ctx, log_id):
 @click.option("--description", default="", help="Description of the log")
 @click.pass_context
 def create_log(ctx, campaign_id, title, description):
-    """Create a new log."""
+    """Create a new log attached to a specific campaign."""
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_log(campaign_id, title, description).to_dict(), indent=2))
@@ -272,7 +272,7 @@ def create_log(ctx, campaign_id, title, description):
 @click.option("--description", help="New description")
 @click.pass_context
 def update_log(ctx, log_id, title, description):
-    """Update an existing log."""
+    """Modify the metadata attributes (title/description) of a log."""
     client = ctx.obj["client"]
     try:
         log_obj = client.get_log(log_id)
@@ -289,7 +289,7 @@ def update_log(ctx, log_id, title, description):
 @click.argument("log_id")
 @click.pass_context
 def delete_log(ctx, log_id):
-    """Delete a log."""
+    """Permanently delete a log and its contents."""
     client = ctx.obj["client"]
     try:
         client.delete_log(log_id)
@@ -307,7 +307,7 @@ def entry():
 @entry.command(name="list")
 @click.pass_context
 def list_entries(ctx):
-    """List all log entries."""
+    """Retrieve and print all log entries across all logs."""
     client = ctx.obj["client"]
     try:
         res = client.get_log_entries()
@@ -320,7 +320,7 @@ def list_entries(ctx):
 @click.argument("entry_id")
 @click.pass_context
 def get_entry(ctx, entry_id):
-    """Get a log entry by ID."""
+    """Fetch and print a specific log entry by its ID."""
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.get_log_entry(entry_id).to_dict(), indent=2))
@@ -333,7 +333,7 @@ def get_entry(ctx, entry_id):
 @click.argument("text")
 @click.pass_context
 def create_entry(ctx, log_id, text):
-    """Create a new log entry."""
+    """Append a new text entry to a specific log."""
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_log_entry(log_id, text).to_dict(), indent=2))
@@ -346,7 +346,7 @@ def create_entry(ctx, log_id, text):
 @click.argument("text")
 @click.pass_context
 def update_entry(ctx, entry_id, text):
-    """Update an existing log entry."""
+    """Modify the text content of a specific log entry."""
     client = ctx.obj["client"]
     try:
         entry_obj = client.get_log_entry(entry_id)
@@ -360,7 +360,7 @@ def update_entry(ctx, entry_id, text):
 @click.argument("entry_id")
 @click.pass_context
 def delete_entry(ctx, entry_id):
-    """Delete a log entry."""
+    """Permanently delete a log entry."""
     client = ctx.obj["client"]
     try:
         client.delete_log_entry(entry_id)
@@ -378,7 +378,7 @@ def page():
 @page.command(name="list")
 @click.pass_context
 def list_pages(ctx):
-    """List all pages."""
+    """Retrieve and print all top-level campaign pages."""
     client = ctx.obj["client"]
     try:
         res = client.get_campaign_entries()
@@ -391,7 +391,7 @@ def list_pages(ctx):
 @click.argument("page_id")
 @click.pass_context
 def get_page(ctx, page_id):
-    """Get a page by ID."""
+    """Fetch and print a specific campaign page by its ID."""
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.get_campaign_entry(page_id).to_dict(), indent=2))
@@ -404,7 +404,7 @@ def get_page(ctx, page_id):
 @click.argument("text")
 @click.pass_context
 def create_page(ctx, campaign_id, text):
-    """Create a new page."""
+    """Create a new top-level page attached to a specific campaign."""
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_campaign_entry(campaign_id, text).to_dict(), indent=2))
@@ -417,7 +417,7 @@ def create_page(ctx, campaign_id, text):
 @click.argument("text")
 @click.pass_context
 def update_page(ctx, page_id, text):
-    """Update an existing page."""
+    """Modify the text content of a specific campaign page."""
     client = ctx.obj["client"]
     try:
         page_obj = client.get_campaign_entry(page_id)
@@ -431,7 +431,7 @@ def update_page(ctx, page_id, text):
 @click.argument("page_id")
 @click.pass_context
 def delete_page(ctx, page_id):
-    """Delete a page."""
+    """Permanently delete a campaign page."""
     client = ctx.obj["client"]
     try:
         client.delete_campaign_entry(page_id)

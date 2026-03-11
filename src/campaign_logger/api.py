@@ -29,7 +29,7 @@ class GeneratorClient:
         self.session.headers.update({"Content-Type": "application/json"})  # pragma: no cover
 
     def list_generators(self) -> list[FullGeneratorModel]:
-        """Gets all generators of the current user."""
+        """Retrieve a list of all generators accessible to the currently authenticated user."""
         url = f"{self.base_url}/api2/generators"
         response = self.session.get(url)
         response.raise_for_status()
@@ -37,23 +37,23 @@ class GeneratorClient:
         return [FullGeneratorModel(**g) for g in response.json()]
 
     def get_generator(self, generator_id: str) -> FullGeneratorModel:
-        """Gets the generator identified by {id}."""
+        """Fetch a specific generator by its unique identifier."""
         url = f"{self.base_url}/api2/generators/{generator_id}"
         response = self.session.get(url)
         response.raise_for_status()
         return FullGeneratorModel(**response.json())
 
     def create_generator(self, model: FullGeneratorModel) -> FullGeneratorModel:
-        """Stores the generator provided in the body of the request."""
+        """Create and store a new generator based on the provided model payload."""
         url = f"{self.base_url}/api2/generators"
         response = self.session.post(url, json=model.model_dump(exclude_unset=True))
         response.raise_for_status()
         return FullGeneratorModel(**response.json())
 
     def update_generator(self, generator_id: str, model: FullGeneratorModel) -> FullGeneratorModel:
-        """Updates the generator identified by {id}.
+        """Update an existing generator.
 
-        Overwrites it with the request body.
+        This performs a full overwrite of the generator matching the specified ID using the provided payload.
         """
         url = f"{self.base_url}/api2/generators/{generator_id}"
         response = self.session.put(url, json=model.model_dump(exclude_unset=True))
@@ -61,26 +61,26 @@ class GeneratorClient:
         return FullGeneratorModel(**response.json())
 
     def delete_generator(self, generator_id: str) -> None:
-        """Deletes the generator identified by {id}."""
+        """Permanently delete the generator associated with the given identifier."""
         url = f"{self.base_url}/api2/generators/{generator_id}"
         response = self.session.delete(url)
         response.raise_for_status()
 
     def validate_generator(self, model: FullGeneratorModel) -> None:
-        """Executes validate on the generator provided in the body."""
+        """Run validation rules against the provided generator payload without saving it."""
         url = f"{self.base_url}/api2/generators/validate"
         response = self.session.post(url, json=model.model_dump(exclude_unset=True))
         response.raise_for_status()
 
     def generate(self, model: FullGeneratorModel) -> dict[str, Any]:
-        """Executes generate on the generator provided in the body."""
+        """Execute a generation process using the rules and tables defined in the provided payload."""
         url = f"{self.base_url}/api2/generators/generate"
         response = self.session.post(url, json=model.model_dump(exclude_unset=True))
         response.raise_for_status()
         return response.json()
 
     def execute_operation(self, generator_id: str, operation: str) -> dict[str, Any]:
-        """Executes {operation} on the generator identified by {id}."""
+        """Perform a remote operation (such as 'validate' or 'generate') on an already saved generator."""
         if operation not in ["validate", "generate"]:
             raise ValueError("Operation must be 'validate' or 'generate'")
         url = f"{self.base_url}/api2/generators/{generator_id}/{operation}"
@@ -89,21 +89,21 @@ class GeneratorClient:
         return response.json() if response.content else {}
 
     def get_execute_tokens(self, generator_id: str) -> list[str]:
-        """Gets all execute-tokens for the generator identified by {id}."""
+        """Retrieve all active execution tokens associated with a specific generator."""
         url = f"{self.base_url}/api2/generators/{generator_id}/execute-tokens"
         response = self.session.get(url)
         response.raise_for_status()
         return response.json()
 
     def create_execute_token(self, generator_id: str) -> str:
-        """Creates a new execute-token for the generator identified by {id}."""
+        """Mint a new execution token for a specific generator to allow stateless execution."""
         url = f"{self.base_url}/api2/generators/{generator_id}/execute-tokens"
         response = self.session.post(url)
         response.raise_for_status()
         return response.json()
 
     def delete_execute_token(self, generator_id: str, token: str) -> None:
-        """Deletes the execute-token {token} for the generator identified by {id}."""
+        """Revoke and delete a specific execution token belonging to a generator."""
         url = f"{self.base_url}/api2/generators/{generator_id}/execute-tokens/{token}"
         response = self.session.delete(url)
         response.raise_for_status()
@@ -194,7 +194,7 @@ class LoggerClient:
 
     # --- Campaigns ---
     def get_campaigns(self) -> list[Campaign]:
-        """Get all campaigns."""
+        """Retrieve all campaigns available to the authenticated API Client."""
         response = self._get("campaigns")
         data = response.get("data", [])
         if not isinstance(data, list):
@@ -202,7 +202,7 @@ class LoggerClient:
         return [self._parse_campaign(r) for r in data]
 
     def get_campaign(self, campaign_id: str) -> Campaign:
-        """Get a campaign by ID."""
+        """Retrieve a specific campaign by its unique identifier."""
         response = self._get("campaigns", campaign_id)
         data = response.get("data", {})
         if isinstance(data, list):
@@ -210,7 +210,7 @@ class LoggerClient:
         return self._parse_campaign(data)
 
     def create_campaign(self, title: str, description: str = "") -> Campaign:
-        """Create a new campaign."""
+        """Create a new top-level campaign entity."""
         url = f"{self.base_url}/campaigns"
         payload = {
             "data": {
@@ -230,7 +230,7 @@ class LoggerClient:
         return self._parse_campaign(data)
 
     def update_campaign(self, campaign_id: str, title: str | None = None, description: str | None = None) -> Campaign:
-        """Update an existing campaign."""
+        """Update the metadata (title or description) of an existing campaign."""
         url = f"{self.base_url}/campaigns/{campaign_id}"
         attributes: dict[str, Any] = {}
         if title is not None:
@@ -248,12 +248,12 @@ class LoggerClient:
         return self._parse_campaign(data)
 
     def delete_campaign(self, campaign_id: str) -> None:
-        """Delete a campaign."""
+        """Permanently delete a campaign and its associated contents."""
         self._delete("campaigns", campaign_id)
 
     # --- Logs ---
     def get_logs(self) -> list[Log]:
-        """Get all logs."""
+        """Retrieve all logs available across the user's campaigns."""
         response = self._get("logs")
         data = response.get("data", [])
         if not isinstance(data, list):
@@ -261,7 +261,7 @@ class LoggerClient:
         return [self._parse_log(r) for r in data]
 
     def get_log(self, log_id: str) -> Log:
-        """Get a log by ID."""
+        """Retrieve a specific log by its unique identifier."""
         response = self._get("logs", log_id)
         data = response.get("data", {})
         if isinstance(data, list):
@@ -269,7 +269,7 @@ class LoggerClient:
         return self._parse_log(data)
 
     def create_log(self, campaign_id: str, title: str, description: str = "") -> Log:
-        """Create a new log."""
+        """Create a new child log attached to a specific campaign."""
         url = f"{self.base_url}/logs"
         payload = {
             "data": {
@@ -291,7 +291,7 @@ class LoggerClient:
         return self._parse_log(data)
 
     def update_log(self, log_id: str, title: str | None = None, description: str | None = None) -> Log:
-        """Update an existing log."""
+        """Update the metadata (title or description) of an existing log."""
         url = f"{self.base_url}/logs/{log_id}"
         attributes: dict[str, Any] = {}
         if title is not None:
@@ -309,12 +309,12 @@ class LoggerClient:
         return self._parse_log(data)
 
     def delete_log(self, log_id: str) -> None:
-        """Delete a log."""
+        """Permanently delete a log and its associated entries."""
         self._delete("logs", log_id)
 
     # --- Log Entries ---
     def get_log_entries(self) -> list[LogEntry]:
-        """Get all log entries."""
+        """Retrieve all individual log entries across the user's logs."""
         response = self._get("log-entries")
         data = response.get("data", [])
         if not isinstance(data, list):
@@ -322,7 +322,7 @@ class LoggerClient:
         return [self._parse_log_entry(r) for r in data]
 
     def get_log_entry(self, entry_id: str) -> LogEntry:
-        """Get a log entry by ID."""
+        """Retrieve a specific log entry by its unique identifier."""
         response = self._get("log-entries", entry_id)
         data = response.get("data", {})
         if isinstance(data, list):
@@ -330,7 +330,7 @@ class LoggerClient:
         return self._parse_log_entry(data)
 
     def create_log_entry(self, log_id: str, raw_text: str) -> LogEntry:
-        """Create a new log entry."""
+        """Create a new text entry attached to a specific log."""
         url = f"{self.base_url}/log-entries"
         payload = {
             "data": {
@@ -351,7 +351,7 @@ class LoggerClient:
         return self._parse_log_entry(data)
 
     def update_log_entry(self, entry_id: str, raw_text: str) -> LogEntry:
-        """Update an existing log entry."""
+        """Update the textual content of an existing log entry."""
         url = f"{self.base_url}/log-entries/{entry_id}"
         payload = {
             "data": {
@@ -371,12 +371,12 @@ class LoggerClient:
         return self._parse_log_entry(data)
 
     def delete_log_entry(self, entry_id: str) -> None:
-        """Delete a log entry."""
+        """Permanently delete a specific log entry."""
         self._delete("log-entries", entry_id)
 
     # --- Campaign Entries (Pages) ---
     def get_campaign_entries(self) -> list[CampaignEntry]:
-        """Get all campaign entries."""
+        """Retrieve all campaign entries (pages) across the user's campaigns."""
         response = self._get("campaign-entries")
         data = response.get("data", [])
         if not isinstance(data, list):
@@ -384,7 +384,7 @@ class LoggerClient:
         return [self._parse_campaign_entry(r) for r in data]
 
     def get_campaign_entry(self, entry_id: str) -> CampaignEntry:
-        """Get a campaign entry by ID."""
+        """Retrieve a specific campaign entry (page) by its unique identifier."""
         response = self._get("campaign-entries", entry_id)
         data = response.get("data", {})
         if isinstance(data, list):
@@ -392,7 +392,7 @@ class LoggerClient:
         return self._parse_campaign_entry(data)
 
     def create_campaign_entry(self, campaign_id: str, raw_text: str) -> CampaignEntry:
-        """Creates a page (Campaign Entry) in a campaign."""
+        """Create a new top-level page (Campaign Entry) attached to a specific campaign."""
         url = f"{self.base_url}/campaign-entries"
         payload = {
             "data": {
@@ -413,7 +413,7 @@ class LoggerClient:
         return self._parse_campaign_entry(data)
 
     def update_campaign_entry(self, entry_id: str, raw_text: str) -> CampaignEntry:
-        """Update an existing campaign entry."""
+        """Update the text content of an existing campaign entry (page)."""
         url = f"{self.base_url}/campaign-entries/{entry_id}"
         payload = {
             "data": {
@@ -433,5 +433,5 @@ class LoggerClient:
         return self._parse_campaign_entry(data)
 
     def delete_campaign_entry(self, entry_id: str) -> None:
-        """Delete a campaign entry."""
+        """Permanently delete a specific campaign entry (page)."""
         self._delete("campaign-entries", entry_id)

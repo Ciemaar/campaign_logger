@@ -8,46 +8,44 @@ from pydantic import PrivateAttr
 
 
 class VariableModel(BaseModel):
-    """Model representing a variable."""
+    """Model representing a variable in a Generator."""
 
-    v: Any | None = Field(None, description="Gets or sets the v.")
+    v: Any | None = Field(None, description="The value of the variable.")
 
 
 class EntryModel(BaseModel):
-    """Model representing an entry."""
+    """Model representing a single text entry or result inside a Table."""
 
-    m: int | None = Field(None, ge=0, le=1024, description="Gets or sets the m.")
-    v: str | None = Field(None, description="Gets or sets the v.")
-    export: dict[str, VariableModel] | None = Field(None, description="Gets or sets the export.")
-    set: dict[str, VariableModel] | None = Field(None, description="Gets or sets the set.")
+    m: int | None = Field(None, ge=0, le=1024, description="Multiplier or relative weight of this entry.")
+    v: str | None = Field(None, description="The text value or pattern for this entry.")
+    export: dict[str, VariableModel] | None = Field(None, description="Variables to export when this entry is selected.")
+    set: dict[str, VariableModel] | None = Field(None, description="Variables to set when this entry is selected.")
 
 
 class TableModel(BaseModel):
-    """Model representing a table."""
+    """Model representing a table of random outcomes within a Generator."""
 
-    name: str | None = Field(None, description="Gets or sets the name.")
-    explanation: str | None = Field(None, description="Gets or sets the explanation.")
-    export: dict[str, VariableModel] | None = Field(None, description="Gets or sets the export.")
-    set: dict[str, VariableModel] | None = Field(None, description="Gets or sets the set.")
-    entries: list[EntryModel] | None = Field(None, description="Gets or sets the entries.")
+    name: str | None = Field(None, description="The name of the table.")
+    explanation: str | None = Field(None, description="Description or explanation of the table's purpose.")
+    export: dict[str, VariableModel] | None = Field(None, description="Variables exported globally from this table.")
+    set: dict[str, VariableModel] | None = Field(None, description="Variables set locally in this table.")
+    entries: list[EntryModel] | None = Field(None, description="The list of possible entries in this table.")
 
 
 class FullGeneratorModel(BaseModel):
-    """Full generator model."""
+    """Model representing a complete Campaign Logger Generator definition."""
 
-    id: str | None = Field(None, description="Gets or sets the identifier.")
-    name: str | None = Field(None, description="Gets or sets the name.")
-    explanation: str | None = Field(None, description="Gets or sets the explanation.")
-    path: str | None = Field(None, description="Gets or sets the path.")
-    categories: list[str] | None = Field(None, description="Gets or sets the categories.")
-    formatting: int | None = Field(None, description="Gets or sets the formatting. 0 or 1.")
-    resultPattern: str | None = Field(None, description="Gets or sets the result pattern.")
-    wrapResultInCurlyBraces: bool | None = Field(
-        False, description=("Gets or sets a value indicating whether to wrap the result in curly braces.")
-    )
-    globals: dict[str, VariableModel] | None = Field(None, description="Gets or sets the globals.")
-    variables: dict[str, VariableModel] | None = Field(None, description="Gets or sets the variables.")
-    tables: list[TableModel] | None = Field(None, description="Gets or sets the tables.")
+    id: str | None = Field(None, description="The unique identifier for the generator.")
+    name: str | None = Field(None, description="The display name of the generator.")
+    explanation: str | None = Field(None, description="A description or explanation of the generator.")
+    path: str | None = Field(None, description="The organizational path where this generator is stored.")
+    categories: list[str] | None = Field(None, description="List of category tags applied to this generator.")
+    formatting: int | None = Field(None, description="Formatting flag for the output (0 or 1).")
+    resultPattern: str | None = Field(None, description="The pattern defining how the final generated result is structured.")
+    wrapResultInCurlyBraces: bool | None = Field(False, description=("Whether the final result string should be wrapped in curly braces."))
+    globals: dict[str, VariableModel] | None = Field(None, description="Global variables defined for the generator.")
+    variables: dict[str, VariableModel] | None = Field(None, description="Local variables defined for the generator.")
+    tables: list[TableModel] | None = Field(None, description="The collection of tables used by the generator.")
 
 
 class GeneratorModelContainer(BaseModel):
