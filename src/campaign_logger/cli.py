@@ -20,12 +20,10 @@ def main(ctx):
 @main.group()
 @click.option("--url", default="https://generator.campaign-logger.com", help="API Base URL")
 @click.option("--token", envvar="CL_GENERATOR_TOKEN", help="Bearer Token")
-@click.option("--client-id", envvar="CL_GENERATOR_CLIENT_ID", help="Client ID for API Key auth")
-@click.option("--client-secret", envvar="CL_GENERATOR_CLIENT_SECRET", help="Client Secret for API Key auth")
 @click.pass_context
-def generator(ctx, url, token, client_id, client_secret):
+def generator(ctx, url, token):
     """Generator API commands."""
-    ctx.obj["client"] = GeneratorClient(base_url=url, token=token, client_id=client_id, client_secret=client_secret)
+    ctx.obj["client"] = GeneratorClient(base_url=url, token=token)
 
 
 @generator.command(name="list")
@@ -109,7 +107,7 @@ def generate(ctx, target):
             with open(target, "r") as f:
                 data = json.load(f)
             model = FullGeneratorModel(**data)
-            result = client.generate_random(model)
+            result = client.generate(model)
         else:
             result = client.execute_operation(target, "generate")
 
@@ -141,11 +139,12 @@ def validate(ctx, target):
 
 @main.group()
 @click.option("--url", default="https://logger.campaign-logger.com", help="API Base URL")
-@click.option("--token", envvar="CL_LOGGER_TOKEN", help="Bearer Token")
+@click.option("--client-id", envvar="CL_LOGGER_CLIENT_ID", help="API Client ID")
+@click.option("--client-secret", envvar="CL_LOGGER_CLIENT_SECRET", help="API Client Secret")
 @click.pass_context
-def logger(ctx, url, token):
+def logger(ctx, url, client_id, client_secret):
     """Main Campaign Logger API commands."""
-    ctx.obj["client"] = LoggerClient(base_url=url, token=token)
+    ctx.obj["client"] = LoggerClient(base_url=url, client_id=client_id, client_secret=client_secret)
 
 
 # --- Campaign Commands ---
@@ -200,7 +199,12 @@ def update_campaign(ctx, campaign_id, title, description):
     """Update an existing campaign."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.update_campaign(campaign_id, title, description).to_dict(), indent=2))
+        camp = client.get_campaign(campaign_id)
+        if title is not None:
+            camp.title = title
+        if description is not None:
+            camp.description = description
+        click.echo(json.dumps(camp.save().to_dict(), indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -271,7 +275,12 @@ def update_log(ctx, log_id, title, description):
     """Update an existing log."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.update_log(log_id, title, description).to_dict(), indent=2))
+        log_obj = client.get_log(log_id)
+        if title is not None:
+            log_obj.title = title
+        if description is not None:
+            log_obj.description = description
+        click.echo(json.dumps(log_obj.save().to_dict(), indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -340,7 +349,9 @@ def update_entry(ctx, entry_id, text):
     """Update an existing log entry."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.update_log_entry(entry_id, text).to_dict(), indent=2))
+        entry_obj = client.get_log_entry(entry_id)
+        entry_obj.raw_text = text
+        click.echo(json.dumps(entry_obj.save().to_dict(), indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -409,7 +420,9 @@ def update_page(ctx, page_id, text):
     """Update an existing page."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.update_campaign_entry(page_id, text).to_dict(), indent=2))
+        page_obj = client.get_campaign_entry(page_id)
+        page_obj.raw_text = text
+        click.echo(json.dumps(page_obj.save().to_dict(), indent=2))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 

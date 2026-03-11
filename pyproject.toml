@@ -6,7 +6,7 @@ requires = [
 
 [tool.ruff]
 line-length = 140
-target-version = "py39"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "D"]
@@ -28,7 +28,7 @@ forced-separate = ["test_campaign_logger"]
 default-section = "third-party"
 
 [tool.pyright]
-pythonVersion = "3.9"
+pythonVersion = "3.11"
 typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]

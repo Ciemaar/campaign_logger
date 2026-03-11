@@ -1,5 +1,3 @@
-import secrets
-
 import pytest
 import requests_mock
 
@@ -10,7 +8,7 @@ BASE_URL = "https://logger.campaign-logger.com"
 
 @pytest.fixture
 def client():
-    return LoggerClient(base_url=BASE_URL, token=secrets.token_hex(16))
+    return LoggerClient(base_url=BASE_URL, client_id="test_id", client_secret="test_secret")
 
 
 def test_get_campaigns(client):
@@ -189,7 +187,8 @@ def test_campaign_methods(client):
         assert new_entry.id == "ce2"  # nosec
 
         m.patch(f"{BASE_URL}/campaigns/c1", json={"data": {"id": "c1", "type": "campaigns"}})
-        upd = campaign.update("Updated")
+        campaign.title = "Updated"
+        upd = campaign.save()
         assert upd.id == "c1"  # nosec
 
         m.delete(f"{BASE_URL}/campaigns/c1", status_code=204)
@@ -211,7 +210,8 @@ def test_log_methods(client):
         assert new_entry.id == "le2"  # nosec
 
         m.patch(f"{BASE_URL}/logs/l1", json={"data": {"id": "l1", "type": "logs"}})
-        upd = log_obj.update("Updated")
+        log_obj.title = "Updated"
+        upd = log_obj.save()
         assert upd.id == "l1"  # nosec
 
         m.delete(f"{BASE_URL}/logs/l1", status_code=204)
@@ -225,7 +225,8 @@ def test_log_entry_methods(client):
         entry = client.get_log_entry("le1")
 
         m.patch(f"{BASE_URL}/log-entries/le1", json={"data": {"id": "le1", "type": "log-entries"}})
-        upd = entry.update("New Text")
+        entry.raw_text = "New Text"
+        upd = entry.save()
         assert upd.id == "le1"  # nosec
 
         m.delete(f"{BASE_URL}/log-entries/le1", status_code=204)
@@ -242,7 +243,8 @@ def test_campaign_entry_methods(client):
         entry = client.get_campaign_entry("ce1")
 
         m.patch(f"{BASE_URL}/campaign-entries/ce1", json={"data": {"id": "ce1", "type": "campaign-entries"}})
-        upd = entry.update("New Text")
+        entry.raw_text = "New Text"
+        upd = entry.save()
         assert upd.id == "ce1"  # nosec
 
         m.delete(f"{BASE_URL}/campaign-entries/ce1", status_code=204)

@@ -63,7 +63,7 @@ Examples using ``LoggerClient``
 
     from campaign_logger.api import LoggerClient
 
-    client = LoggerClient(token="your_api_token")
+    client = LoggerClient(client_id="your_client_id", client_secret="your_client_secret")
 
     response = client.create_campaign(
         title="My Epic Campaign",

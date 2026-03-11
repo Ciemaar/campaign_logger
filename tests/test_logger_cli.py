@@ -11,16 +11,21 @@ def runner():
     return CliRunner()
 
 
-class MockResource:
+class MockResource(MagicMock):
     """Mock for JSON API Resource."""
 
-    def __init__(self, data):
+    def __init__(self, data, *args, **kwargs):
         """Initialize MockResource."""
+        super().__init__(*args, **kwargs)
         self._data = data
 
     def to_dict(self):
         """Return dict representation."""
         return self._data
+
+    def save(self):
+        """Mock save method."""
+        return self
 
 
 @pytest.fixture
@@ -69,9 +74,27 @@ def test_create_campaign(runner, mock_logger_client):
 
 
 def test_update_campaign(runner, mock_logger_client):
-    result = runner.invoke(main, ["logger", "campaign", "update", "c1", "--title", "New Title"])
+    result = runner.invoke(main, ["logger", "campaign", "update", "c1", "--title", "New Title", "--description", "Desc"])
     assert result.exit_code == 0  # nosec
-    mock_logger_client.update_campaign.assert_called_once_with("c1", "New Title", None)
+    mock_logger_client.get_campaign.assert_called_once_with("c1")
+
+
+def test_update_log(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "log", "update", "l1", "--title", "New Title", "--description", "Desc"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_log.assert_called_with("l1")
+
+
+def test_update_entry(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "entry", "update", "le1", "text"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_log_entry.assert_called_with("le1")
+
+
+def test_update_page(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "page", "update", "ce1", "text"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_campaign_entry.assert_called_with("ce1")
 
 
 def test_delete_campaign(runner, mock_logger_client):
@@ -114,7 +137,7 @@ def test_logger_cli_error_handling(runner, mock_logger_client):
     result = runner.invoke(main, ["logger", "campaign", "create", "title"])
     assert "Error: API error" in result.output  # nosec
 
-    mock_logger_client.update_campaign.side_effect = Exception("API error")
+    mock_logger_client.get_campaign.side_effect = Exception("API error")
     result = runner.invoke(main, ["logger", "campaign", "update", "1"])
     assert "Error: API error" in result.output  # nosec
 
@@ -134,7 +157,7 @@ def test_logger_cli_error_handling(runner, mock_logger_client):
     result = runner.invoke(main, ["logger", "log", "create", "1", "title"])
     assert "Error: API error" in result.output  # nosec
 
-    mock_logger_client.update_log.side_effect = Exception("API error")
+    mock_logger_client.get_log.side_effect = Exception("API error")
     result = runner.invoke(main, ["logger", "log", "update", "1"])
     assert "Error: API error" in result.output  # nosec
 
@@ -154,7 +177,7 @@ def test_logger_cli_error_handling(runner, mock_logger_client):
     result = runner.invoke(main, ["logger", "entry", "create", "1", "text"])
     assert "Error: API error" in result.output  # nosec
 
-    mock_logger_client.update_log_entry.side_effect = Exception("API error")
+    mock_logger_client.get_log_entry.side_effect = Exception("API error")
     result = runner.invoke(main, ["logger", "entry", "update", "1", "text"])
     assert "Error: API error" in result.output  # nosec
 
@@ -174,7 +197,7 @@ def test_logger_cli_error_handling(runner, mock_logger_client):
     result = runner.invoke(main, ["logger", "page", "create", "1", "text"])
     assert "Error: API error" in result.output  # nosec
 
-    mock_logger_client.update_campaign_entry.side_effect = Exception("API error")
+    mock_logger_client.get_campaign_entry.side_effect = Exception("API error")
     result = runner.invoke(main, ["logger", "page", "update", "1", "text"])
     assert "Error: API error" in result.output  # nosec
 

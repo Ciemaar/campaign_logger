@@ -76,7 +76,7 @@ def test_generate_random(client):
     with requests_mock.Mocker() as m:
         m.post(f"{BASE_URL}/api2/generators/generate", json={"result": "random result"})
         model = FullGeneratorModel(id="gen1", name="Test")  # pyright: ignore
-        result = client.generate_random(model)
+        result = client.generate(model)
         assert result == {"result": "random result"}  # nosec
 
 
