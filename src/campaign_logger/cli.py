@@ -7,7 +7,7 @@ import click
 
 from .api import GeneratorClient
 from .api import LoggerClient
-from .models import FullGeneratorModel
+from .models import GeneratorModel
 
 
 @click.group()
@@ -60,7 +60,7 @@ def create_generator(ctx, json_file):
     client = ctx.obj["client"]
     try:
         data = json.load(json_file)
-        model = FullGeneratorModel(**data)
+        model = GeneratorModel(**data)
         created = client.create_generator(model)
         click.echo(created.model_dump_json(indent=2))
     except Exception as e:
@@ -76,7 +76,7 @@ def update_generator(ctx, generator_id, json_file):
     client = ctx.obj["client"]
     try:
         data = json.load(json_file)
-        model = FullGeneratorModel(**data)
+        model = GeneratorModel(**data)
         updated = client.update_generator(generator_id, model)
         click.echo(updated.model_dump_json(indent=2))
     except Exception as e:
@@ -106,7 +106,7 @@ def generate(ctx, target):
         if os.path.isfile(target):
             with open(target, "r") as f:
                 data = json.load(f)
-            model = FullGeneratorModel(**data)
+            model = GeneratorModel(**data)
             result = client.generate(model)
         else:
             result = client.execute_operation(target, "generate")
@@ -126,7 +126,7 @@ def validate(ctx, target):
         if os.path.isfile(target):
             with open(target, "r") as f:
                 data = json.load(f)
-            model = FullGeneratorModel(**data)
+            model = GeneratorModel(**data)
             client.validate_generator(model)
             click.echo("Generator is valid.")
         else:

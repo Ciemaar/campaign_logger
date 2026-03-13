@@ -4,7 +4,7 @@ import pytest
 import requests_mock
 
 from campaign_logger.api import GeneratorClient
-from campaign_logger.models import FullGeneratorModel
+from campaign_logger.models import GeneratorModel
 
 BASE_URL = "https://generator.campaign-logger.com"
 
@@ -40,7 +40,7 @@ def test_get_generator(client):
 def test_create_generator(client):
     with requests_mock.Mocker() as m:
         m.post(f"{BASE_URL}/api2/generators", json={"id": "new_gen", "name": "New Generator"})
-        model = FullGeneratorModel(id="new_gen", name="New Generator")  # pyright: ignore
+        model = GeneratorModel(id="new_gen", name="New Generator")  # pyright: ignore
         created = client.create_generator(model)
         assert created.id == "new_gen"  # nosec
         assert created.name == "New Generator"  # nosec
@@ -52,7 +52,7 @@ def test_update_generator(client):
             f"{BASE_URL}/api2/generators/gen1",
             json={"id": "gen1", "name": "Updated Generator"},
         )
-        model = FullGeneratorModel(id="gen1", name="Updated Generator")  # pyright: ignore
+        model = GeneratorModel(id="gen1", name="Updated Generator")  # pyright: ignore
         updated = client.update_generator("gen1", model)
         assert updated.name == "Updated Generator"  # nosec
 
@@ -67,7 +67,7 @@ def test_delete_generator(client):
 def test_validate_generator(client):
     with requests_mock.Mocker() as m:
         m.post(f"{BASE_URL}/api2/generators/validate", status_code=200)
-        model = FullGeneratorModel(id="gen1", name="Test")  # pyright: ignore
+        model = GeneratorModel(id="gen1", name="Test")  # pyright: ignore
         client.validate_generator(model)
         assert m.called  # nosec
 
@@ -75,7 +75,7 @@ def test_validate_generator(client):
 def test_generate_random(client):
     with requests_mock.Mocker() as m:
         m.post(f"{BASE_URL}/api2/generators/generate", json={"result": "random result"})
-        model = FullGeneratorModel(id="gen1", name="Test")  # pyright: ignore
+        model = GeneratorModel(id="gen1", name="Test")  # pyright: ignore
         result = client.generate(model)
         assert result == {"result": "random result"}  # nosec
 

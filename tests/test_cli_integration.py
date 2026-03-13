@@ -4,7 +4,7 @@ import pytest
 from click.testing import CliRunner
 
 from campaign_logger.cli import main
-from campaign_logger.models import FullGeneratorModel
+from campaign_logger.models import GeneratorModel
 
 
 @pytest.fixture
@@ -19,12 +19,12 @@ def mock_client(mocker):
 
     # Configure default returns
     mock_instance.list_generators.return_value = [
-        FullGeneratorModel(id="1", name="Gen 1"),  # pyright: ignore
-        FullGeneratorModel(id="2", name="Gen 2"),  # pyright: ignore
+        GeneratorModel(id="1", name="Gen 1"),  # pyright: ignore
+        GeneratorModel(id="2", name="Gen 2"),  # pyright: ignore
     ]
-    mock_instance.get_generator.return_value = FullGeneratorModel(id="1", name="Gen 1")  # pyright: ignore
-    mock_instance.create_generator.return_value = FullGeneratorModel(id="3", name="New Gen")  # pyright: ignore
-    mock_instance.update_generator.return_value = FullGeneratorModel(id="1", name="Updated Gen")  # pyright: ignore
+    mock_instance.get_generator.return_value = GeneratorModel(id="1", name="Gen 1")  # pyright: ignore
+    mock_instance.create_generator.return_value = GeneratorModel(id="3", name="New Gen")  # pyright: ignore
+    mock_instance.update_generator.return_value = GeneratorModel(id="1", name="Updated Gen")  # pyright: ignore
     mock_instance.generate_random.return_value = {"result": "random"}
     mock_instance.execute_operation.return_value = {"result": "op result"}
 

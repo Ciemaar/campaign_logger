@@ -6,7 +6,7 @@ import requests
 
 from .models import Campaign
 from .models import CampaignEntry
-from .models import FullGeneratorModel
+from .models import GeneratorModel
 from .models import Log
 from .models import LogEntry
 
@@ -28,37 +28,62 @@ class GeneratorClient:
 
         self.session.headers.update({"Content-Type": "application/json"})  # pragma: no cover
 
-    def list_generators(self) -> list[FullGeneratorModel]:
+    def _parse_generator(self, generator_data: dict[str, Any]) -> GeneratorModel:
+        """Parse raw dictionary into a GeneratorModel and inject the client."""
+        model = GeneratorModel(**generator_data)
+        model._client = self
+        return model
+
+    def list_generators(self) -> list[GeneratorModel]:
         """Retrieve a list of all generators accessible to the currently authenticated user."""
         url = f"{self.base_url}/api2/generators"
         response = self.session.get(url)
         response.raise_for_status()
-        # Assuming the API returns a list of FullGeneratorModel
-        return [FullGeneratorModel(**g) for g in response.json()]
+        data = response.json()
+        generators = data.get("generators", data) if isinstance(data, dict) else data
+        return [self._parse_generator(g) for g in generators]
 
-    def get_generator(self, generator_id: str) -> FullGeneratorModel:
+    def get_generator(self, generator_id: str) -> GeneratorModel:
         """Fetch a specific generator by its unique identifier."""
         url = f"{self.base_url}/api2/generators/{generator_id}"
         response = self.session.get(url)
         response.raise_for_status()
-        return FullGeneratorModel(**response.json())
+        data = response.json()
+        # Sometimes individual requests are nested under a list in 'generators' key too
+        if isinstance(data, dict) and "generators" in data:
+            data = data["generators"][0] if data["generators"] else data
+        return self._parse_generator(data)
 
-    def create_generator(self, model: FullGeneratorModel) -> FullGeneratorModel:
+    def get_generator_by_name(self, name: str) -> GeneratorModel | None:
+        """Fetch a specific generator by its exact name."""
+        generators = self.list_generators()
+        for gen in generators:
+            if gen.name == name:
+                return gen
+        return None
+
+    def create_generator(self, model: GeneratorModel) -> GeneratorModel:
         """Create and store a new generator based on the provided model payload."""
         url = f"{self.base_url}/api2/generators"
-        response = self.session.post(url, json=model.model_dump(exclude_unset=True))
+        response = self.session.post(url, json=model.model_dump(exclude_unset=True, exclude={"_client"}))
         response.raise_for_status()
-        return FullGeneratorModel(**response.json())
+        data = response.json()
+        if isinstance(data, dict) and "generators" in data:
+            data = data["generators"][0] if data["generators"] else data
+        return self._parse_generator(data)
 
-    def update_generator(self, generator_id: str, model: FullGeneratorModel) -> FullGeneratorModel:
+    def update_generator(self, generator_id: str, model: GeneratorModel) -> GeneratorModel:
         """Update an existing generator.
 
         This performs a full overwrite of the generator matching the specified ID using the provided payload.
         """
         url = f"{self.base_url}/api2/generators/{generator_id}"
-        response = self.session.put(url, json=model.model_dump(exclude_unset=True))
+        response = self.session.put(url, json=model.model_dump(exclude_unset=True, exclude={"_client"}))
         response.raise_for_status()
-        return FullGeneratorModel(**response.json())
+        data = response.json()
+        if isinstance(data, dict) and "generators" in data:
+            data = data["generators"][0] if data["generators"] else data
+        return self._parse_generator(data)
 
     def delete_generator(self, generator_id: str) -> None:
         """Permanently delete the generator associated with the given identifier."""
@@ -66,16 +91,16 @@ class GeneratorClient:
         response = self.session.delete(url)
         response.raise_for_status()
 
-    def validate_generator(self, model: FullGeneratorModel) -> None:
+    def validate_generator(self, model: GeneratorModel) -> None:
         """Run validation rules against the provided generator payload without saving it."""
         url = f"{self.base_url}/api2/generators/validate"
-        response = self.session.post(url, json=model.model_dump(exclude_unset=True))
+        response = self.session.post(url, json=model.model_dump(exclude_unset=True, exclude={"_client"}))
         response.raise_for_status()
 
-    def generate(self, model: FullGeneratorModel) -> dict[str, Any]:
+    def generate(self, model: GeneratorModel) -> dict[str, Any]:
         """Execute a generation process using the rules and tables defined in the provided payload."""
         url = f"{self.base_url}/api2/generators/generate"
-        response = self.session.post(url, json=model.model_dump(exclude_unset=True))
+        response = self.session.post(url, json=model.model_dump(exclude_unset=True, exclude={"_client"}))
         response.raise_for_status()
         return response.json()
 

@@ -32,7 +32,7 @@ class TableModel(BaseModel):
     entries: list[EntryModel] | None = Field(None, description="The list of possible entries in this table.")
 
 
-class FullGeneratorModel(BaseModel):
+class GeneratorModel(BaseModel):
     """Model representing a complete Campaign Logger Generator definition."""
 
     id: str | None = Field(None, description="The unique identifier for the generator.")
@@ -47,9 +47,31 @@ class FullGeneratorModel(BaseModel):
     variables: dict[str, VariableModel] | None = Field(None, description="Local variables defined for the generator.")
     tables: list[TableModel] | None = Field(None, description="The collection of tables used by the generator.")
 
+    _client: Any = PrivateAttr(default=None)
 
-class GeneratorModelContainer(BaseModel):
-    """Container for generator models."""
+    def validate_generator(self) -> None:
+        """Run validation rules against this generator payload."""
+        client = getattr(self, "_client")
+        client.validate_generator(self)
+
+    def generate(self) -> dict[str, Any]:
+        """Execute a generation process using this generator."""
+        client = getattr(self, "_client")
+        return client.generate(self)
+
+    def save(self) -> "GeneratorModel":
+        """Update this existing generator on the remote server."""
+        client = getattr(self, "_client")
+        if not self.id:
+            raise ValueError("Generator does not have an ID to save.")
+        return client.update_generator(self.id, self)
+
+    def delete(self) -> None:
+        """Delete this generator from the remote server."""
+        client = getattr(self, "_client")
+        if not self.id:
+            raise ValueError("Generator does not have an ID to delete.")
+        client.delete_generator(self.id)
 
 
 # High-Level Object-Oriented Models
