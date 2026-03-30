@@ -77,9 +77,10 @@ def main():
             tox_environments[alias].update(env_vars=env_vars.split())
 
     for root, _, files in os.walk(templates_path):
+        relative = relpath(root, templates_path)
+        dest_dir = join(base_path, relative)
         for name in files:
-            relative = relpath(root, templates_path)
-            with open(join(base_path, relative, name), "w") as fh:
+            with open(join(dest_dir, name), "w") as fh:
                 fh.write(jinja.get_template(join(relative, name)).render(tox_environments=tox_environments))
             print("Wrote {}".format(name))
     print("DONE.")
