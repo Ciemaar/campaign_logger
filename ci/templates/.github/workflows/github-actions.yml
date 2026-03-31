@@ -23,8 +23,8 @@ jobs:
 {% set prefix = env.split('-')[0] -%}
 {% if prefix.startswith('pypy') %}
 {% set python %}pypy-{{ prefix[4] }}.{{ prefix[5] }}{% endset %}
-{% set cpython %}pp{{ prefix[4:5] }}{% endset %}
-{% set toxpython %}pypy{{ prefix[4] }}.{{ prefix[5] }}{% endset %}
+{% set cpython %}pp{{ prefix[4:] }}{% endset %}
+{% set toxpython %}pypy{{ prefix[4:] }}{% endset %}
 {% else %}
 {% set python %}{{ prefix[2] }}.{{ prefix[3:] }}{% endset %}
 {% set cpython %}cp{{ prefix[2:] }}{% endset %}
@@ -40,14 +40,19 @@ jobs:
             toxpython: '{{ toxpython }}'
             python_arch: '{{ python_arch }}'
             tox_env: '{{ env }}{% if 'cover' in env %},codecov{% endif %}'
-            os: '{{ os }}-latest'
+            os: '{% if os == 'ubuntu' %}{% if prefix in ['py27', 'py36', 'py37', 'pypy27'] %}ubuntu-20.04{% else %}ubuntu-latest{% endif %}{% elif os == 'windows' %}windows-2019{% else %}macos-13{% endif %}'
 {% endfor %}
 {% endfor %}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: actions/setup-python@v2
+    - name: install gettext
+      if: runner.os == 'macOS'
+      run: |
+        brew install gettext
+        brew link --force gettext
+    - uses: actions/setup-python@v5
       with:
         python-version: {{ '${{ matrix.python }}' }}
         architecture: {{ '${{ matrix.python_arch }}' }}
