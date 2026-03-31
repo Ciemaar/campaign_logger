@@ -30,10 +30,12 @@ def test_list_generators(client):
 
         m.get(
             f"{BASE_URL}/api2/generators",
-            json={"generators": [
-                {"id": "gen1", "name": "Generator 1"},
-                {"id": "gen2", "name": "Generator 2"},
-            ]},
+            json={
+                "generators": [
+                    {"id": "gen1", "name": "Generator 1"},
+                    {"id": "gen2", "name": "Generator 2"},
+                ]
+            },
         )
         generators = client.list_generators()
         assert len(generators) == 2  # nosec
@@ -131,7 +133,7 @@ def test_generator_model_methods(client):
         model.delete()
         assert m.called
 
-        model_no_id = GeneratorModel(name="No ID")
+        model_no_id = GeneratorModel(name="No ID")  # pyright: ignore
         model_no_id._client = client
         with pytest.raises(ValueError):
             model_no_id.save()
