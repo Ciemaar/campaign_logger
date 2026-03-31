@@ -16,6 +16,10 @@ include CHANGELOG.rst
 include CONTRIBUTING.rst
 include LICENSE
 include README.rst
+include README.md
+include AGENTS.md
 
 
 global-exclude *.py[cod] __pycache__/* *.so *.dylib
+include SESSION_INSTRUCTIONS.md
+include PYPI_UPLOAD_INSTRUCTIONS.md
