@@ -72,3 +72,10 @@ source = ["campaign_logger"]
 [tool.coverage.report]
 show_missing = true
 fail_under = 95
+
+[tool.check-manifest]
+ignore = [
+    "AGENTS.md",
+    "SESSION_INSTRUCTIONS.md",
+    "PYPI_UPLOAD_INSTRUCTIONS.md"
+]
