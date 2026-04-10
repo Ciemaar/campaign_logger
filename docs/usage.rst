@@ -31,6 +31,12 @@ Generator CLI Usage
 
 The package includes a command-line interface `campaign-logger`.
 
+Authentication for the Generator CLI can be provided via the ``--token`` option or by setting the ``CL_GENERATOR_TOKEN`` environment variable.
+
+.. code-block:: bash
+
+    export CL_GENERATOR_TOKEN="your_generator_api_token"
+
 List generators::
 
     campaign-logger generator list
@@ -117,6 +123,13 @@ Logger CLI Usage
 ----------------
 
 The ``logger`` command group provides management of the core entities.
+
+Authentication for the Logger CLI can be provided via the ``--client-id`` and ``--client-secret`` options or by setting the ``CL_LOGGER_CLIENT_ID`` and ``CL_LOGGER_CLIENT_SECRET`` environment variables.
+
+.. code-block:: bash
+
+    export CL_LOGGER_CLIENT_ID="your_client_id"
+    export CL_LOGGER_CLIENT_SECRET="your_client_secret"
 
 Campaigns
 ^^^^^^^^^

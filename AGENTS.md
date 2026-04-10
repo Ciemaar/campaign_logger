@@ -4,8 +4,8 @@ This file contains instructions for AI agents working on this repository.
 
 ## Core Constraints
 
-1. **Python Version:** Supports Python 3.9 through 3.14. Do not use features
-   newer than 3.9 without fallbacks.
+1. **Python Version:** Supports Python 3.11 through 3.14. Do not use features
+   newer than 3.11 without fallbacks.
 1. **Linting:** The project uses `ruff` for both linting and formatting. Run
    `ruff check .` and `ruff format .`.
 1. **Type Checking:** The project uses `pyright`. Run `pyright .` to verify
