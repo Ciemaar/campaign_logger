@@ -47,7 +47,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: install system dependencies (macOS)
+    - name: install gettext
       if: runner.os == 'macOS'
       run: |
         brew install gettext
