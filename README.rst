@@ -11,7 +11,6 @@ Overview
       - |docs|
     * - tests
       - | |github-actions| |requires|
-        | |coveralls| |codecov|
         | |scrutinizer| |codacy| |codeclimate|
     * - package
       - | |version| |wheel| |supported-versions| |supported-implementations|
@@ -27,14 +26,6 @@ Overview
 .. |requires| image:: https://requires.io/github/Ciemaar/campaign_logger/requirements.svg?branch=main
      :target: https://requires.io/github/Ciemaar/campaign_logger/requirements/?branch=main
      :alt: Requirements Status
-
-.. |coveralls| image:: https://coveralls.io/repos/Ciemaar/campaign_logger/badge.svg?branch=main&service=github
-    :alt: Coverage Status
-    :target: https://coveralls.io/r/Ciemaar/campaign_logger
-
-.. |codecov| image:: https://codecov.io/gh/Ciemaar/campaign_logger/branch/main/graphs/badge.svg?branch=main
-    :alt: Coverage Status
-    :target: https://codecov.io/github/Ciemaar/campaign_logger
 
 .. |codacy| image:: https://img.shields.io/codacy/grade/ab86dd91d20d43e0bc3c2a023e5ee061.svg
     :target: https://www.codacy.com/app/Ciemaar/campaign_logger
@@ -72,7 +63,8 @@ Overview
 
 .. end-badges
 
-A module to support interaction with campaign logger https://campaign-logger.com/.
+A module to support interaction with `Campaign Logger <https://campaign-logger.com/>`_.
+This library provides a Python client and CLI for the `Generator API <https://generator.campaign-logger.com/>`_.
 
 * Free software: GNU Lesser General Public License v3 or later (LGPLv3+)
 
