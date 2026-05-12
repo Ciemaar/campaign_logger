@@ -76,7 +76,8 @@ The main app uses a JSON:API specification. Here is a brief example using
 import requests
 
 headers = {
-    "Authorization": "Bearer your_api_token",
+    "api-client": "your_client_id",
+    "api-secret": "your_client_secret",
     "Content-Type": "application/vnd.api+json",
     "Accept": "application/vnd.api+json"
 }
