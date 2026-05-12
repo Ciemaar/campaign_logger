@@ -237,7 +237,7 @@ class LoggerClient:
     def create_campaign(self, title: str, description: str = "") -> Campaign:
         """Create a new top-level campaign entity."""
         url = f"{self.base_url}/campaigns"
-        payload = {
+        payload: dict[str, Any] = {
             "data": {
                 "type": "campaigns",
                 "attributes": {
@@ -263,7 +263,7 @@ class LoggerClient:
         if description is not None:
             attributes["description"] = description
 
-        payload = {"data": {"type": "campaigns", "id": campaign_id, "attributes": attributes}}
+        payload: dict[str, Any] = {"data": {"type": "campaigns", "id": campaign_id, "attributes": attributes}}
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
@@ -296,7 +296,7 @@ class LoggerClient:
     def create_log(self, campaign_id: str, title: str, description: str = "") -> Log:
         """Create a new child log attached to a specific campaign."""
         url = f"{self.base_url}/logs"
-        payload = {
+        payload: dict[str, Any] = {
             "data": {
                 "type": "logs",
                 "attributes": {
@@ -324,7 +324,7 @@ class LoggerClient:
         if description is not None:
             attributes["description"] = description
 
-        payload = {"data": {"type": "logs", "id": log_id, "attributes": attributes}}
+        payload: dict[str, Any] = {"data": {"type": "logs", "id": log_id, "attributes": attributes}}
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
@@ -357,7 +357,7 @@ class LoggerClient:
     def create_log_entry(self, log_id: str, raw_text: str) -> LogEntry:
         """Create a new text entry attached to a specific log."""
         url = f"{self.base_url}/log-entries"
-        payload = {
+        payload: dict[str, Any] = {
             "data": {
                 "type": "log-entries",
                 "attributes": {
@@ -378,7 +378,7 @@ class LoggerClient:
     def update_log_entry(self, entry_id: str, raw_text: str) -> LogEntry:
         """Update the textual content of an existing log entry."""
         url = f"{self.base_url}/log-entries/{entry_id}"
-        payload = {
+        payload: dict[str, Any] = {
             "data": {
                 "type": "log-entries",
                 "id": entry_id,
@@ -419,7 +419,7 @@ class LoggerClient:
     def create_campaign_entry(self, campaign_id: str, raw_text: str) -> CampaignEntry:
         """Create a new top-level page (Campaign Entry) attached to a specific campaign."""
         url = f"{self.base_url}/campaign-entries"
-        payload = {
+        payload: dict[str, Any] = {
             "data": {
                 "type": "campaign-entries",
                 "attributes": {
@@ -440,7 +440,7 @@ class LoggerClient:
     def update_campaign_entry(self, entry_id: str, raw_text: str) -> CampaignEntry:
         """Update the text content of an existing campaign entry (page)."""
         url = f"{self.base_url}/campaign-entries/{entry_id}"
-        payload = {
+        payload: dict[str, Any] = {
             "data": {
                 "type": "campaign-entries",
                 "id": entry_id,
