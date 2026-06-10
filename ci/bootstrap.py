@@ -64,7 +64,7 @@ def main():
     )
 
     tox_environments = {}
-    for (alias, conf) in matrix.from_file(join(base_path, "setup.cfg")).items():
+    for alias, conf in matrix.from_file(join(base_path, "setup.cfg")).items():
         deps = conf["dependencies"]
         tox_environments[alias] = {
             "deps": deps.split(),

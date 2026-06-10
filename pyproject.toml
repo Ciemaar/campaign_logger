@@ -6,5 +6,9 @@ requires = [
 
 [tool.black]
 line-length = 140
-target-version = ['py27']
+target-version = ['py311']
 skip-string-normalization = true
+
+[project]
+name = "campaign-logger"
+version = "0.0.0"

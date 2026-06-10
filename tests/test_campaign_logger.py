@@ -1,4 +1,3 @@
-
 from click.testing import CliRunner
 
 from campaign_logger.cli import main
