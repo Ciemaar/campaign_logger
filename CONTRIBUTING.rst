@@ -47,13 +47,37 @@ To set up `campaign_logger` for local development:
 
     git checkout -b name-of-your-bugfix-or-feature
 
+4. Set up a virtual environment. You can use standard `pip` and `venv` or the modern `uv` tool.
+
+   **Using standard Python tools (venv and pip):**
+
+   .. code-block:: bash
+
+       python -m venv .venv
+       source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+       pip install -e ".[test]"
+
+   **Using uv (faster alternative):**
+
+   .. code-block:: bash
+
+       uv venv
+       source .venv/bin/activate
+       uv pip install -e ".[test]"
+
    Now you can make your changes locally.
 
-4. When you're done making changes run all the checks and docs builder with `tox <https://tox.readthedocs.io/en/latest/install.html>`_ one command::
+5. Make sure to run the formatting and linting tools before submitting::
+
+    ruff format .
+    ruff check .
+    pyright .
+
+6. When you're done making changes, run all the checks and docs builder with `tox <https://tox.wiki/en/latest/install.html>`_ in one command::
 
     tox
 
-5. Commit your changes and push your branch to GitHub::
+7. Commit your changes and push your branch to GitHub::
 
     git add .
     git commit -m "Your detailed description of your changes."
