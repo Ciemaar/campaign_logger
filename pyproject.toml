@@ -79,3 +79,12 @@ ignore = [
     "SESSION_INSTRUCTIONS.md",
     "PYPI_UPLOAD_INSTRUCTIONS.md"
 ]
+
+[project]
+name = "campaign-logger"
+version = "0.0.0"
+dependencies = [
+    "click",
+    "requests",
+    "pydantic>=2.0",
+]
