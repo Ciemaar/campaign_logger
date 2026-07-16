@@ -3,6 +3,7 @@ requires = [
     "setuptools>=30.3.0",
     "wheel",
 ]
+build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 140
@@ -82,9 +83,46 @@ ignore = [
 
 [project]
 name = "campaign-logger"
-version = "0.0.0"
+version = "0.0.1"
+description = "A module to support interaction with campaign logger https://campaign-logger.com/."
+authors = [{name = "Andy Fundinger", email = "andy@ciemaar.com"}]
+license = {text = "LGPL-3.0-or-later"}
+requires-python = ">=3.11"
+readme = "README.rst"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Operating System :: Unix",
+    "Operating System :: POSIX",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Utilities",
+]
 dependencies = [
     "click",
     "requests",
     "pydantic>=2.0",
 ]
+
+[project.optional-dependencies]
+test = [
+    "requests-mock",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock"
+]
+
+[project.urls]
+"Documentation" = "https://campaign_logger.readthedocs.io/"
+"Changelog" = "https://campaign_logger.readthedocs.io/en/latest/changelog.html"
+"Issue Tracker" = "https://github.com/Ciemaar/campaign_logger/issues"
+
+[project.scripts]
+campaign-logger = "campaign_logger.cli:main"
