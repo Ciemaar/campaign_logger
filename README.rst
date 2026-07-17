@@ -11,11 +11,11 @@ Overview
       - |docs|
     * - tests
       - | |github-actions| |requires|
-        | |scrutinizer| |codacy| |codeclimate|
+        | |codacy| |codeclimate|
     * - package
       - | |version| |wheel| |supported-versions| |supported-implementations|
         | |commits-since|
-.. |docs| image:: https://readthedocs.org/projects/campaign_logger/badge/?style=flat
+.. |docs| image:: https://app.readthedocs.org/projects/campaign-logger/badge/?style=flat
     :target: https://campaign_logger.readthedocs.io/
     :alt: Documentation Status
 
@@ -31,8 +31,8 @@ Overview
     :target: https://www.codacy.com/app/Ciemaar/campaign_logger
     :alt: Codacy Code Quality Status
 
-.. |codeclimate| image:: https://codeclimate.com/github/Ciemaar/campaign_logger/badges/gpa.svg
-   :target: https://codeclimate.com/github/Ciemaar/campaign_logger
+.. |codeclimate| image:: https://qlty.sh/gh/Ciemaar/projects/campaign_logger/maintainability.svg
+   :target: https://qlty.sh/login?returnTo=%2Fgh%2FCiemaar%2Fprojects%2Fcampaign_logger
    :alt: CodeClimate Quality Status
 
 .. |version| image:: https://img.shields.io/pypi/v/campaign-logger.svg
@@ -56,9 +56,6 @@ Overview
     :target: https://github.com/Ciemaar/campaign_logger/compare/v0.0.0...main
 
 
-.. |scrutinizer| image:: https://img.shields.io/scrutinizer/quality/g/Ciemaar/campaign_logger/main.svg
-    :alt: Scrutinizer Status
-    :target: https://scrutinizer-ci.com/g/Ciemaar/campaign_logger/
 
 
 .. end-badges

@@ -35,6 +35,16 @@ If you are proposing a feature:
 Development
 ===========
 
+We strongly encourage the use of `pre-commit <https://pre-commit.com/>`_ to automatically run linting and code quality checks before each commit.
+
+**Setting up pre-commit:**
+
+1. Install pre-commit (if not already installed globally): `pip install pre-commit` or `uv pip install pre-commit`.
+2. Install the git hook scripts: `pre-commit install`.
+3. (Optional) Run against all files manually: `pre-commit run --all-files`.
+
+If you cannot use pre-commit, you are responsible for manually running the tools listed in `.pre-commit-config.yaml` (e.g., `ruff check .`, `ruff format .`, `mdformat .`) prior to submitting your code.
+
 To set up `campaign_logger` for local development:
 
 1. Fork `campaign_logger <https://github.com/Ciemaar/campaign_logger>`_

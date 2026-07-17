@@ -36,4 +36,9 @@ This file contains instructions for AI agents working on this repository.
 1. Plan changes.
 1. Implement changes.
 1. Verify with `tox -e check` (lint/types) and `tox -e py312-cover` (tests).
+1. Agents should proactively monitor the tests on GitHub and autonomously
+   address any CI failures (excluding codacy, which is only advisory).
+1. Agents used should be explicitly acknowledged in PR descriptions and
+   `AUTHORS.rst`, but the submitting user retains responsibility for the content
+   submitted.
 1. Submit.
