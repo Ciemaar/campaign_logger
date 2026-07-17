@@ -86,13 +86,11 @@ name = "campaign-logger"
 version = "0.0.1"
 description = "A module to support interaction with campaign logger https://campaign-logger.com/."
 authors = [{name = "Andy Fundinger", email = "andy@ciemaar.com"}]
-license = {text = "LGPL-3.0-or-later"}
+license = {file = "LICENSE"}
 requires-python = ">=3.11"
-readme = "README.rst"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     "Operating System :: Unix",
     "Operating System :: POSIX",
     "Operating System :: Microsoft :: Windows",
@@ -105,6 +103,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Utilities",
 ]
+readme = "README.rst"
 dependencies = [
     "click",
     "requests",
