@@ -79,19 +79,11 @@ headers = {
     "api-client": "your_client_id",
     "api-secret": "your_client_secret",
     "Content-Type": "application/vnd.api+json",
-    "Accept": "application/vnd.api+json"
+    "Accept": "application/vnd.api+json",
 }
 
 # Create a Campaign
-payload = {
-    "data": {
-        "type": "campaigns",
-        "attributes": {
-            "title": "My Epic Campaign",
-            "description": "A new adventure begins."
-        }
-    }
-}
+payload = {"data": {"type": "campaigns", "attributes": {"title": "My Epic Campaign", "description": "A new adventure begins."}}}
 response = requests.post("https://logger.campaign-logger.com/campaigns", headers=headers, json=payload)
 print(response.json())
 ```
