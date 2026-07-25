@@ -83,7 +83,7 @@ To set up `campaign_logger` for local development:
     ruff check .
     pyright .
 
-6. When you're done making changes, run all the checks and docs builder with `tox <https://tox.wiki/en/latest/install.html>`_ in one command::
+6. When you're done making changes, run all the checks and docs builder with `tox <https://tox.wiki/en/latest/installation.html>`_ in one command::
 
     tox
 

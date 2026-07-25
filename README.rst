@@ -16,7 +16,7 @@ Overview
       - | |version| |wheel| |supported-versions| |supported-implementations|
         | |commits-since|
 .. |docs| image:: https://app.readthedocs.org/projects/campaign-logger/badge/?style=flat
-    :target: https://campaign_logger.readthedocs.io/
+    :target: https://campaign-logger.readthedocs.io/
     :alt: Documentation Status
 
 .. |github-actions| image:: https://github.com/Ciemaar/campaign_logger/actions/workflows/github-actions.yml/badge.svg
@@ -27,8 +27,8 @@ Overview
      :target: https://requires.io/github/Ciemaar/campaign_logger/requirements/?branch=main
      :alt: Requirements Status
 
-.. |codacy| image:: https://img.shields.io/codacy/grade/ab86dd91d20d43e0bc3c2a023e5ee061.svg
-    :target: https://www.codacy.com/app/Ciemaar/campaign_logger
+.. |codacy| image:: https://app.codacy.com/project/badge/Grade/ab86dd91d20d43e0bc3c2a023e5ee061
+    :target: https://app.codacy.com/gh/Ciemaar/campaign_logger/dashboard
     :alt: Codacy Code Quality Status
 
 .. |codeclimate| image:: https://qlty.sh/gh/Ciemaar/projects/campaign_logger/maintainability.svg
@@ -51,9 +51,9 @@ Overview
     :alt: Supported implementations
     :target: https://pypi.org/project/campaign-logger
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/Ciemaar/campaign_logger/v0.0.0.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/Ciemaar/campaign_logger/v0.0.1.svg
     :alt: Commits since latest release
-    :target: https://github.com/Ciemaar/campaign_logger/compare/v0.0.0...main
+    :target: https://github.com/Ciemaar/campaign_logger/compare/v0.0.1...main
 
 
 
@@ -81,7 +81,7 @@ Documentation
 =============
 
 
-https://campaign_logger.readthedocs.io/
+https://campaign-logger.readthedocs.io/
 
 
 Development
