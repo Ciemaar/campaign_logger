@@ -108,6 +108,7 @@ dependencies = [
     "click",
     "requests",
     "pydantic>=2.0",
+    "rich",
 ]
 
 [project.optional-dependencies]

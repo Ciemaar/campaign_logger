@@ -6,6 +6,13 @@ from click.testing import CliRunner
 from campaign_logger.cli import main
 
 
+@pytest.fixture(autouse=True)
+def mock_env(monkeypatch):
+    monkeypatch.setenv("CL_GENERATOR_TOKEN", "mock_token")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "mock_id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "mock_secret")
+
+
 @pytest.fixture
 def runner():
     return CliRunner()
@@ -61,8 +68,10 @@ def mock_logger_client(mocker):
 
 
 def test_list_campaigns(runner, mock_logger_client):
+    mock_logger_client.get_campaigns.return_value = [type("MockCamp", (), {"id": "c1", "title": "Camp Title"})()]
     result = runner.invoke(main, ["logger", "campaign", "list"])
     assert result.exit_code == 0  # nosec
+    assert "c1: Camp Title" in result.output  # nosec
     mock_logger_client.get_campaigns.assert_called_once()
 
 
@@ -104,8 +113,10 @@ def test_delete_campaign(runner, mock_logger_client):
 
 
 def test_list_logs(runner, mock_logger_client):
+    mock_logger_client.get_logs.return_value = [type("MockLog", (), {"id": "l1", "title": "Log Title"})()]
     result = runner.invoke(main, ["logger", "log", "list"])
     assert result.exit_code == 0  # nosec
+    assert "l1: Log Title" in result.output  # nosec
     mock_logger_client.get_logs.assert_called_once()
 
 
@@ -122,14 +133,36 @@ def test_delete_log(runner, mock_logger_client):
 
 
 def test_list_entries(runner, mock_logger_client):
+    mock_logger_client.get_log_entries.return_value = [
+        type("MockEntry", (), {"id": "1", "log_id": "l1", "raw_text": "Text 1"})(),
+        type("MockEntry", (), {"id": "2", "log_id": "l2", "raw_text": ""})(),
+    ]
     result = runner.invoke(main, ["logger", "entry", "list"])
     assert result.exit_code == 0  # nosec
+    assert "1: Text 1" in result.output  # nosec
+    assert "2: (empty)" in result.output  # nosec
     mock_logger_client.get_log_entries.assert_called_once()
+
+    result_filtered = runner.invoke(main, ["logger", "entry", "list", "l1"])
+    assert result_filtered.exit_code == 0  # nosec
+    assert "1: Text 1" in result_filtered.output  # nosec
+    assert "2: (empty)" not in result_filtered.output  # nosec
+
+    # Test filtering by env var
+    import os
+    os.environ["CL_DEFAULT_LOG_ID"] = "l2"
+    result_env_filtered = runner.invoke(main, ["logger", "entry", "list"])
+    assert result_env_filtered.exit_code == 0  # nosec
+    assert "2: (empty)" in result_env_filtered.output  # nosec
+    assert "1: Text 1" not in result_env_filtered.output  # nosec
+    del os.environ["CL_DEFAULT_LOG_ID"]
 
 
 def test_get_entry(runner, mock_logger_client):
-    result = runner.invoke(main, ["logger", "entry", "get", "le1"])
+    mock_logger_client.get_log_entry.return_value = type("MockEntry", (), {"id": "le1", "raw_text": "# Markdown"})()
+    result = runner.invoke(main, ["logger", "entry", "get", "le1", "--raw"])
     assert result.exit_code == 0  # nosec
+    assert "# Markdown" in result.output  # nosec
     mock_logger_client.get_log_entry.assert_called_once_with("le1")
 
 
@@ -140,14 +173,37 @@ def test_delete_entry(runner, mock_logger_client):
 
 
 def test_list_pages(runner, mock_logger_client):
+    mock_logger_client.get_campaign_entries.return_value = [
+        type("MockPage", (), {"id": "1", "campaign_id": "c1", "raw_text": "Page 1\nSecond line"})(),
+        type("MockPage", (), {"id": "2", "campaign_id": "c2", "raw_text": ""})(),
+    ]
     result = runner.invoke(main, ["logger", "page", "list"])
     assert result.exit_code == 0  # nosec
+    assert "1: Page 1" in result.output  # nosec
+    assert "Second line" not in result.output  # nosec
+    assert "2: (empty)" in result.output  # nosec
     mock_logger_client.get_campaign_entries.assert_called_once()
+
+    result_filtered = runner.invoke(main, ["logger", "page", "list", "c1"])
+    assert result_filtered.exit_code == 0  # nosec
+    assert "1: Page 1" in result_filtered.output  # nosec
+    assert "2: (empty)" not in result_filtered.output  # nosec
+
+    # Test filtering by env var
+    import os
+    os.environ["CL_DEFAULT_CAMPAIGN_ID"] = "c2"
+    result_env_filtered = runner.invoke(main, ["logger", "page", "list"])
+    assert result_env_filtered.exit_code == 0  # nosec
+    assert "2: (empty)" in result_env_filtered.output  # nosec
+    assert "1: Page 1" not in result_env_filtered.output  # nosec
+    del os.environ["CL_DEFAULT_CAMPAIGN_ID"]
 
 
 def test_get_page(runner, mock_logger_client):
-    result = runner.invoke(main, ["logger", "page", "get", "ce1"])
+    mock_logger_client.get_campaign_entry.return_value = type("MockPage", (), {"id": "ce1", "raw_text": "# Markdown"})()
+    result = runner.invoke(main, ["logger", "page", "get", "ce1", "--raw"])
     assert result.exit_code == 0  # nosec
+    assert "# Markdown" in result.output  # nosec
     mock_logger_client.get_campaign_entry.assert_called_once_with("ce1")
 
 
