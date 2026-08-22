@@ -125,3 +125,8 @@ test = [
 
 [project.scripts]
 campaign-logger = "campaign_logger.cli:main"
+[tool.rstfmt]
+ext = [
+    "sphinx.ext.doctest",
+    "sphinx.ext.autodoc",
+]

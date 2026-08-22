@@ -1,7 +1,9 @@
-============
-Installation
-============
+##############
+ Installation
+##############
 
-At the command line::
+At the command line:
 
-    pip install campaign-logger
+.. code::
+
+   pip install campaign-logger

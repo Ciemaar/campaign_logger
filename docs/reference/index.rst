@@ -1,7 +1,8 @@
-Reference
-=========
+###########
+ Reference
+###########
 
 .. toctree::
-    :glob:
+   :glob:
 
-    campaign_logger*
+   campaign_logger*
