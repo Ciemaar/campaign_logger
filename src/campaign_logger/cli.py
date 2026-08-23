@@ -38,13 +38,11 @@ def load_config():
             pass
 
 
-load_config()
-
-
 @click.group()
 @click.pass_context
 def main(ctx):
     """Campaign Logger command line interface."""
+    load_config()
     ctx.ensure_object(dict)
 
 
@@ -55,11 +53,7 @@ def main(ctx):
 def generator(ctx, url, token):
     """Generator API commands."""
     if not token:
-        click.echo(
-            "Error: No authentication token provided. Please provide a token using --token, "
-            "the CL_GENERATOR_TOKEN environment variable, or a ~/.campaign_logger.json config file.",
-            err=True,
-        )
+        click.echo("Error: No authentication token provided.", err=True)
         ctx.exit(1)
     ctx.obj["client"] = GeneratorClient(base_url=url, token=token)
 
@@ -210,11 +204,7 @@ def validate(ctx, target):
 def logger(ctx, url, client_id, client_secret):
     """Main Campaign Logger API commands."""
     if not client_id or not client_secret:
-        click.echo(
-            "Error: Missing client ID or secret. Please provide them using --client-id/--client-secret, "
-            "CL_LOGGER_CLIENT_ID/CL_LOGGER_CLIENT_SECRET environment variables, or a ~/.campaign_logger.json config file.",
-            err=True,
-        )
+        click.echo("Error: Missing client ID or secret.", err=True)
         ctx.exit(1)
     ctx.obj["client"] = LoggerClient(base_url=url, client_id=client_id, client_secret=client_secret)
 
@@ -228,7 +218,7 @@ def campaign():
 @campaign.command(name="list")
 @click.pass_context
 def list_campaigns(ctx):
-    """Retrieve and print all user campaigns."""
+    """Retrieve and print all user campaigns in JSON format."""
     client = ctx.obj["client"]
     try:
         res = client.get_campaigns()
