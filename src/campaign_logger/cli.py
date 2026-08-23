@@ -378,12 +378,13 @@ def list_entries(ctx, log_id):
         if not log_id:
             log_id = os.environ.get("CL_DEFAULT_LOG_ID")
 
-        res = client.get_log_entries()
         if log_id:
-            res = [e for e in res if e.log_id == log_id]
+            res = client.get_log_entries(log_id=log_id)
+        else:
+            res = client.get_log_entries()
 
         for e in res:
-            first_line = e.raw_text.splitlines()[0] if e.raw_text else "(empty)"
+            first_line = e.raw_text.splitlines()[0] if getattr(e, "raw_text", None) else "(empty)"
             click.echo(f"{e.id}: {first_line}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -470,12 +471,13 @@ def list_pages(ctx, campaign_id):
         if not campaign_id:
             campaign_id = os.environ.get("CL_DEFAULT_CAMPAIGN_ID")
 
-        res = client.get_campaign_entries()
         if campaign_id:
-            res = [p for p in res if p.campaign_id == campaign_id]
+            res = client.get_campaign_entries(campaign_id=campaign_id)
+        else:
+            res = client.get_campaign_entries()
 
         for p in res:
-            first_line = p.raw_text.splitlines()[0] if p.raw_text else "(empty)"
+            first_line = p.raw_text.splitlines()[0] if getattr(p, "raw_text", None) else "(empty)"
             click.echo(f"{p.id}: {first_line}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)

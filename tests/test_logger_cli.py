@@ -18,6 +18,11 @@ class MockResource(MagicMock):
         """Initialize MockResource."""
         super().__init__(*args, **kwargs)
         self._data = data
+        self.id = data.get("id")
+        self.title = data.get("title")
+        self.raw_text = data.get("raw_text")
+        self.log_id = data.get("log_id")
+        self.campaign_id = data.get("campaign_id")
 
     def to_dict(self):
         """Return dict representation."""
@@ -31,10 +36,10 @@ class MockResource(MagicMock):
 @pytest.fixture
 def mock_logger_client(mocker):
     mock_instance = MagicMock()
-    mock_c1 = MockResource({"id": "c1"})
-    mock_l1 = MockResource({"id": "l1"})
-    mock_le1 = MockResource({"id": "le1"})
-    mock_ce1 = MockResource({"id": "ce1"})
+    mock_c1 = MockResource({"id": "c1", "title": "Camp Title"})
+    mock_l1 = MockResource({"id": "l1", "title": "Log Title"})
+    mock_le1 = MockResource({"id": "le1", "raw_text": "Text 1"})
+    mock_ce1 = MockResource({"id": "ce1", "raw_text": "Page 1"})
 
     mock_instance.get_campaigns.return_value = [mock_c1]
     mock_instance.get_campaign.return_value = mock_c1

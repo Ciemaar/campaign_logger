@@ -171,8 +171,7 @@ def test_list_entries_with_default_log_id(runner, monkeypatch, mocker):
 
     mock_instance = MagicMock()
     mock_instance.get_log_entries.return_value = [
-        type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": "text1"})(),
-        type("MockEntry", (), {"id": "2", "log_id": "2", "raw_text": "text2"})(),
+        type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": "text1"})()
     ]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
@@ -189,8 +188,7 @@ def test_list_pages_with_default_campaign_id(runner, monkeypatch, mocker):
 
     mock_instance = MagicMock()
     mock_instance.get_campaign_entries.return_value = [
-        type("MockPage", (), {"id": "1", "campaign_id": "1", "raw_text": "text1"})(),
-        type("MockPage", (), {"id": "2", "campaign_id": "2", "raw_text": "text2"})(),
+        type("MockPage", (), {"id": "1", "campaign_id": "1", "raw_text": "text1"})()
     ]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
