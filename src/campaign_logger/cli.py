@@ -4,8 +4,8 @@ import json
 import os
 from pathlib import Path
 
-import requests
 import click
+import requests
 
 from .api import GeneratorClient
 from .api import LoggerClient
@@ -37,7 +37,9 @@ def load_config():
         except Exception:
             pass
 
+
 load_config()
+
 
 @click.group()
 @click.pass_context
@@ -85,7 +87,7 @@ def get_generator(ctx, generator_id):
         try:
             generator_obj = client.get_generator(generator_id)
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
+            if e.response is not None and e.response.status_code == 404:
                 generator_obj = client.get_generator_by_name(generator_id)
                 if generator_obj is None:
                     raise Exception("Generator not found by ID or Name")
@@ -156,7 +158,7 @@ def generate(ctx, target):
             try:
                 result = client.execute_operation(target, "generate")
             except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 404:
+                if e.response is not None and e.response.status_code == 404:
                     gen = client.get_generator_by_name(target)
                     if gen and gen.id:
                         result = client.execute_operation(gen.id, "generate")
@@ -187,7 +189,7 @@ def validate(ctx, target):
             try:
                 client.execute_operation(target, "validate")
             except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 404:
+                if e.response is not None and e.response.status_code == 404:
                     gen = client.get_generator_by_name(target)
                     if gen and gen.id:
                         client.execute_operation(gen.id, "validate")
@@ -412,6 +414,7 @@ def get_entry(ctx, entry_id, raw):
             try:
                 from rich.console import Console
                 from rich.markdown import Markdown
+
                 console = Console()
                 console.print(Markdown(entry_obj.raw_text or ""))
             except ImportError:
@@ -503,6 +506,7 @@ def get_page(ctx, page_id, raw):
             try:
                 from rich.console import Console
                 from rich.markdown import Markdown
+
                 console = Console()
                 console.print(Markdown(page_obj.raw_text or ""))
             except ImportError:
