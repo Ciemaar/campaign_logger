@@ -4,8 +4,8 @@ import json
 import os
 from pathlib import Path
 
-import click
 import requests
+import click
 
 from .api import GeneratorClient
 from .api import LoggerClient
@@ -37,12 +37,12 @@ def load_config():
         except Exception:
             pass
 
+load_config()
 
 @click.group()
 @click.pass_context
 def main(ctx):
     """Campaign Logger command line interface."""
-    load_config()
     ctx.ensure_object(dict)
 
 
@@ -53,7 +53,11 @@ def main(ctx):
 def generator(ctx, url, token):
     """Generator API commands."""
     if not token:
-        click.echo("Error: No authentication token provided.", err=True)
+        click.echo(
+            "Error: No authentication token provided. Please provide a token using --token, "
+            "the CL_GENERATOR_TOKEN environment variable, or a ~/.campaign_logger.json config file.",
+            err=True,
+        )
         ctx.exit(1)
     ctx.obj["client"] = GeneratorClient(base_url=url, token=token)
 
@@ -81,7 +85,7 @@ def get_generator(ctx, generator_id):
         try:
             generator_obj = client.get_generator(generator_id)
         except requests.exceptions.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
+            if e.response.status_code == 404:
                 generator_obj = client.get_generator_by_name(generator_id)
                 if generator_obj is None:
                     raise Exception("Generator not found by ID or Name")
@@ -152,7 +156,7 @@ def generate(ctx, target):
             try:
                 result = client.execute_operation(target, "generate")
             except requests.exceptions.HTTPError as e:
-                if e.response is not None and e.response.status_code == 404:
+                if e.response.status_code == 404:
                     gen = client.get_generator_by_name(target)
                     if gen and gen.id:
                         result = client.execute_operation(gen.id, "generate")
@@ -183,7 +187,7 @@ def validate(ctx, target):
             try:
                 client.execute_operation(target, "validate")
             except requests.exceptions.HTTPError as e:
-                if e.response is not None and e.response.status_code == 404:
+                if e.response.status_code == 404:
                     gen = client.get_generator_by_name(target)
                     if gen and gen.id:
                         client.execute_operation(gen.id, "validate")
@@ -204,7 +208,11 @@ def validate(ctx, target):
 def logger(ctx, url, client_id, client_secret):
     """Main Campaign Logger API commands."""
     if not client_id or not client_secret:
-        click.echo("Error: Missing client ID or secret.", err=True)
+        click.echo(
+            "Error: Missing client ID or secret. Please provide them using --client-id/--client-secret, "
+            "CL_LOGGER_CLIENT_ID/CL_LOGGER_CLIENT_SECRET environment variables, or a ~/.campaign_logger.json config file.",
+            err=True,
+        )
         ctx.exit(1)
     ctx.obj["client"] = LoggerClient(base_url=url, client_id=client_id, client_secret=client_secret)
 
@@ -218,11 +226,12 @@ def campaign():
 @campaign.command(name="list")
 @click.pass_context
 def list_campaigns(ctx):
-    """Retrieve and print all user campaigns in JSON format."""
+    """Retrieve and print all user campaigns."""
     client = ctx.obj["client"]
     try:
         res = client.get_campaigns()
-        click.echo(json.dumps([c.to_dict() for c in res], indent=2))
+        for c in res:
+            click.echo(f"{c.id}: {c.title}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -297,7 +306,8 @@ def list_logs(ctx):
     client = ctx.obj["client"]
     try:
         res = client.get_logs()
-        click.echo(json.dumps([log_obj.to_dict() for log_obj in res], indent=2))
+        for log_obj in res:
+            click.echo(f"{log_obj.id}: {log_obj.title}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -367,25 +377,45 @@ def entry():
 
 
 @entry.command(name="list")
+@click.argument("log_id", required=False)
 @click.pass_context
-def list_entries(ctx):
-    """Retrieve and print all log entries across all logs."""
+def list_entries(ctx, log_id):
+    """Retrieve and print all log entries across all logs, optionally filtering by log_id."""
     client = ctx.obj["client"]
     try:
+        if not log_id:
+            log_id = os.environ.get("CL_DEFAULT_LOG_ID")
+
         res = client.get_log_entries()
-        click.echo(json.dumps([e.to_dict() for e in res], indent=2))
+        if log_id:
+            res = [e for e in res if e.log_id == log_id]
+
+        for e in res:
+            first_line = e.raw_text.splitlines()[0] if e.raw_text else "(empty)"
+            click.echo(f"{e.id}: {first_line}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
 
 @entry.command(name="get")
 @click.argument("entry_id")
+@click.option("--raw", is_flag=True, help="Print raw unformatted text")
 @click.pass_context
-def get_entry(ctx, entry_id):
+def get_entry(ctx, entry_id, raw):
     """Fetch and print a specific log entry by its ID."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_log_entry(entry_id).to_dict(), indent=2))
+        entry_obj = client.get_log_entry(entry_id)
+        if raw:
+            click.echo(entry_obj.raw_text or "")
+        else:
+            try:
+                from rich.console import Console
+                from rich.markdown import Markdown
+                console = Console()
+                console.print(Markdown(entry_obj.raw_text or ""))
+            except ImportError:
+                click.echo(entry_obj.raw_text or "")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -438,25 +468,45 @@ def page():
 
 
 @page.command(name="list")
+@click.argument("campaign_id", required=False)
 @click.pass_context
-def list_pages(ctx):
-    """Retrieve and print all top-level campaign pages."""
+def list_pages(ctx, campaign_id):
+    """Retrieve and print all top-level campaign pages, optionally filtering by campaign_id."""
     client = ctx.obj["client"]
     try:
+        if not campaign_id:
+            campaign_id = os.environ.get("CL_DEFAULT_CAMPAIGN_ID")
+
         res = client.get_campaign_entries()
-        click.echo(json.dumps([p.to_dict() for p in res], indent=2))
+        if campaign_id:
+            res = [p for p in res if p.campaign_id == campaign_id]
+
+        for p in res:
+            first_line = p.raw_text.splitlines()[0] if p.raw_text else "(empty)"
+            click.echo(f"{p.id}: {first_line}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
 
 @page.command(name="get")
 @click.argument("page_id")
+@click.option("--raw", is_flag=True, help="Print raw unformatted text")
 @click.pass_context
-def get_page(ctx, page_id):
+def get_page(ctx, page_id, raw):
     """Fetch and print a specific campaign page by its ID."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_campaign_entry(page_id).to_dict(), indent=2))
+        page_obj = client.get_campaign_entry(page_id)
+        if raw:
+            click.echo(page_obj.raw_text or "")
+        else:
+            try:
+                from rich.console import Console
+                from rich.markdown import Markdown
+                console = Console()
+                console.print(Markdown(page_obj.raw_text or ""))
+            except ImportError:
+                click.echo(page_obj.raw_text or "")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
