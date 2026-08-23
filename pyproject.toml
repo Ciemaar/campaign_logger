@@ -117,6 +117,9 @@ test = [
     "pytest-cov",
     "pytest-mock"
 ]
+cli = [
+    "rich"
+]
 
 [project.urls]
 "Documentation" = "https://campaign_logger.readthedocs.io/"
