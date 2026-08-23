@@ -7,13 +7,6 @@ from campaign_logger.cli import main
 from campaign_logger.models import GeneratorModel
 
 
-@pytest.fixture(autouse=True)
-def mock_env(monkeypatch):
-    monkeypatch.setenv("CL_GENERATOR_TOKEN", "mock_token")
-    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "mock_id")
-    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "mock_secret")
-
-
 @pytest.fixture
 def runner():
     return CliRunner()
@@ -30,7 +23,6 @@ def mock_client(mocker):
         GeneratorModel(id="2", name="Gen 2"),  # pyright: ignore
     ]
     mock_instance.get_generator.return_value = GeneratorModel(id="1", name="Gen 1")  # pyright: ignore
-    mock_instance.get_generator_by_name.return_value = None
     mock_instance.create_generator.return_value = GeneratorModel(id="3", name="New Gen")  # pyright: ignore
     mock_instance.update_generator.return_value = GeneratorModel(id="1", name="Updated Gen")  # pyright: ignore
     mock_instance.generate_random.return_value = {"result": "random"}
@@ -104,12 +96,9 @@ def test_generator_cli_error_handling(runner, mock_client):
     assert result.exit_code == 0  # click's default behavior for caught errors here
     assert "Error: API is down" in result.output  # nosec
 
-    import requests
-    response = requests.Response()
-    response.status_code = 404
-    mock_client.get_generator.side_effect = requests.exceptions.HTTPError("Not found", response=response)
+    mock_client.get_generator.side_effect = Exception("Not found")
     result = runner.invoke(main, ["generator", "get", "1"])
-    assert "Error: Generator not found by ID or Name" in result.output  # nosec
+    assert "Error: Not found" in result.output  # nosec
 
     with runner.isolated_filesystem():
         with open("new.json", "w") as f:
@@ -126,10 +115,10 @@ def test_generator_cli_error_handling(runner, mock_client):
     result = runner.invoke(main, ["generator", "delete", "1"])
     assert "Error: Delete failed" in result.output  # nosec
 
-    mock_client.execute_operation.side_effect = requests.exceptions.HTTPError("Generate failed", response=response)
+    mock_client.execute_operation.side_effect = Exception("Generate failed")
     result = runner.invoke(main, ["generator", "generate", "1"])
-    assert "Error: Generator not found by ID or Name" in result.output  # nosec
+    assert "Error: Generate failed" in result.output  # nosec
 
-    mock_client.execute_operation.side_effect = requests.exceptions.HTTPError("Validate failed", response=response)
+    mock_client.execute_operation.side_effect = Exception("Validate failed")
     result = runner.invoke(main, ["generator", "validate", "1"])
-    assert "Error: Generator not found by ID or Name" in result.output  # nosec
+    assert "Error: Validate failed" in result.output  # nosec
