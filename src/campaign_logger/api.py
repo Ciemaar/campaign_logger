@@ -163,8 +163,11 @@ class LoggerClient:
         if item_id:
             url = f"{url}/{item_id}"
         response = self.session.get(url)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.JSONDecodeError as e:
+            raise requests.exceptions.HTTPError(f"Failed to parse JSON response: {response.text}", response=response) from e
 
     def _delete(self, resource_type: str, item_id: str) -> None:
         """Delete a resource from the API."""
