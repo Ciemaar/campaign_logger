@@ -377,3 +377,35 @@ def test_kebab_case_parsing(client):
         assert log_entry.id == "le_kebab"  # nosec
         assert log_entry.log_id == "l1"  # nosec
         assert log_entry.raw_text == "Log text via kebab"  # nosec
+
+
+def test_get_log_entries_filter(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/log-entries",
+            json={
+                "data": [
+                    {"id": "e1", "type": "log-entries", "attributes": {"logId": "l1"}},
+                    {"id": "e2", "type": "log-entries", "attributes": {"logId": "l2"}},
+                ]
+            },
+        )
+        entries = client.get_log_entries(log_id="l1")
+        assert len(entries) == 1
+        assert entries[0].id == "e1"
+
+
+def test_get_campaign_entries_filter(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/campaign-entries",
+            json={
+                "data": [
+                    {"id": "ce1", "type": "campaign-entries", "attributes": {"campaignId": "c1"}},
+                    {"id": "ce2", "type": "campaign-entries", "attributes": {"campaignId": "c2"}},
+                ]
+            },
+        )
+        entries = client.get_campaign_entries(campaign_id="c1")
+        assert len(entries) == 1
+        assert entries[0].id == "ce1"

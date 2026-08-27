@@ -193,7 +193,7 @@ class LoggerClient:
             type=resource.get("type", ""),
             title=str(attrs.get("title", "")),
             description=str(attrs.get("description", "")),
-            campaign_id=str(attrs.get("campaignId", "")),
+            campaign_id=str(attrs.get("campaignId", attrs.get("campaign-id", ""))),
         )
         log_obj._client = self
         return log_obj
@@ -353,13 +353,16 @@ class LoggerClient:
         self._delete("logs", log_id)
 
     # --- Log Entries ---
-    def get_log_entries(self) -> list[LogEntry]:
+    def get_log_entries(self, log_id: str | None = None) -> list[LogEntry]:
         """Retrieve all individual log entries across the user's logs."""
         response = self._get("log-entries")
         data = response.get("data", [])
         if not isinstance(data, list):
             data = [data]
-        return [self._parse_log_entry(r) for r in data]
+        entries = [self._parse_log_entry(r) for r in data]
+        if log_id:
+            entries = [e for e in entries if e.log_id == log_id]
+        return entries
 
     def get_log_entry(self, entry_id: str) -> LogEntry:
         """Retrieve a specific log entry by its unique identifier."""
@@ -415,13 +418,16 @@ class LoggerClient:
         self._delete("log-entries", entry_id)
 
     # --- Campaign Entries (Pages) ---
-    def get_campaign_entries(self) -> list[CampaignEntry]:
+    def get_campaign_entries(self, campaign_id: str | None = None) -> list[CampaignEntry]:
         """Retrieve all campaign entries (pages) across the user's campaigns."""
         response = self._get("campaign-entries")
         data = response.get("data", [])
         if not isinstance(data, list):
             data = [data]
-        return [self._parse_campaign_entry(r) for r in data]
+        entries = [self._parse_campaign_entry(r) for r in data]
+        if campaign_id:
+            entries = [e for e in entries if e.campaign_id == campaign_id]
+        return entries
 
     def get_campaign_entry(self, entry_id: str) -> CampaignEntry:
         """Retrieve a specific campaign entry (page) by its unique identifier."""
