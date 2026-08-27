@@ -203,19 +203,31 @@ class LoggerClient:
         entry = LogEntry(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
-            raw_text=str(attrs.get("rawText", "")),
-            log_id=str(attrs.get("logId", "")),
+            raw_text=str(attrs.get("rawText", attrs.get("raw-text", ""))),
+            log_id=str(attrs.get("logId", attrs.get("log-id", ""))),
         )
         entry._client = self
         return entry
 
     def _parse_campaign_entry(self, resource: dict[str, Any]) -> CampaignEntry:
         attrs = resource.get("attributes", {})
+
+        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
+        raw_public = str(attrs.get("rawPublic", attrs.get("raw-public", "")))
+        tag_symbol = str(attrs.get("tagSymbol", attrs.get("tag-symbol", "")))
+        tag_value = str(attrs.get("tagValue", attrs.get("tag-value", "")))
+
+        # In Campaign Logger, the full content of a page is sometimes spread out.
+        # If raw-text is empty but raw-public is set, combine tag info and raw-public.
+        if not raw_text and raw_public:
+            title_prefix = f"{tag_symbol}{tag_value}\n" if tag_symbol and tag_value else ""
+            raw_text = f"{title_prefix}{raw_public}".strip()
+
         entry = CampaignEntry(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
-            raw_text=str(attrs.get("rawText", "")),
-            campaign_id=str(attrs.get("campaignId", "")),
+            raw_text=raw_text,
+            campaign_id=str(attrs.get("campaignId", attrs.get("campaign-id", ""))),
         )
         entry._client = self
         return entry

@@ -334,3 +334,45 @@ def test_get_campaign_entries_list_handling(client):
             client.update_campaign_entry("ce1", "text")
         except ValueError:
             pass
+
+def test_kebab_case_parsing(client):
+    with requests_mock.Mocker() as m:
+        # Test Campaign Entry parsing with kebab-case and split properties
+        m.get(
+            f"{BASE_URL}/campaign-entries/ce_kebab",
+            json={
+                "data": {
+                    "id": "ce_kebab",
+                    "type": "campaign-entries",
+                    "attributes": {
+                        "campaign-id": "c1",
+                        "raw-public": "This is public text",
+                        "tag-symbol": "~",
+                        "tag-value": "Test Page",
+                    }
+                }
+            },
+        )
+        entry = client.get_campaign_entry("ce_kebab")
+        assert entry.id == "ce_kebab"  # nosec
+        assert entry.campaign_id == "c1"  # nosec
+        assert entry.raw_text == "~Test Page\nThis is public text"  # nosec
+
+        # Test Log Entry parsing with kebab-case
+        m.get(
+            f"{BASE_URL}/log-entries/le_kebab",
+            json={
+                "data": {
+                    "id": "le_kebab",
+                    "type": "log-entries",
+                    "attributes": {
+                        "log-id": "l1",
+                        "raw-text": "Log text via kebab",
+                    }
+                }
+            },
+        )
+        log_entry = client.get_log_entry("le_kebab")
+        assert log_entry.id == "le_kebab"  # nosec
+        assert log_entry.log_id == "l1"  # nosec
+        assert log_entry.raw_text == "Log text via kebab"  # nosec
