@@ -1,0 +1,10 @@
+{
+    "data": {
+        "type": "log-entries",
+        "id": "e2-kebab",
+        "attributes": {
+            "raw-text": "Log text via kebab",
+            "log-id": "l1"
+        }
+    }
+}
