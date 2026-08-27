@@ -335,6 +335,7 @@ def test_get_campaign_entries_list_handling(client):
         except ValueError:
             pass
 
+
 def test_kebab_case_parsing(client):
     with requests_mock.Mocker() as m:
         # Test Campaign Entry parsing with kebab-case and split properties
@@ -349,7 +350,7 @@ def test_kebab_case_parsing(client):
                         "raw-public": "This is public text",
                         "tag-symbol": "~",
                         "tag-value": "Test Page",
-                    }
+                    },
                 }
             },
         )
@@ -368,7 +369,7 @@ def test_kebab_case_parsing(client):
                     "attributes": {
                         "log-id": "l1",
                         "raw-text": "Log text via kebab",
-                    }
+                    },
                 }
             },
         )
