@@ -200,10 +200,17 @@ class LoggerClient:
 
     def _parse_log_entry(self, resource: dict[str, Any]) -> LogEntry:
         attrs = resource.get("attributes", {})
+
+        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
+        title = str(attrs.get("title", ""))
+
+        if not raw_text and title:
+            raw_text = title
+
         entry = LogEntry(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
-            raw_text=str(attrs.get("rawText", attrs.get("raw-text", ""))),
+            raw_text=raw_text,
             log_id=str(attrs.get("logId", attrs.get("log-id", ""))),
         )
         entry._client = self
@@ -219,9 +226,12 @@ class LoggerClient:
 
         # In Campaign Logger, the full content of a page is sometimes spread out.
         # If raw-text is empty but raw-public is set, combine tag info and raw-public.
-        if not raw_text and raw_public:
-            title_prefix = f"{tag_symbol}{tag_value}\n" if tag_symbol and tag_value else ""
-            raw_text = f"{title_prefix}{raw_public}".strip()
+        if not raw_text:
+            if raw_public:
+                title_prefix = f"{tag_symbol}{tag_value}\n" if tag_symbol and tag_value else ""
+                raw_text = f"{title_prefix}{raw_public}".strip()
+            elif tag_value:
+                raw_text = tag_value
 
         entry = CampaignEntry(
             id=str(resource.get("id", "")),
