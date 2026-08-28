@@ -209,7 +209,7 @@ def test_list_entries_no_log_id(runner, monkeypatch, mocker):
     result = runner.invoke(main, ["logger", "entry", "list"])
     assert result.exit_code == 0
     assert "1: text1" in result.output
-    assert "2: (empty)" in result.output
+    assert "2: (empty)" not in result.output
 
 
 def test_list_pages_no_campaign_id(runner, monkeypatch, mocker):
@@ -227,7 +227,7 @@ def test_list_pages_no_campaign_id(runner, monkeypatch, mocker):
     result = runner.invoke(main, ["logger", "page", "list"])
     assert result.exit_code == 0
     assert "1: text1" in result.output
-    assert "2: (empty)" in result.output
+    assert "2: (empty)" not in result.output
 
 
 def test_missing_config_file_handled(tmp_path, monkeypatch):
@@ -290,7 +290,7 @@ def test_list_entries_no_first_line(runner, monkeypatch, mocker):
 
     result = runner.invoke(main, ["logger", "entry", "list"])
     assert result.exit_code == 0
-    assert "1: (empty)" in result.output
+    assert "1: (empty)" not in result.output
 
 
 def test_list_pages_no_first_line(runner, monkeypatch, mocker):
@@ -306,4 +306,4 @@ def test_list_pages_no_first_line(runner, monkeypatch, mocker):
 
     result = runner.invoke(main, ["logger", "page", "list"])
     assert result.exit_code == 0
-    assert "1: (empty)" in result.output
+    assert "1: (empty)" not in result.output

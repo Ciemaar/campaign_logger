@@ -384,7 +384,10 @@ def list_entries(ctx, log_id):
             res = client.get_log_entries()
 
         for e in res:
-            first_line = e.raw_text.splitlines()[0] if getattr(e, "raw_text", None) else "(empty)"
+            text = e.raw_text.strip() if getattr(e, "raw_text", None) else ""
+            first_line = text.splitlines()[0] if text else "(empty)"
+            if first_line == "(empty)":
+                continue
             click.echo(f"{e.id}: {first_line}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -477,7 +480,10 @@ def list_pages(ctx, campaign_id):
             res = client.get_campaign_entries()
 
         for p in res:
-            first_line = p.raw_text.splitlines()[0] if getattr(p, "raw_text", None) else "(empty)"
+            text = p.raw_text.strip() if getattr(p, "raw_text", None) else ""
+            first_line = text.splitlines()[0] if text else "(empty)"
+            if first_line == "(empty)":
+                continue
             click.echo(f"{p.id}: {first_line}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
