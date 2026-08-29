@@ -1,12 +1,33 @@
 {
-    "data": {
-        "type": "campaign-entries",
-        "id": "ce2-kebab",
-        "attributes": {
-            "campaign-id": "c1",
-            "raw-public": "Content via raw-public",
-            "tag-symbol": "@",
-            "tag-value": "Test Page"
+    "data":  {
+      "attributes": {
+        "labels": null,
+        "raw-public": "Pick or roll a type, then the stats as listed. This should allow you to select any OCC from those listed.  \n  \n__01-12% Brainy:__ I.Q. 1D6+18, M.E. 1D6+12, M.A. 1D4+10, P.S. 1D6+9, P.P. 2D4+9, P.E. 1D4+8, P.B. 1D6+9, Spd 1D6+11.  \n Best as Peacekeeper Medic, Field Engineer, Intel Agent,  \n__13-26% Strong-Willed:__ I.Q. 1D6+11, M.E. 1D6+19, M.A. 1D6+9, P.S. 1D6+9, P.P. 1D4+13, P.E. 1D6+10, P.B. 1D6+9, Spd 1D6+8.  \n Best as Military Specialist, Para- Arcane, Witchhunter  \n__27-39% Charismatic:__ I.Q. 1D6+10, M.E. 1D4+1D6+9, M.A. 1D6+18, P.S. 1D4+10, P.P. 1D4+10, P.E. 1D6+8, P.B. 1D6+14, Spd 1D6+9.  \n Best as Intel Agent,  \n__40-51% Physically Strong:__ I.Q. 1D4+10, M.E. 1D4+10, M.A. 1D6+10, P.S. 2D6+19, P.P. 1D4+12, P.E. 1D6+15, P.B. 1D6+12, Spd 1D6+11  \n Best as Armored Sentinels, Soldier/Peacekeeper, Fire & Rescue, Para-Arcane, Witchhunter  \n__52-65% Fast Reflexes and High Dexterity:__ I.Q. 1D4+10, M.E. 1D6+9, M.A. 1D6+8, P.S. 1D6+9, P.P. 1D6+19, P.E. 1D6+11, P.B. 1D6+10, Spd 1D6+17  \n Best as Chromium Guardsmen, Silver Eagle,  \n__66-78% Great Endurance:__ I.Q. 1D4+9, M.E. 1D6+14, M.A. 1D6+8, P.S. 1D6+9, P.P. 1D6+9, P.E. 1D6+19, P.B. 1D6+9, Spd 1D6+12  \n Best as Soldier/Peacekeeper,  \n__79-88% A Beauty or Pretty Boy:__ I.Q. 1D4+10, M.E. 1D6+8, M.A. 1D6+15, P.S. 1D6+11, P.P. 1D6+8, P.E. 1D6+9, P.B. 1D4+20, Spd 1D6+9.  \n Best as Volunteer Militia Fighter, Civilian  \n__89-00% Fast as Lightning:__ I.Q. 1D4+9, M.E. 1D6+9, M.A. 1D6+8, P.S. 1D6+9, P.P. 1D6+14, P.E. 1D6+10, P.B. 1D6+10, Spd 2D6+20.  \n Best as Soldier/Peacekeeper, Volunteer Militia Fighter",
+        "raw-summary": null,
+        "raw-text": "",
+        "tag-symbol": "~",
+        "tag-value": "Quick Character Creation",
+        "created-on": "2024-02-11T20:34:23.125",
+        "revision": "6066267352e64a25a7f76d8d0b1297a3",
+        "updated-on": "2024-02-11T20:36:12.608441",
+        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+      },
+      "relationships": {
+        "campaign": {
+          "meta": {
+            "reverse": "campaign-entries"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/campaign-entries/13803ddeee244a9ebe29575da8e1414f/relationships/campaign",
+            "related": "https://logger.campaign-logger.com/campaign-entries/13803ddeee244a9ebe29575da8e1414f/campaign"
+          },
+          "data": {
+            "type": "campaigns",
+            "id": "535738ede60447209b9bb5c1e364a92a"
+          }
         }
+      },
+      "type": "campaign-entries",
+      "id": "13803ddeee244a9ebe29575da8e1414f"
     }
 }

@@ -1,11 +1,40 @@
 {
     "data": {
-        "type": "logs",
-        "id": "log1-kebab",
-        "attributes": {
-            "campaign-id": "c1",
-            "title": "Log via kebab",
-            "description": "desc"
+      "attributes": {
+        "description": "One Shot 2-Level 5RD ",
+        "image-url": "",
+        "is-pinned": false,
+        "title": "Beep-Bop-Boop",
+        "created-on": "2020-11-14T16:08:39.933088",
+        "revision": "e1b60c4b34594acdb5e5ff8dd98ea145",
+        "updated-on": "2020-11-14T16:08:39.933088",
+        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+      },
+      "relationships": {
+        "campaign": {
+          "meta": {
+            "reverse": "logs"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/relationships/campaign",
+            "related": "https://logger.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/campaign"
+          },
+          "data": {
+            "type": "campaigns",
+            "id": "45ee4afaaeb745f9bda39f857a570bf4"
+          }
+        },
+        "log-entries": {
+          "meta": {
+            "reverse": "log"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/relationships/log-entries",
+            "related": "https://logger.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/log-entries"
+          }
         }
+      },
+      "type": "logs",
+      "id": "4ddd887e1988489498989162dca92bd2"
     }
 }
