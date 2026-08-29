@@ -80,21 +80,15 @@ def test_parse_campaign_entry_from_fixture_tag_value_fallback():
     assert entry.campaign_id == "c1"
     assert entry.raw_text == "My Page Title"
 
+
 def test_parse_log_entry_relationships():
     payload = {
-      "attributes": {
-        "raw-text": "Some text",
-      },
-      "relationships": {
-        "log": {
-          "data": {
-            "type": "logs",
-            "id": "rel_log_id"
-          }
-        }
-      },
-      "type": "log-entries",
-      "id": "e_id"
+        "attributes": {
+            "raw-text": "Some text",
+        },
+        "relationships": {"log": {"data": {"type": "logs", "id": "rel_log_id"}}},
+        "type": "log-entries",
+        "id": "e_id",
     }
 
     client = LoggerClient()
@@ -104,40 +98,27 @@ def test_parse_log_entry_relationships():
 
 def test_parse_campaign_entry_relationships():
     payload = {
-      "attributes": {
-        "raw-text": "Some text",
-      },
-      "relationships": {
-        "campaign": {
-          "data": {
-            "type": "campaigns",
-            "id": "rel_campaign_id"
-          }
-        }
-      },
-      "type": "campaign-entries",
-      "id": "ce_id"
+        "attributes": {
+            "raw-text": "Some text",
+        },
+        "relationships": {"campaign": {"data": {"type": "campaigns", "id": "rel_campaign_id"}}},
+        "type": "campaign-entries",
+        "id": "ce_id",
     }
 
     client = LoggerClient()
     entry = client._parse_campaign_entry(payload)
     assert entry.campaign_id == "rel_campaign_id"
 
+
 def test_parse_log_relationships():
     payload = {
-      "attributes": {
-        "title": "Some text",
-      },
-      "relationships": {
-        "campaign": {
-          "data": {
-            "type": "campaigns",
-            "id": "rel_campaign_id"
-          }
-        }
-      },
-      "type": "logs",
-      "id": "l_id"
+        "attributes": {
+            "title": "Some text",
+        },
+        "relationships": {"campaign": {"data": {"type": "campaigns", "id": "rel_campaign_id"}}},
+        "type": "logs",
+        "id": "l_id",
     }
 
     client = LoggerClient()
