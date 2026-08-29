@@ -196,6 +196,18 @@ def validate(ctx, target):
         click.echo(f"Error: {e}", err=True)
 
 
+@main.command()
+@click.option("--read-only", is_flag=True, help="Run the MCP server in read-only mode")
+def mcp(read_only):
+    """Start the Campaign Logger MCP server."""
+    from .mcp_server import run_mcp_server
+
+    try:
+        run_mcp_server(read_only=read_only)
+    except Exception as e:
+        click.echo(f"MCP Server Error: {e}", err=True)
+
+
 @main.group()
 @click.option("--url", default="https://logger.campaign-logger.com", help="API Base URL")
 @click.option("--client-id", envvar="CL_LOGGER_CLIENT_ID", help="API Client ID")
