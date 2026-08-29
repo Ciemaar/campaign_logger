@@ -386,7 +386,7 @@ def list_entries(ctx, log_id):
         for e in res:
             text = e.raw_text.strip() if getattr(e, "raw_text", None) else ""
 
-            title = e.title
+            title = getattr(e, "title", "")
             if not title and text:
                 title = text.splitlines()[0]
 
@@ -486,7 +486,7 @@ def list_pages(ctx, campaign_id):
         for p in res:
             text = p.raw_text.strip() if getattr(p, "raw_text", None) else ""
 
-            title = p.tag_value
+            title = getattr(p, "tag_value", "")
             if not title and text:
                 title = text.splitlines()[0]
 

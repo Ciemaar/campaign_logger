@@ -233,14 +233,12 @@ class LoggerClient:
 
         raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
         raw_public = str(attrs.get("rawPublic", attrs.get("raw-public", "")))
-        tag_symbol = str(attrs.get("tagSymbol", attrs.get("tag-symbol", "")))
+
         tag_value = str(attrs.get("tagValue", attrs.get("tag-value", "")))
 
         # In Campaign Logger, the full content of a page is sometimes spread out.
-        # If raw-text is empty but raw-public is set, combine tag info and raw-public.
         if not raw_text and raw_public:
-            title_prefix = f"{tag_symbol}{tag_value}\n" if tag_symbol and tag_value else ""
-            raw_text = f"{title_prefix}{raw_public}".strip()
+            raw_text = raw_public.strip()
 
         campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
         if not campaign_id and campaign_rel:

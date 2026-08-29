@@ -27,7 +27,7 @@ def test_parse_campaign_entry_from_fixture():
 
     assert entry.id == "ce2-kebab"
     assert entry.campaign_id == "c1"
-    assert entry.raw_text == "@Test Page\nContent via raw-public"
+    assert entry.raw_text == "Content via raw-public"
 
 
 def test_parse_log_from_fixture():
@@ -65,7 +65,7 @@ def test_parse_log_entry_from_fixture_title_fallback():
 
     assert entry.id == "le-title"
     assert entry.log_id == "l1"
-    assert entry.raw_text == "My Entry Title"
+    assert entry.raw_text == ""
 
 
 def test_parse_campaign_entry_from_fixture_tag_value_fallback():
@@ -78,7 +78,7 @@ def test_parse_campaign_entry_from_fixture_tag_value_fallback():
 
     assert entry.id == "ce-title"
     assert entry.campaign_id == "c1"
-    assert entry.raw_text == "My Page Title"
+    assert entry.raw_text == ""
 
 
 def test_parse_log_entry_relationships():

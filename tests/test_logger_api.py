@@ -357,7 +357,7 @@ def test_kebab_case_parsing(client):
         entry = client.get_campaign_entry("ce_kebab")
         assert entry.id == "ce_kebab"  # nosec
         assert entry.campaign_id == "c1"  # nosec
-        assert entry.raw_text == "~Test Page\nThis is public text"  # nosec
+        assert entry.raw_text == "This is public text"  # nosec
 
         # Test Log Entry parsing with kebab-case
         m.get(
