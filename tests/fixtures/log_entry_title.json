@@ -1,10 +1,33 @@
 {
-    "data": {
-        "type": "log-entries",
-        "id": "le-title",
-        "attributes": {
-            "title": "My Entry Title",
-            "log-id": "l1"
+    "data":  {
+      "attributes": {
+        "is-shared": false,
+        "ordering": null,
+        "raw-prefix": "",
+        "raw-suffix": null,
+        "raw-text": "Planetary Governor @\"High Duke Gene Marte\" of #\"Mani's Stand\" calls the characters  with a problem but it is top secret and he will not tell them anything until their discretion is assured.  \n\n1. Message from the Governor direct, but how to answer?\n2. Governors Secretary @\"Earl Jerey Parkell\" considers the characters to low brow, how to get to the governor\n3. No help, Police Chief @\"Sir Juany Ramas\" is in on it and arrest them for lesse majesty towards the governor, forgery, etc.\n4. The big plan, Play by ear.\n5. Mission, goto the robofac, @\"Duke Tery Warder\" has produced very little in 2 months, find out why and fix it.  The Duke has been an enemy of the High Duke for the last two years, but they were allies in the past.\n\n*\"5RD1-1-5\"",
+        "title": "The Pitch Room one ",
+        "created-on": "2020-11-14T16:20:52.947503",
+        "revision": "70b27d6fe5ad4da28cc4904cbe4ae294",
+        "updated-on": "2020-11-14T16:20:52.947503",
+        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+      },
+      "relationships": {
+        "log": {
+          "meta": {
+            "reverse": "log-entries"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/log-entries/8b470101e91d47459e87ecbcee2e30c3/relationships/log",
+            "related": "https://logger.campaign-logger.com/log-entries/8b470101e91d47459e87ecbcee2e30c3/log"
+          },
+          "data": {
+            "type": "logs",
+            "id": "4ddd887e1988489498989162dca92bd2"
+          }
         }
+      },
+      "type": "log-entries",
+      "id": "8b470101e91d47459e87ecbcee2e30c3"
     }
 }

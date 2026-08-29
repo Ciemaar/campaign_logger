@@ -1,10 +1,33 @@
 {
-    "data": {
-        "type": "log-entries",
-        "id": "e2-kebab",
-        "attributes": {
-            "raw-text": "Log text via kebab",
-            "log-id": "l1"
+    "data":  {
+      "attributes": {
+        "is-shared": false,
+        "ordering": null,
+        "raw-prefix": null,
+        "raw-suffix": null,
+        "raw-text": "@Unicorn takes up residence near @\"Lillian Robin\" after she purifies her home and part of #\"Fork State Park\"  in the *\"Psychic Storm Of Purification\"",
+        "title": null,
+        "created-on": "2020-05-05T17:05:21.234",
+        "revision": "6c651e4903514c838e56fb369a244a29",
+        "updated-on": "2020-05-05T17:05:21.234",
+        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+      },
+      "relationships": {
+        "log": {
+          "meta": {
+            "reverse": "log-entries"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/log-entries/80b93c9cc3cb4595811b780c91fae8a9/relationships/log",
+            "related": "https://logger.campaign-logger.com/log-entries/80b93c9cc3cb4595811b780c91fae8a9/log"
+          },
+          "data": {
+            "type": "logs",
+            "id": "bf7c92f7749649ebbf43b168ff820ae6"
+          }
         }
+      },
+      "type": "log-entries",
+      "id": "80b93c9cc3cb4595811b780c91fae8a9"
     }
 }

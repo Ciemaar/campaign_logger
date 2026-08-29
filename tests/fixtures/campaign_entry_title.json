@@ -1,10 +1,33 @@
 {
-    "data": {
-        "type": "campaign-entries",
-        "id": "ce-title",
-        "attributes": {
-            "campaign-id": "c1",
-            "tag-value": "My Page Title"
+    "data":  {
+      "attributes": {
+        "labels": null,
+        "raw-public": "# Your ~\"Deadly Secret\" for which you would surely be killed\n\nEach character must have a deadly secret for which they would surely be killed.  If your secret becomes generally known you will surely be killed, probably by King @\"Ivan Constanavich\" but maybe by someone else powerful and inevitable.  This obviously includes being a traitor in his court and any crimes that would normally be taken seriously, but beyond that there are many reasons why the king might find you \"fatally inconvenient.\"  Some deadly secrets include\n\n## Being an agent of a foreign party\n\nTreason leads to death, if you are working for someone else against #\"Cock A Knee\".  Certain public relationships may be ok, but secret agents are very much subject to being shot at dawn.\n\nSome factions you might consider being secretly aligned with include:\n\n  - the #\"Coalition States\"\n  - the ^\"Black Market\"\n  - #\"The Federation Of Magic\"\n  - the ^\"Native American\" tribes\n  - Corporate factions such as ^\"Northern Gun\", ^\"Titan Robotics\", or ^\"Wilk's\"\n  - Extra-dimensional Powers such as the ^Atlanteans, ^Splugorth, ^Demons of #Hades, or ^Deevils of #Dyval\n\n## Having \"Illegal abilities\" \n\nIn the future of Rifts earth tolerance is not in great supply, the #\"Coalition States\" are famously intolerant and in some cases it is important for him to adopt some of their policies in order to receive !\"Foreign Aid\" and not be counted as an enemy.  Of course this is not limited to the #\"Coalition States\", #\"Tolkeen\" considers certain magics dangerous, #\"The Federation Of Magic\" wants to control magic knowledge, etc. etc.\n\n  - Psychic Powers\n  - Magic\n  - a particular kind of magic like Necromancy, Elementalism, Native American magic\n  - Magic outside the guild\n  - Juicer, Bionic, or Mind over Matter(Crazy) enhancement\n\n## Criminal history\n\nLife in Rifts Earth is nasty brutish and short, imprisoning people for long intervals is not a thing that #\"Cock A Knee\" can afford, serious crimes are generally sentences of exile or death.  \n\n  - Desertion from an allied army\n  - Murder\n  - Ever-so-grand larceny\n   - Drug, monster, or human trafficking \n\n__Note__ if your secret is a crime, you definitely did it, there will be no sub-plot of finding the real killer.  Of course you can write a false accusation into your backstory too if you want.\n\n## Other Deadly Secrets\nPossibly you have done nothing wrong, but if you you know or have done ever gets out you will surely be killed.\n\nPerhaps:\n* you have information about the King or Kingdom committing crimes, perhaps you were there when the King used a magic artifact to win a battle\n* some other group wants you dead and the King wants their help\n* you know that a high ^\"Noble\" is a traitor and you would be killed to prevent your __true__ accusations\n* you are hunted by ^\"Black Market\" or ^Sunaj assassins and only protected by your false identity\n\n# Other Character's Secrets\n\nYou will also be given a couple secrets that you would probably tolerate and a couple secrets that you would consider especially heinous.  Until your characters have built up a strong bond of trust revealing a secret to another character is a deadly risk; they may reveal it, blackmail you, or let it go.  If they do reveal it you will need a new character.  You should only reveal your secret if it is a matter of desperate need **and** you trust whoever you reveal it to.",
+        "raw-summary": null,
+        "raw-text": "",
+        "tag-symbol": "~",
+        "tag-value": "Deadly Secret",
+        "created-on": "2024-02-11T20:59:21.09",
+        "revision": "4310f7da87484cfdb38c6621a3471c93",
+        "updated-on": "2024-03-03T17:02:33.752875",
+        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+      },
+      "relationships": {
+        "campaign": {
+          "meta": {
+            "reverse": "campaign-entries"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/campaign-entries/482162d944a24c379202e52541f14bcb/relationships/campaign",
+            "related": "https://logger.campaign-logger.com/campaign-entries/482162d944a24c379202e52541f14bcb/campaign"
+          },
+          "data": {
+            "type": "campaigns",
+            "id": "535738ede60447209b9bb5c1e364a92a"
+          }
         }
+      },
+      "type": "campaign-entries",
+      "id": "482162d944a24c379202e52541f14bcb"
     }
 }

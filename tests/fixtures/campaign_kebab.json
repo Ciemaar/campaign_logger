@@ -1,10 +1,45 @@
 {
-    "data": {
-        "type": "campaigns",
-        "id": "c1-kebab",
-        "attributes": {
-            "title": "Campaign via kebab",
-            "description": "desc"
+    "data":  {
+      "attributes": {
+        "description": "",
+        "image-url": "",
+        "invited-players": null,
+        "title": "The Future!",
+        "created-on": "2020-11-14T04:51:29.293273",
+        "revision": "471a8ba889a9449a96e7c41e59c12f24",
+        "updated-on": "2020-11-14T04:51:29.293274",
+        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+      },
+      "relationships": {
+        "campaign-entries": {
+          "meta": {
+            "reverse": "campaign"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/campaign-entries",
+            "related": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/campaign-entries"
+          }
+        },
+        "logs": {
+          "meta": {
+            "reverse": "campaign"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/logs",
+            "related": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/logs"
+          }
+        },
+        "player-logs": {
+          "meta": {
+            "reverse": "campaign"
+          },
+          "links": {
+            "self": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/player-logs",
+            "related": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/player-logs"
+          }
         }
+      },
+      "type": "campaigns",
+      "id": "45ee4afaaeb745f9bda39f857a570bf4"
     }
 }
