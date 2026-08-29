@@ -8,6 +8,7 @@
    readme
    installation
    usage
+   mcp_integration
    reference/index
    contributing
    authors
