@@ -385,10 +385,14 @@ def list_entries(ctx, log_id):
 
         for e in res:
             text = e.raw_text.strip() if getattr(e, "raw_text", None) else ""
-            first_line = text.splitlines()[0] if text else "(empty)"
-            if first_line == "(empty)":
+
+            title = e.title
+            if not title and text:
+                title = text.splitlines()[0]
+
+            if not title:
                 continue
-            click.echo(f"{e.id}: {first_line}")
+            click.echo(f"{e.id}: {title}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -481,10 +485,14 @@ def list_pages(ctx, campaign_id):
 
         for p in res:
             text = p.raw_text.strip() if getattr(p, "raw_text", None) else ""
-            first_line = text.splitlines()[0] if text else "(empty)"
-            if first_line == "(empty)":
+
+            title = p.tag_value
+            if not title and text:
+                title = text.splitlines()[0]
+
+            if not title:
                 continue
-            click.echo(f"{p.id}: {first_line}")
+            click.echo(f"{p.id}: {title}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 

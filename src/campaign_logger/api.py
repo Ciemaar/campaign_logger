@@ -212,9 +212,6 @@ class LoggerClient:
         raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
         title = str(attrs.get("title", ""))
 
-        if not raw_text and title:
-            raw_text = title
-
         log_id = str(attrs.get("logId", attrs.get("log-id", "")))
         if not log_id and log_rel:
             log_id = str(log_rel.get("id", ""))
@@ -223,6 +220,7 @@ class LoggerClient:
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
             raw_text=raw_text,
+            title=title if title else None,
             log_id=log_id,
         )
         entry._client = self
@@ -240,12 +238,9 @@ class LoggerClient:
 
         # In Campaign Logger, the full content of a page is sometimes spread out.
         # If raw-text is empty but raw-public is set, combine tag info and raw-public.
-        if not raw_text:
-            if raw_public:
-                title_prefix = f"{tag_symbol}{tag_value}\n" if tag_symbol and tag_value else ""
-                raw_text = f"{title_prefix}{raw_public}".strip()
-            elif tag_value:
-                raw_text = tag_value
+        if not raw_text and raw_public:
+            title_prefix = f"{tag_symbol}{tag_value}\n" if tag_symbol and tag_value else ""
+            raw_text = f"{title_prefix}{raw_public}".strip()
 
         campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
         if not campaign_id and campaign_rel:
@@ -255,6 +250,7 @@ class LoggerClient:
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
             raw_text=raw_text,
+            tag_value=tag_value if tag_value else None,
             campaign_id=campaign_id,
         )
         entry._client = self
