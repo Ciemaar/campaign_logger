@@ -1,0 +1,10 @@
+{
+    "data": {
+        "type": "log-entries",
+        "id": "le-title",
+        "attributes": {
+            "title": "My Entry Title",
+            "log-id": "l1"
+        }
+    }
+}

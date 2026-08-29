@@ -90,3 +90,21 @@ print(response.json())
 
 See the [documentation](https://campaign_logger.readthedocs.io/) for more
 details and examples on Logs and Log Entries.
+
+## Known Limitations & Future Enhancements
+
+- **Pagination:** The LoggerClient currently lacks pagination support. If the
+  `get_campaigns()`, `get_logs()`, or list entry methods return partial data
+  with `links.next` attributes, the client will only return the first page.
+- **HTTP Error Verbosity:** Standard HTTP Errors (e.g. 400 Bad Request, 500
+  Internal Server Error) triggered via `.raise_for_status()` do not unpack the
+  JSON response body. In the future, intercepting `HTTPError` to inject the
+  `response.text` into the exception message would aid debugging.
+- **Generator Execution:** The `execute_operation` method currently hardcodes
+  GET requests, which prevents supplying contextual parameters during generation
+  execution.
+- **Un-persisted Models:** High-level models instantiated manually (e.g.,
+  `Campaign(id='', title='New')`) do not automatically mint IDs or toggle POST
+  vs PATCH on `.save()`. They will attempt to PATCH against `id=''` which
+  results in 404 or URL resolution errors. You must use `.create_campaign()` or
+  similar creation methods on the parent objects/client.

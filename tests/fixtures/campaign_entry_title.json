@@ -1,0 +1,10 @@
+{
+    "data": {
+        "type": "campaign-entries",
+        "id": "ce-title",
+        "attributes": {
+            "campaign-id": "c1",
+            "tag-value": "My Page Title"
+        }
+    }
+}

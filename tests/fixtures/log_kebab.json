@@ -1,0 +1,11 @@
+{
+    "data": {
+        "type": "logs",
+        "id": "log1-kebab",
+        "attributes": {
+            "campaign-id": "c1",
+            "title": "Log via kebab",
+            "description": "desc"
+        }
+    }
+}

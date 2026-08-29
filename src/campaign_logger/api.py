@@ -163,8 +163,11 @@ class LoggerClient:
         if item_id:
             url = f"{url}/{item_id}"
         response = self.session.get(url)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.JSONDecodeError as e:
+            raise requests.exceptions.HTTPError(f"Failed to parse JSON response: {response.text}", response=response) from e
 
     def _delete(self, resource_type: str, item_id: str) -> None:
         """Delete a resource from the API."""
@@ -185,34 +188,68 @@ class LoggerClient:
 
     def _parse_log(self, resource: dict[str, Any]) -> Log:
         attrs = resource.get("attributes", {})
+        rels = resource.get("relationships", {})
+        campaign_rel = rels.get("campaign", {}).get("data", {})
+        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
+        if not campaign_id and campaign_rel:
+            campaign_id = str(campaign_rel.get("id", ""))
+
         log_obj = Log(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
             title=str(attrs.get("title", "")),
             description=str(attrs.get("description", "")),
-            campaign_id=str(attrs.get("campaignId", "")),
+            campaign_id=campaign_id,
         )
         log_obj._client = self
         return log_obj
 
     def _parse_log_entry(self, resource: dict[str, Any]) -> LogEntry:
         attrs = resource.get("attributes", {})
+        rels = resource.get("relationships", {})
+        log_rel = rels.get("log", {}).get("data", {})
+
+        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
+        title = str(attrs.get("title", ""))
+
+        log_id = str(attrs.get("logId", attrs.get("log-id", "")))
+        if not log_id and log_rel:
+            log_id = str(log_rel.get("id", ""))
+
         entry = LogEntry(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
-            raw_text=str(attrs.get("rawText", "")),
-            log_id=str(attrs.get("logId", "")),
+            raw_text=raw_text,
+            title=title if title else None,
+            log_id=log_id,
         )
         entry._client = self
         return entry
 
     def _parse_campaign_entry(self, resource: dict[str, Any]) -> CampaignEntry:
         attrs = resource.get("attributes", {})
+        rels = resource.get("relationships", {})
+        campaign_rel = rels.get("campaign", {}).get("data", {})
+
+        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
+        raw_public = str(attrs.get("rawPublic", attrs.get("raw-public", "")))
+
+        tag_value = str(attrs.get("tagValue", attrs.get("tag-value", "")))
+
+        # In Campaign Logger, the full content of a page is sometimes spread out.
+        if not raw_text and raw_public:
+            raw_text = raw_public.strip()
+
+        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
+        if not campaign_id and campaign_rel:
+            campaign_id = str(campaign_rel.get("id", ""))
+
         entry = CampaignEntry(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
-            raw_text=str(attrs.get("rawText", "")),
-            campaign_id=str(attrs.get("campaignId", "")),
+            raw_text=raw_text,
+            tag_value=tag_value if tag_value else None,
+            campaign_id=campaign_id,
         )
         entry._client = self
         return entry
@@ -338,13 +375,16 @@ class LoggerClient:
         self._delete("logs", log_id)
 
     # --- Log Entries ---
-    def get_log_entries(self) -> list[LogEntry]:
+    def get_log_entries(self, log_id: str | None = None) -> list[LogEntry]:
         """Retrieve all individual log entries across the user's logs."""
         response = self._get("log-entries")
         data = response.get("data", [])
         if not isinstance(data, list):
             data = [data]
-        return [self._parse_log_entry(r) for r in data]
+        entries = [self._parse_log_entry(r) for r in data]
+        if log_id:
+            entries = [e for e in entries if e.log_id == log_id]
+        return entries
 
     def get_log_entry(self, entry_id: str) -> LogEntry:
         """Retrieve a specific log entry by its unique identifier."""
@@ -400,13 +440,16 @@ class LoggerClient:
         self._delete("log-entries", entry_id)
 
     # --- Campaign Entries (Pages) ---
-    def get_campaign_entries(self) -> list[CampaignEntry]:
+    def get_campaign_entries(self, campaign_id: str | None = None) -> list[CampaignEntry]:
         """Retrieve all campaign entries (pages) across the user's campaigns."""
         response = self._get("campaign-entries")
         data = response.get("data", [])
         if not isinstance(data, list):
             data = [data]
-        return [self._parse_campaign_entry(r) for r in data]
+        entries = [self._parse_campaign_entry(r) for r in data]
+        if campaign_id:
+            entries = [e for e in entries if e.campaign_id == campaign_id]
+        return entries
 
     def get_campaign_entry(self, entry_id: str) -> CampaignEntry:
         """Retrieve a specific campaign entry (page) by its unique identifier."""

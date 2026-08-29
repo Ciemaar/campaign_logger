@@ -1,0 +1,12 @@
+{
+    "data": {
+        "type": "campaign-entries",
+        "id": "ce2-kebab",
+        "attributes": {
+            "campaign-id": "c1",
+            "raw-public": "Content via raw-public",
+            "tag-symbol": "@",
+            "tag-value": "Test Page"
+        }
+    }
+}

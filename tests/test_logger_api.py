@@ -334,3 +334,78 @@ def test_get_campaign_entries_list_handling(client):
             client.update_campaign_entry("ce1", "text")
         except ValueError:
             pass
+
+
+def test_kebab_case_parsing(client):
+    with requests_mock.Mocker() as m:
+        # Test Campaign Entry parsing with kebab-case and split properties
+        m.get(
+            f"{BASE_URL}/campaign-entries/ce_kebab",
+            json={
+                "data": {
+                    "id": "ce_kebab",
+                    "type": "campaign-entries",
+                    "attributes": {
+                        "campaign-id": "c1",
+                        "raw-public": "This is public text",
+                        "tag-symbol": "~",
+                        "tag-value": "Test Page",
+                    },
+                }
+            },
+        )
+        entry = client.get_campaign_entry("ce_kebab")
+        assert entry.id == "ce_kebab"  # nosec
+        assert entry.campaign_id == "c1"  # nosec
+        assert entry.raw_text == "This is public text"  # nosec
+
+        # Test Log Entry parsing with kebab-case
+        m.get(
+            f"{BASE_URL}/log-entries/le_kebab",
+            json={
+                "data": {
+                    "id": "le_kebab",
+                    "type": "log-entries",
+                    "attributes": {
+                        "log-id": "l1",
+                        "raw-text": "Log text via kebab",
+                    },
+                }
+            },
+        )
+        log_entry = client.get_log_entry("le_kebab")
+        assert log_entry.id == "le_kebab"  # nosec
+        assert log_entry.log_id == "l1"  # nosec
+        assert log_entry.raw_text == "Log text via kebab"  # nosec
+
+
+def test_get_log_entries_filter(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/log-entries",
+            json={
+                "data": [
+                    {"id": "e1", "type": "log-entries", "attributes": {"logId": "l1"}},
+                    {"id": "e2", "type": "log-entries", "attributes": {"logId": "l2"}},
+                ]
+            },
+        )
+        entries = client.get_log_entries(log_id="l1")
+        assert len(entries) == 1
+        assert entries[0].id == "e1"
+
+
+def test_get_campaign_entries_filter(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/campaign-entries",
+            json={
+                "data": [
+                    {"id": "ce1", "type": "campaign-entries", "attributes": {"campaignId": "c1"}},
+                    {"id": "ce2", "type": "campaign-entries", "attributes": {"campaignId": "c2"}},
+                ]
+            },
+        )
+        entries = client.get_campaign_entries(campaign_id="c1")
+        assert len(entries) == 1
+        assert entries[0].id == "ce1"

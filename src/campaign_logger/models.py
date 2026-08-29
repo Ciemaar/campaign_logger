@@ -93,6 +93,7 @@ class LogEntry(BaseEntity):
     """Model representing a Log Entry."""
 
     raw_text: str
+    title: str | None = None
     log_id: str
 
     def save(self) -> "LogEntry":
@@ -110,6 +111,7 @@ class CampaignEntry(BaseEntity):
     """Model representing a Campaign Entry (Page)."""
 
     raw_text: str
+    tag_value: str | None = None
     campaign_id: str
 
     def save(self) -> "CampaignEntry":
