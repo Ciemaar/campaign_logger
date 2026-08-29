@@ -188,18 +188,26 @@ class LoggerClient:
 
     def _parse_log(self, resource: dict[str, Any]) -> Log:
         attrs = resource.get("attributes", {})
+        rels = resource.get("relationships", {})
+        campaign_rel = rels.get("campaign", {}).get("data", {})
+        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
+        if not campaign_id and campaign_rel:
+            campaign_id = str(campaign_rel.get("id", ""))
+
         log_obj = Log(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
             title=str(attrs.get("title", "")),
             description=str(attrs.get("description", "")),
-            campaign_id=str(attrs.get("campaignId", attrs.get("campaign-id", ""))),
+            campaign_id=campaign_id,
         )
         log_obj._client = self
         return log_obj
 
     def _parse_log_entry(self, resource: dict[str, Any]) -> LogEntry:
         attrs = resource.get("attributes", {})
+        rels = resource.get("relationships", {})
+        log_rel = rels.get("log", {}).get("data", {})
 
         raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
         title = str(attrs.get("title", ""))
@@ -207,17 +215,23 @@ class LoggerClient:
         if not raw_text and title:
             raw_text = title
 
+        log_id = str(attrs.get("logId", attrs.get("log-id", "")))
+        if not log_id and log_rel:
+            log_id = str(log_rel.get("id", ""))
+
         entry = LogEntry(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
             raw_text=raw_text,
-            log_id=str(attrs.get("logId", attrs.get("log-id", ""))),
+            log_id=log_id,
         )
         entry._client = self
         return entry
 
     def _parse_campaign_entry(self, resource: dict[str, Any]) -> CampaignEntry:
         attrs = resource.get("attributes", {})
+        rels = resource.get("relationships", {})
+        campaign_rel = rels.get("campaign", {}).get("data", {})
 
         raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
         raw_public = str(attrs.get("rawPublic", attrs.get("raw-public", "")))
@@ -233,11 +247,15 @@ class LoggerClient:
             elif tag_value:
                 raw_text = tag_value
 
+        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
+        if not campaign_id and campaign_rel:
+            campaign_id = str(campaign_rel.get("id", ""))
+
         entry = CampaignEntry(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
             raw_text=raw_text,
-            campaign_id=str(attrs.get("campaignId", attrs.get("campaign-id", ""))),
+            campaign_id=campaign_id,
         )
         entry._client = self
         return entry
