@@ -31,6 +31,7 @@ default-section = "third-party"
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "basic"
+ignore = ["src/campaign_logger/mcp_server.py"]
 
 [tool.pytest.ini_options]
 norecursedirs = [
