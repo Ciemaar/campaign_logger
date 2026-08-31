@@ -264,6 +264,34 @@ def test_get_entry_without_rich(runner, monkeypatch, mocker):
     assert "text1" in result.output
 
 
+def test_get_player_entry_with_rich(runner, monkeypatch, mocker):
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+
+    mock_instance = MagicMock()
+    mock_instance.get_player_log_entry.return_value = type(
+        "MockEntry", (), {"id": "1", "raw_text": "# text1", "to_dict": lambda *args: {}}
+    )()
+    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
+
+    result = runner.invoke(main, ["logger", "player-entry", "get", "1"])
+    assert result.exit_code == 0
+    assert "text1" in result.output
+
+
+def test_get_player_entry_without_rich(runner, monkeypatch, mocker):
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+
+    mock_instance = MagicMock()
+    mock_instance.get_player_log_entry.return_value = type("MockEntry", (), {"id": "1", "raw_text": "text1", "to_dict": lambda *args: {}})()
+    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
+
+    result = runner.invoke(main, ["logger", "player-entry", "get", "1", "--raw"])
+    assert result.exit_code == 0
+    assert "text1" in result.output
+
+
 def test_get_page_without_rich(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
@@ -408,34 +436,6 @@ def test_list_entries_no_first_line(runner, monkeypatch, mocker):
     result = runner.invoke(main, ["logger", "entry", "list"])
     assert result.exit_code == 0
     assert "1: (empty)" not in result.output
-
-
-def test_get_player_entry_with_rich(runner, monkeypatch, mocker):
-    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
-    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
-
-    mock_instance = MagicMock()
-    mock_instance.get_player_log_entry.return_value = type(
-        "MockEntry", (), {"id": "1", "raw_text": "# text1", "to_dict": lambda *args: {}}
-    )()
-    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
-
-    result = runner.invoke(main, ["logger", "player-entry", "get", "1"])
-    assert result.exit_code == 0
-    assert "text1" in result.output
-
-
-def test_get_player_entry_without_rich(runner, monkeypatch, mocker):
-    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
-    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
-
-    mock_instance = MagicMock()
-    mock_instance.get_player_log_entry.return_value = type("MockEntry", (), {"id": "1", "raw_text": "text1", "to_dict": lambda *args: {}})()
-    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
-
-    result = runner.invoke(main, ["logger", "player-entry", "get", "1", "--raw"])
-    assert result.exit_code == 0
-    assert "text1" in result.output
 
 
 def test_list_pages_no_first_line(runner, monkeypatch, mocker):

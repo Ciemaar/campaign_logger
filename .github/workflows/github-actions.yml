@@ -164,7 +164,7 @@ jobs:
             tox_env: 'py314-nocov'
             os: 'macos-latest'
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 0
     - name: install gettext
@@ -172,7 +172,7 @@ jobs:
       run: |
         brew install gettext
         brew link --force gettext
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python }}
         architecture: ${{ matrix.python_arch }}
