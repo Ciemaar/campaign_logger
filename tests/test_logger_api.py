@@ -158,6 +158,97 @@ def test_delete_campaign_entry(client):
         assert m.called  # nosec
 
 
+def test_get_player_logs(client):
+    with requests_mock.Mocker() as m:
+        m.get(f"{BASE_URL}/player-logs", json={"data": [{"id": "pl1", "type": "player-logs", "attributes": {"campaignId": "c1"}}]})
+        result = client.get_player_logs()
+        assert len(result) == 1  # nosec
+        assert result[0].id == "pl1"  # nosec
+
+
+def test_get_player_log(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/player-logs/pl1",
+            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"campaignId": "c1"}}},
+        )
+        result = client.get_player_log("pl1")
+        assert result.id == "pl1"  # nosec
+
+
+def test_create_player_log(client):
+    with requests_mock.Mocker() as m:
+        m.post(
+            f"{BASE_URL}/player-logs",
+            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"title": "Player Log", "campaignId": "c1"}}},
+        )
+        result = client.create_player_log("c1", "Player Log", "Desc")
+        assert result.id == "pl1"  # nosec
+
+
+def test_update_player_log(client):
+    with requests_mock.Mocker() as m:
+        m.patch(
+            f"{BASE_URL}/player-logs/pl1",
+            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"title": "New Title"}}},
+        )
+        result = client.update_player_log("pl1", title="New Title", description="New Desc")
+        assert result.id == "pl1"  # nosec
+
+
+def test_delete_player_log(client):
+    with requests_mock.Mocker() as m:
+        m.delete(f"{BASE_URL}/player-logs/pl1", status_code=204)
+        client.delete_player_log("pl1")
+
+
+def test_get_player_log_entries(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/player-log-entries",
+            json={"data": [{"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}]},
+        )
+        result = client.get_player_log_entries()
+        assert len(result) == 1  # nosec
+        assert result[0].id == "ple1"  # nosec
+
+
+def test_get_player_log_entry(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/player-log-entries/ple1",
+            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+        )
+        result = client.get_player_log_entry("ple1")
+        assert result.id == "ple1"  # nosec
+
+
+def test_create_player_log_entry(client):
+    with requests_mock.Mocker() as m:
+        m.post(
+            f"{BASE_URL}/player-log-entries",
+            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+        )
+        result = client.create_player_log_entry("pl1", "text")
+        assert result.id == "ple1"  # nosec
+
+
+def test_update_player_log_entry(client):
+    with requests_mock.Mocker() as m:
+        m.patch(
+            f"{BASE_URL}/player-log-entries/ple1",
+            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+        )
+        result = client.update_player_log_entry("ple1", "new text")
+        assert result.id == "ple1"  # nosec
+
+
+def test_delete_player_log_entry(client):
+    with requests_mock.Mocker() as m:
+        m.delete(f"{BASE_URL}/player-log-entries/ple1", status_code=204)
+        client.delete_player_log_entry("ple1")
+
+
 def test_campaign_methods(client):
     with requests_mock.Mocker() as m:
         m.get(f"{BASE_URL}/campaigns/c1", json={"data": {"id": "c1", "type": "campaigns"}})
@@ -193,6 +284,70 @@ def test_campaign_methods(client):
 
         m.delete(f"{BASE_URL}/campaigns/c1", status_code=204)
         campaign.delete()
+        assert m.called  # nosec
+
+        m.get(
+            f"{BASE_URL}/player-logs",
+            json={"data": [{"id": "pl1", "type": "player-logs", "attributes": {"campaignId": "c1"}}]},
+        )
+        plogs = campaign.get_player_logs()
+        assert len(plogs) == 1  # nosec
+
+        m.post(
+            f"{BASE_URL}/player-logs",
+            json={"data": {"id": "pl2", "type": "player-logs", "attributes": {"campaignId": "c1"}}},
+        )
+        new_plog = campaign.create_player_log("Title")
+        assert new_plog.id == "pl2"  # nosec
+
+
+def test_player_log_methods(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/player-logs/pl1",
+            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"campaignId": "c1"}}},
+        )
+        plog = client.get_player_log("pl1")
+
+        m.get(
+            f"{BASE_URL}/player-log-entries",
+            json={"data": [{"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}]},
+        )
+        entries = plog.get_entries()
+        assert len(entries) == 1  # nosec
+
+        m.post(
+            f"{BASE_URL}/player-log-entries",
+            json={"data": {"id": "ple2", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+        )
+        new_entry = plog.create_entry("text")
+        assert new_entry.id == "ple2"  # nosec
+
+        m.patch(f"{BASE_URL}/player-logs/pl1", json={"data": {"id": "pl1", "type": "player-logs"}})
+        plog.title = "Updated"
+        upd = plog.save()
+        assert upd.id == "pl1"  # nosec
+
+        m.delete(f"{BASE_URL}/player-logs/pl1", status_code=204)
+        plog.delete()
+        assert m.called  # nosec
+
+
+def test_player_log_entry_methods(client):
+    with requests_mock.Mocker() as m:
+        m.get(
+            f"{BASE_URL}/player-log-entries/ple1",
+            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+        )
+        entry = client.get_player_log_entry("ple1")
+
+        m.patch(f"{BASE_URL}/player-log-entries/ple1", json={"data": {"id": "ple1", "type": "player-log-entries"}})
+        entry.raw_text = "new text"
+        upd = entry.save()
+        assert upd.id == "ple1"  # nosec
+
+        m.delete(f"{BASE_URL}/player-log-entries/ple1", status_code=204)
+        entry.delete()
         assert m.called  # nosec
 
 
@@ -294,6 +449,27 @@ def test_get_logs_list_handling(client):
             pass
 
 
+def test_get_player_logs_list_handling(client):
+    with requests_mock.Mocker() as m:
+        m.get(f"{BASE_URL}/player-logs/pl1", json={"data": [{"id": "pl1", "type": "player-logs"}]})
+        try:
+            client.get_player_log("pl1")
+        except ValueError:
+            pass
+
+        m.post(f"{BASE_URL}/player-logs", json={"data": [{"id": "pl1", "type": "player-logs"}]})
+        try:
+            client.create_player_log("c1", "Title")
+        except ValueError:
+            pass
+
+        m.patch(f"{BASE_URL}/player-logs/pl1", json={"data": [{"id": "pl1", "type": "player-logs"}]})
+        try:
+            client.update_player_log("pl1")
+        except ValueError:
+            pass
+
+
 def test_get_log_entries_list_handling(client):
     with requests_mock.Mocker() as m:
         m.get(f"{BASE_URL}/log-entries/e1", json={"data": [{"id": "e1", "type": "log-entries"}]})
@@ -311,6 +487,27 @@ def test_get_log_entries_list_handling(client):
         m.patch(f"{BASE_URL}/log-entries/e1", json={"data": [{"id": "e1", "type": "log-entries"}]})
         try:
             client.update_log_entry("e1", "text")
+        except ValueError:
+            pass
+
+
+def test_get_player_log_entries_list_handling(client):
+    with requests_mock.Mocker() as m:
+        m.get(f"{BASE_URL}/player-log-entries/ple1", json={"data": [{"id": "ple1", "type": "player-log-entries"}]})
+        try:
+            client.get_player_log_entry("ple1")
+        except ValueError:
+            pass
+
+        m.post(f"{BASE_URL}/player-log-entries", json={"data": [{"id": "ple1", "type": "player-log-entries"}]})
+        try:
+            client.create_player_log_entry("pl1", "text")
+        except ValueError:
+            pass
+
+        m.patch(f"{BASE_URL}/player-log-entries/ple1", json={"data": [{"id": "ple1", "type": "player-log-entries"}]})
+        try:
+            client.update_player_log_entry("ple1", "text")
         except ValueError:
             pass
 

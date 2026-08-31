@@ -9,6 +9,8 @@ from .models import CampaignEntry
 from .models import GeneratorModel
 from .models import Log
 from .models import LogEntry
+from .models import PlayerLog
+from .models import PlayerLogEntry
 
 
 class GeneratorClient:
@@ -217,6 +219,46 @@ class LoggerClient:
             log_id = str(log_rel.get("id", ""))
 
         entry = LogEntry(
+            id=str(resource.get("id", "")),
+            type=resource.get("type", ""),
+            raw_text=raw_text,
+            title=title if title else None,
+            log_id=log_id,
+        )
+        entry._client = self
+        return entry
+
+    def _parse_player_log(self, resource: dict[str, Any]) -> PlayerLog:
+        attrs = resource.get("attributes", {})
+        rels = resource.get("relationships", {})
+        campaign_rel = rels.get("campaign", {}).get("data", {})
+        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
+        if not campaign_id and campaign_rel:
+            campaign_id = str(campaign_rel.get("id", ""))
+
+        log_obj = PlayerLog(
+            id=str(resource.get("id", "")),
+            type=resource.get("type", ""),
+            title=str(attrs.get("title", "")),
+            description=str(attrs.get("description", "")),
+            campaign_id=campaign_id,
+        )
+        log_obj._client = self
+        return log_obj
+
+    def _parse_player_log_entry(self, resource: dict[str, Any]) -> PlayerLogEntry:
+        attrs = resource.get("attributes", {})
+        rels = resource.get("relationships", {})
+        log_rel = rels.get("playerLog", rels.get("player-log", {})).get("data", {})
+
+        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
+        title = str(attrs.get("title", ""))
+
+        log_id = str(attrs.get("logId", attrs.get("log-id", "")))
+        if not log_id and log_rel:
+            log_id = str(log_rel.get("id", ""))
+
+        entry = PlayerLogEntry(
             id=str(resource.get("id", "")),
             type=resource.get("type", ""),
             raw_text=raw_text,
@@ -503,3 +545,129 @@ class LoggerClient:
     def delete_campaign_entry(self, entry_id: str) -> None:
         """Permanently delete a specific campaign entry (page)."""
         self._delete("campaign-entries", entry_id)
+
+    # --- Player Logs ---
+    def get_player_logs(self) -> list[PlayerLog]:
+        """Retrieve all player logs available across the user's campaigns."""
+        response = self._get("player-logs")
+        data = response.get("data", [])
+        if not isinstance(data, list):
+            data = [data]
+        return [self._parse_player_log(r) for r in data]
+
+    def get_player_log(self, log_id: str) -> PlayerLog:
+        """Retrieve a specific player log by its unique identifier."""
+        response = self._get("player-logs", log_id)
+        data = response.get("data", {})
+        if isinstance(data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_player_log(data)
+
+    def create_player_log(self, campaign_id: str, title: str, description: str = "") -> PlayerLog:
+        """Create a new child player log attached to a specific campaign."""
+        url = f"{self.base_url}/player-logs"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "player-logs",
+                "attributes": {
+                    "title": title,
+                    "description": description,
+                    "campaignId": campaign_id,
+                },
+                "relationships": {"campaign": {"data": {"type": "campaigns", "id": campaign_id}}},
+            }
+        }
+        response = self.session.post(url, json=payload)
+        response.raise_for_status()
+        json_resp = response.json()
+        data = json_resp.get("data", {})
+        if isinstance(data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_player_log(data)
+
+    def update_player_log(self, log_id: str, title: str | None = None, description: str | None = None) -> PlayerLog:
+        """Update the metadata (title or description) of an existing player log."""
+        url = f"{self.base_url}/player-logs/{log_id}"
+        attributes: dict[str, Any] = {}
+        if title is not None:
+            attributes["title"] = title
+        if description is not None:
+            attributes["description"] = description
+
+        payload: dict[str, Any] = {"data": {"type": "player-logs", "id": log_id, "attributes": attributes}}
+        response = self.session.patch(url, json=payload)
+        response.raise_for_status()
+        json_resp = response.json()
+        data = json_resp.get("data", {})
+        if isinstance(data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_player_log(data)
+
+    def delete_player_log(self, log_id: str) -> None:
+        """Permanently delete a player log and its associated entries."""
+        self._delete("player-logs", log_id)
+
+    # --- Player Log Entries ---
+    def get_player_log_entries(self, log_id: str | None = None) -> list[PlayerLogEntry]:
+        """Retrieve all individual player log entries across the user's player logs."""
+        response = self._get("player-log-entries")
+        data = response.get("data", [])
+        if not isinstance(data, list):
+            data = [data]
+        entries = [self._parse_player_log_entry(r) for r in data]
+        if log_id:
+            entries = [e for e in entries if e.log_id == log_id]
+        return entries
+
+    def get_player_log_entry(self, entry_id: str) -> PlayerLogEntry:
+        """Retrieve a specific player log entry by its unique identifier."""
+        response = self._get("player-log-entries", entry_id)
+        data = response.get("data", {})
+        if isinstance(data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_player_log_entry(data)
+
+    def create_player_log_entry(self, log_id: str, raw_text: str) -> PlayerLogEntry:
+        """Create a new text entry attached to a specific player log."""
+        url = f"{self.base_url}/player-log-entries"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "player-log-entries",
+                "attributes": {
+                    "rawText": raw_text,
+                    "logId": log_id,
+                },
+                "relationships": {"playerLog": {"data": {"type": "player-logs", "id": log_id}}},
+            }
+        }
+        response = self.session.post(url, json=payload)
+        response.raise_for_status()
+        json_resp = response.json()
+        data = json_resp.get("data", {})
+        if isinstance(data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_player_log_entry(data)
+
+    def update_player_log_entry(self, entry_id: str, raw_text: str) -> PlayerLogEntry:
+        """Update the textual content of an existing player log entry."""
+        url = f"{self.base_url}/player-log-entries/{entry_id}"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "player-log-entries",
+                "id": entry_id,
+                "attributes": {
+                    "rawText": raw_text,
+                },
+            }
+        }
+        response = self.session.patch(url, json=payload)
+        response.raise_for_status()
+        json_resp = response.json()
+        data = json_resp.get("data", {})
+        if isinstance(data, list):
+            raise ValueError("Expected a single resource, got a list.")
+        return self._parse_player_log_entry(data)
+
+    def delete_player_log_entry(self, entry_id: str) -> None:
+        """Permanently delete a specific player log entry."""
+        self._delete("player-log-entries", entry_id)

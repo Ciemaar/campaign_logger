@@ -362,6 +362,83 @@ def delete_log(ctx, log_id):
         click.echo(f"Error: {e}", err=True)
 
 
+# --- Player Log Commands ---
+@logger.group()
+def player_log():
+    """Manage player logs."""
+
+
+@player_log.command(name="list")
+@click.pass_context
+def list_player_logs(ctx):
+    """Retrieve and print all player logs across all campaigns."""
+    client = ctx.obj["client"]
+    try:
+        res = client.get_player_logs()
+        for log_obj in res:
+            click.echo(f"{log_obj.id}: {log_obj.title}")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@player_log.command(name="get")
+@click.argument("log_id")
+@click.pass_context
+def get_player_log(ctx, log_id):
+    """Fetch and print a specific player log by its ID."""
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.get_player_log(log_id).to_dict(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@player_log.command(name="create")
+@click.argument("campaign_id")
+@click.argument("title")
+@click.option("--description", default="", help="Description of the player log")
+@click.pass_context
+def create_player_log(ctx, campaign_id, title, description):
+    """Create a new player log attached to a specific campaign."""
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.create_player_log(campaign_id, title, description).to_dict(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@player_log.command(name="update")
+@click.argument("log_id")
+@click.option("--title", help="New title")
+@click.option("--description", help="New description")
+@click.pass_context
+def update_player_log(ctx, log_id, title, description):
+    """Modify the metadata attributes (title/description) of a player log."""
+    client = ctx.obj["client"]
+    try:
+        log_obj = client.get_player_log(log_id)
+        if title is not None:
+            log_obj.title = title
+        if description is not None:
+            log_obj.description = description
+        click.echo(json.dumps(log_obj.save().to_dict(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@player_log.command(name="delete")
+@click.argument("log_id")
+@click.pass_context
+def delete_player_log(ctx, log_id):
+    """Permanently delete a player log and its contents."""
+    client = ctx.obj["client"]
+    try:
+        client.delete_player_log(log_id)
+        click.echo(f"Player Log {log_id} deleted.")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
 # --- Entry Commands ---
 @logger.group()
 def entry():
@@ -458,6 +535,103 @@ def delete_entry(ctx, entry_id):
     try:
         client.delete_log_entry(entry_id)
         click.echo(f"Entry {entry_id} deleted.")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+# --- Player Entry Commands ---
+@logger.group()
+def player_entry():
+    """Manage player log entries."""
+
+
+@player_entry.command(name="list")
+@click.argument("log_id", required=False)
+@click.pass_context
+def list_player_entries(ctx, log_id):
+    """Retrieve and print all player log entries across all logs, optionally filtering by log_id."""
+    client = ctx.obj["client"]
+    try:
+        if log_id:
+            res = client.get_player_log_entries(log_id=log_id)
+        else:
+            res = client.get_player_log_entries()
+
+        for e in res:
+            text = e.raw_text.strip() if getattr(e, "raw_text", None) else ""
+
+            title = getattr(e, "title", "")
+            if not title and text:
+                title = text.splitlines()[0]
+
+            if not title:
+                continue
+            click.echo(f"{e.id}: {title}")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@player_entry.command(name="get")
+@click.argument("entry_id")
+@click.option("--raw", is_flag=True, help="Print raw unformatted text")
+@click.pass_context
+def get_player_entry(ctx, entry_id, raw):
+    """Fetch and print a specific player log entry by its ID."""
+    client = ctx.obj["client"]
+    try:
+        entry_obj = client.get_player_log_entry(entry_id)
+        if raw:
+            click.echo(entry_obj.raw_text or "")
+        else:
+            try:
+                from rich.console import Console
+                from rich.markdown import Markdown
+
+                console = Console()
+                console.print(Markdown(entry_obj.raw_text or ""))
+            except ImportError:
+                click.echo(entry_obj.raw_text or "")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@player_entry.command(name="create")
+@click.argument("log_id")
+@click.argument("text")
+@click.pass_context
+def create_player_entry(ctx, log_id, text):
+    """Append a new text entry to a specific player log."""
+    client = ctx.obj["client"]
+    try:
+        click.echo(json.dumps(client.create_player_log_entry(log_id, text).to_dict(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@player_entry.command(name="update")
+@click.argument("entry_id")
+@click.argument("text")
+@click.pass_context
+def update_player_entry(ctx, entry_id, text):
+    """Modify the text content of a specific player log entry."""
+    client = ctx.obj["client"]
+    try:
+        entry_obj = client.get_player_log_entry(entry_id)
+        entry_obj.raw_text = text
+        click.echo(json.dumps(entry_obj.save().to_dict(), indent=2))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@player_entry.command(name="delete")
+@click.argument("entry_id")
+@click.pass_context
+def delete_player_entry(ctx, entry_id):
+    """Permanently delete a player log entry."""
+    client = ctx.obj["client"]
+    try:
+        client.delete_player_log_entry(entry_id)
+        click.echo(f"Player Entry {entry_id} deleted.")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 

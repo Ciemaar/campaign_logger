@@ -61,6 +61,19 @@ def mock_logger_client(mocker):
     mock_instance.create_campaign_entry.return_value = mock_ce1
     mock_instance.update_campaign_entry.return_value = mock_ce1
 
+    mock_pl1 = MockResource({"id": "pl1", "title": "Player Log Title"})
+    mock_ple1 = MockResource({"id": "ple1", "raw_text": "Player Text 1"})
+
+    mock_instance.get_player_logs.return_value = [mock_pl1]
+    mock_instance.get_player_log.return_value = mock_pl1
+    mock_instance.create_player_log.return_value = mock_pl1
+    mock_instance.update_player_log.return_value = mock_pl1
+
+    mock_instance.get_player_log_entries.return_value = [mock_ple1]
+    mock_instance.get_player_log_entry.return_value = mock_ple1
+    mock_instance.create_player_log_entry.return_value = mock_ple1
+    mock_instance.update_player_log_entry.return_value = mock_ple1
+
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
     return mock_instance
 
@@ -106,6 +119,66 @@ def test_delete_campaign(runner, mock_logger_client):
     result = runner.invoke(main, ["logger", "campaign", "delete", "c1"])
     assert result.exit_code == 0  # nosec
     mock_logger_client.delete_campaign.assert_called_once_with("c1")
+
+
+def test_list_player_logs(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-log", "list"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_player_logs.assert_called_once()
+
+
+def test_get_player_log(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-log", "get", "pl1"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_player_log.assert_called_once_with("pl1")
+
+
+def test_create_player_log(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-log", "create", "c1", "Title"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.create_player_log.assert_called_once_with("c1", "Title", "")
+
+
+def test_update_player_log(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-log", "update", "pl1", "--title", "New"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_player_log.assert_called_once_with("pl1")
+
+
+def test_delete_player_log(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-log", "delete", "pl1"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.delete_player_log.assert_called_once_with("pl1")
+
+
+def test_list_player_entries(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-entry", "list"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_player_log_entries.assert_called_once()
+
+
+def test_get_player_entry(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-entry", "get", "ple1"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_player_log_entry.assert_called_once_with("ple1")
+
+
+def test_create_player_entry(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-entry", "create", "pl1", "text"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.create_player_log_entry.assert_called_once_with("pl1", "text")
+
+
+def test_update_player_entry(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-entry", "update", "ple1", "new text"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.get_player_log_entry.assert_called_once_with("ple1")
+
+
+def test_delete_player_entry(runner, mock_logger_client):
+    result = runner.invoke(main, ["logger", "player-entry", "delete", "ple1"])
+    assert result.exit_code == 0  # nosec
+    mock_logger_client.delete_player_log_entry.assert_called_once_with("ple1")
 
 
 def test_list_logs(runner, mock_logger_client):
