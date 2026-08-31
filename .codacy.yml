@@ -1,0 +1,12 @@
+---
+# Codacy analysis configuration.
+# See https://github.com/codacy/codacy-analysis-cli#tools-configuration
+#
+# Test files legitimately use `assert` (pytest relies on it for assertions),
+# which trips security linters such as Bandit's B101 "assert_used" check.
+# That check exists to warn about asserts in production code (stripped
+# under `python -O`), not test code, so we exclude tests/ from analysis
+# entirely rather than suppress the rule repo-wide.
+exclude_paths:
+  - "tests/**/*"
+  - "tests_live/**/*"
