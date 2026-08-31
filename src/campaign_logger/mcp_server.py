@@ -4,6 +4,7 @@ import json
 import os
 
 from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
 from .api import GeneratorClient
@@ -31,12 +32,12 @@ def create_mcp_server(read_only: bool = False) -> MCPServer:
 
     def _require_logger():
         if not logger_client:
-            raise Exception("Logger client not authenticated. Set CL_LOGGER_CLIENT_ID and CL_LOGGER_CLIENT_SECRET.")
+            raise ToolError("Logger client not authenticated. Set CL_LOGGER_CLIENT_ID and CL_LOGGER_CLIENT_SECRET.")
         return logger_client
 
     def _require_generator():
         if not generator_client:
-            raise Exception("Generator client not authenticated. Set CL_GENERATOR_TOKEN.")
+            raise ToolError("Generator client not authenticated. Set CL_GENERATOR_TOKEN.")
         return generator_client
 
     # --- Read Tools ---
@@ -145,7 +146,7 @@ def create_mcp_server(read_only: bool = False) -> MCPServer:
         except Exception:
             generator = client.get_generator_by_name(generator_id)
             if not generator:
-                raise ValueError("Generator not found by ID or Name")
+                raise ToolError("Generator not found by ID or Name")
         return generator.model_dump_json(indent=2)
 
     @server.tool()
@@ -161,7 +162,7 @@ def create_mcp_server(read_only: bool = False) -> MCPServer:
             if gen and gen.id:
                 result = client.execute_operation(gen.id, "generate")
             else:
-                raise ValueError("Generator not found by ID or Name")
+                raise ToolError("Generator not found by ID or Name")
 
         return json.dumps(result, indent=2)
 
