@@ -171,6 +171,17 @@ class Campaign(BaseEntity):
         client = getattr(self, "_client")
         return client.create_log(self.id, title, description)
 
+    def get_player_logs(self) -> list["PlayerLog"]:
+        """Get all player logs for this campaign."""
+        client = getattr(self, "_client")
+        logs = client.get_player_logs()
+        return [log for log in logs if log.campaign_id == self.id]
+
+    def create_player_log(self, title: str, description: str = "") -> "PlayerLog":
+        """Create a new player log for this campaign."""
+        client = getattr(self, "_client")
+        return client.create_player_log(self.id, title, description)
+
     def get_entries(self) -> list[CampaignEntry]:
         """Get all campaign entries (pages) for this campaign."""
         client = getattr(self, "_client")
@@ -191,3 +202,50 @@ class Campaign(BaseEntity):
         """Delete this campaign."""
         client = getattr(self, "_client")
         client.delete_campaign(self.id)
+
+
+class PlayerLogEntry(BaseEntity):
+    """Model representing a Player Log Entry."""
+
+    raw_text: str
+    title: str | None = None
+    log_id: str
+
+    def save(self) -> "PlayerLogEntry":
+        """Save changes to this player log entry."""
+        client = getattr(self, "_client")
+        return client.update_player_log_entry(self.id, self.raw_text)
+
+    def delete(self) -> None:
+        """Delete this player log entry."""
+        client = getattr(self, "_client")
+        client.delete_player_log_entry(self.id)
+
+
+class PlayerLog(BaseEntity):
+    """Model representing a Player Log."""
+
+    title: str
+    description: str
+    campaign_id: str
+
+    def get_entries(self) -> list[PlayerLogEntry]:
+        """Get all player log entries for this log."""
+        client = getattr(self, "_client")
+        entries = client.get_player_log_entries()
+        return [entry for entry in entries if entry.log_id == self.id]
+
+    def create_entry(self, raw_text: str) -> PlayerLogEntry:
+        """Create a new player log entry for this log."""
+        client = getattr(self, "_client")
+        return client.create_player_log_entry(self.id, raw_text)
+
+    def save(self) -> "PlayerLog":
+        """Save changes to this player log."""
+        client = getattr(self, "_client")
+        return client.update_player_log(self.id, self.title, self.description)
+
+    def delete(self) -> None:
+        """Delete this player log."""
+        client = getattr(self, "_client")
+        client.delete_player_log(self.id)
