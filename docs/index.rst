@@ -9,6 +9,8 @@
    installation
    usage
    reference/index
+   requirements
+   tooling_evaluation
    contributing
    authors
    changelog
