@@ -21,6 +21,10 @@ repos:
     hooks:
       - id: mdformat
         args: ["--wrap", "80"]
+        # Base mdformat does not understand GFM tables and reflows them into
+        # prose. mdformat-gfm adds table/strikethrough/autolink support.
+        additional_dependencies:
+          - mdformat-gfm==0.3.6
   - repo: https://github.com/dzhu/rstfmt
     rev: v0.0.14
     hooks:
