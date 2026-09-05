@@ -23,10 +23,10 @@ class GeneratorClient:
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
 
-        if token:  # pragma: no cover
+        if token:
             self.session.headers.update({"Authorization": f"Bearer {token}"})
 
-        self.session.headers.update({"Content-Type": "application/json"})  # pragma: no cover
+        self.session.headers.update({"Content-Type": "application/json"})
 
     def _parse_generator(self, generator_data: dict[str, Any]) -> GeneratorModel:
         """Parse raw dictionary into a GeneratorModel and inject the client."""
@@ -134,6 +134,39 @@ class GeneratorClient:
         response.raise_for_status()
 
 
+class LoggerSession(requests.Session):
+    """A :class:`requests.Session` that drops the logger API credentials on a cross-host redirect.
+
+    ``requests`` only protects the standard ``Authorization`` header: ``rebuild_auth``
+    deletes it when a redirect crosses to a different host and leaves every other header
+    in place. The logger API authenticates with the custom headers ``api-client`` and
+    ``api-secret``, which therefore travel to whatever host answers a redirect unless they
+    are stripped explicitly. See issue #39.
+
+    :class:`LoggerClient` uses this automatically. It is public so that callers building
+    their own session -- to add retries, proxies or a custom adapter -- can inherit the
+    same protection rather than reimplementing it::
+
+        session = LoggerSession()
+        session.mount("https://", HTTPAdapter(max_retries=3))
+    """
+
+    AUTH_HEADERS = ("api-client", "api-secret")
+
+    def rebuild_auth(self, prepared_request: requests.PreparedRequest, response: requests.Response) -> None:
+        """Strip the custom auth headers whenever requests would strip ``Authorization``."""
+        super().rebuild_auth(prepared_request, response)
+
+        old_url = response.request.url
+        new_url = prepared_request.url
+
+        # Both are Optional on the requests types. If either is missing we cannot tell
+        # whether the host changed, so strip the credentials rather than risk sending them.
+        if old_url is None or new_url is None or self.should_strip_auth(old_url, new_url):
+            for header in self.AUTH_HEADERS:
+                prepared_request.headers.pop(header, None)
+
+
 class LoggerClient:
     """Client for the main Campaign Logger JSON:API."""
 
@@ -145,9 +178,9 @@ class LoggerClient:
     ):
         """Initialize the Logger API client."""
         self.base_url = base_url.rstrip("/")
-        self.session = requests.Session()
+        self.session = LoggerSession()
 
-        if client_id and client_secret:  # pragma: no cover
+        if client_id and client_secret:
             self.session.headers.update({"api-client": client_id, "api-secret": client_secret})
 
         self.session.headers.update(
@@ -155,7 +188,7 @@ class LoggerClient:
                 "Content-Type": "application/vnd.api+json",
                 "Accept": "application/vnd.api+json",
             }
-        )  # pragma: no cover
+        )
 
     def _get(self, resource_type: str, item_id: str | None = None) -> dict[str, Any]:
         """Get a resource from the API."""
