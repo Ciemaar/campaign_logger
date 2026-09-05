@@ -12,6 +12,8 @@ unchanged through 0809ece, so the logger test below fails at every commit in tha
 which is what shows the failure is the header choice and not the test harness.
 """
 
+import secrets
+
 import pytest
 import requests_mock
 
@@ -22,9 +24,10 @@ API_HOST = "https://logger.campaign-logger.com"
 GENERATOR_HOST = "https://generator.campaign-logger.com"
 OTHER_HOST = "https://elsewhere.example.com"
 
-CLIENT_ID = "client-id-under-test"
-CLIENT_SECRET = "client-secret-under-test"
-BEARER_TOKEN = "bearer-token-under-test"
+# Generated per run rather than hardcoded, per the convention in tests/test_api.py.
+CLIENT_ID = secrets.token_hex(16)
+CLIENT_SECRET = secrets.token_hex(16)
+BEARER_TOKEN = secrets.token_hex(16)
 
 
 def _redirected_headers(mocker, source, destination):
