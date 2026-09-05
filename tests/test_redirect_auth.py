@@ -18,6 +18,7 @@ import requests_mock
 
 from campaign_logger.api import GeneratorClient
 from campaign_logger.api import LoggerClient
+from campaign_logger.api import LoggerSession
 
 API_HOST = "https://logger.campaign-logger.com"
 GENERATOR_HOST = "https://generator.campaign-logger.com"
@@ -75,3 +76,19 @@ def test_logger_credentials_are_still_sent_to_the_api_itself():
         sent = m.request_history[-1]
         assert sent.headers["api-client"] == CLIENT_ID  # nosec
         assert sent.headers["api-secret"] == CLIENT_SECRET  # nosec
+
+
+def test_logger_session_is_usable_on_its_own():
+    """LoggerSession is public API, so it must protect a session built by hand too."""
+    session = LoggerSession()
+    session.headers.update({"api-client": CLIENT_ID, "api-secret": CLIENT_SECRET})
+
+    with requests_mock.Mocker(session=session) as m:
+        m.get(f"{API_HOST}/campaigns", status_code=302, headers={"Location": f"{OTHER_HOST}/campaigns"})
+        m.get(f"{OTHER_HOST}/campaigns", json={"data": []})
+        session.get(f"{API_HOST}/campaigns")
+
+        final = m.request_history[-1]
+        assert final.url.startswith(OTHER_HOST)  # nosec - redirect was followed
+        assert "api-client" not in final.headers  # nosec
+        assert "api-secret" not in final.headers  # nosec
