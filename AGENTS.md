@@ -38,6 +38,19 @@ This file contains instructions for AI agents working on this repository.
 1. Verify with `tox -e check` (lint/types) and `tox -e py312-cover` (tests).
 1. Agents should proactively monitor the tests on GitHub and autonomously
    address any CI failures (excluding codacy, which is only advisory).
+1. Review the code scanning results on your PR; do not assume a green upload
+   means clean results. Findings are to be **triaged, not blanket-corrected**:
+   - Fix what is a genuine defect in the code you changed.
+   - Leave, and say why in the PR, findings that are false positives or that
+     contradict this project's own configuration. Codacy's line-length and
+     import checks disagree with the `ruff` settings in `pyproject.toml`; `ruff`
+     wins. Pytest fixture shadowing (`W0621`) and `assert` in tests (Bandit
+     `B101`) are expected and are not defects.
+   - Never silently ignore a Security-category finding of `high` severity or
+     above. "Codacy is advisory" covers style; it does not cover those. Triage
+     them explicitly and record the outcome in the PR.
+   - Note that Codacy results for a pull request are published against
+     `refs/pull/<n>/merge`, not `refs/pull/<n>/head`.
 1. Agents used should be explicitly acknowledged in PR descriptions and
    `AUTHORS.rst`, but the submitting user retains responsibility for the content
    submitted.
