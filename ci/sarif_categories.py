@@ -13,7 +13,11 @@ set it, so every run lands in the same (empty) category and the upload is refuse
 each run with an id derived from its tool name makes the categories distinct and leaves the
 results themselves untouched.
 
-Usage: python ci/sarif_categories.py results.sarif
+The input file is left alone and a new file is written. The Codacy CLI runs in Docker as
+root, so ``results.sarif`` is owned by root and rewriting it in place fails with
+``PermissionError`` on the GitHub runner.
+
+Usage: python ci/sarif_categories.py results.sarif results.categorised.sarif
 """
 
 import json
@@ -44,18 +48,18 @@ def assign_categories(sarif):
 
 
 def main(argv):
-    """Rewrite the SARIF file named in argv[1] in place."""
-    if len(argv) != 2:
+    """Read the SARIF file named in argv[1] and write a categorised copy to argv[2]."""
+    if len(argv) != 3:
         print(__doc__, file=sys.stderr)
         return 2
 
-    path = argv[1]
-    with open(path, encoding="utf-8") as handle:
+    source, destination = argv[1], argv[2]
+    with open(source, encoding="utf-8") as handle:
         sarif = json.load(handle)
 
     assigned = assign_categories(sarif)
 
-    with open(path, "w", encoding="utf-8") as handle:
+    with open(destination, "w", encoding="utf-8") as handle:
         json.dump(sarif, handle)
 
     print(f"Assigned {len(assigned)} SARIF categories: {', '.join(assigned)}")

@@ -57,11 +57,13 @@ jobs:
       # The Codacy CLI emits one SARIF file containing a separate run per tool. Since
       # 2025-07-21 the upload action refuses a file whose runs share a category, so give
       # each run a distinct one. See issue #35.
+      # results.sarif is written by a root-owned Docker container, so it is read-only to
+      # the runner; write the categorised copy to a new file rather than in place.
       - name: Assign a SARIF category per tool
-        run: python ci/sarif_categories.py results.sarif
+        run: python ci/sarif_categories.py results.sarif results.categorised.sarif
 
       # Upload the SARIF file generated in the previous step
       - name: Upload SARIF results file
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: results.sarif
+          sarif_file: results.categorised.sarif
