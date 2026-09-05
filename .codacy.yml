@@ -1,0 +1,26 @@
+---
+# Codacy analysis configuration.
+# See https://github.com/codacy/codacy-analysis-cli#tools-configuration
+
+engines:
+  # Disabled: ruff already enforces style, imports and docstrings on every commit
+  # via pre-commit and the `check` tox environment, and it is configured from
+  # pyproject.toml. Codacy's pylint duplicates that work while disagreeing with
+  # it -- notably line length, where Codacy assumes 100 and this project sets
+  # line-length = 140 -- and it runs a pylint old enough to flag PEP 585
+  # generics such as `dict[str, Any]` as "Value 'dict' is unsubscriptable".
+  # Between them these produced roughly 900 of the ~1300 open alerts, which
+  # buried the two findings that actually mattered. See issue #38.
+  pylint:
+    enabled: false
+  pylintpython3:
+    enabled: false
+
+# Test files legitimately use `assert` (pytest relies on it for assertions),
+# which trips security linters such as Bandit's B101 "assert_used" check.
+# That check exists to warn about asserts in production code (stripped
+# under `python -O`), not test code, so we exclude tests/ from analysis
+# entirely rather than suppress the rule repo-wide.
+exclude_paths:
+  - "tests/**/*"
+  - "tests_live/**/*"
