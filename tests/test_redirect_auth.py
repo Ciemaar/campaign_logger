@@ -14,7 +14,6 @@ which is what shows the failure is the header choice and not the test harness.
 
 import secrets
 
-import pytest
 import requests_mock
 
 from campaign_logger.api import GeneratorClient
@@ -36,11 +35,6 @@ def _redirected_headers(mocker, source, destination):
     return mocker
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#39: api-client/api-secret are custom headers, so requests does not strip them "
-    "on a cross-host redirect. Remove this marker when the fix lands.",
-)
 def test_logger_credentials_are_not_sent_to_a_different_host_after_redirect():
     """The logger client must not forward its credentials across a cross-host redirect."""
     client = LoggerClient(base_url=API_HOST, client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
