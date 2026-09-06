@@ -1,6 +1,33 @@
 name: build
 on: [push, pull_request]
 jobs:
+  bootstrap-drift:
+    # ci/templates/ is the source for tox.ini and this workflow. Dependabot only ever
+    # edits the generated files, so without this check the two silently diverge and the
+    # next `tox -e bootstrap` reverts whatever dependabot landed. See issue #34.
+    name: 'bootstrap drift'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.11'
+    - name: install bootstrap dependencies
+      run: python -mpip install --progress-bar=off jinja2 matrix
+    - name: regenerate from ci/templates
+      run: python ci/bootstrap.py --no-env
+    - name: fail if the generated files are out of date
+      run: |
+        if ! git diff --exit-code; then
+          echo "::error::Generated files differ from ci/templates/."
+          echo "Run 'tox -e bootstrap' (or 'python ci/bootstrap.py --no-env') and commit the result."
+          echo "If you changed .github/workflows/*.yml or tox.ini by hand, make the same change in ci/templates/."
+          exit 1
+        fi
+
   test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}

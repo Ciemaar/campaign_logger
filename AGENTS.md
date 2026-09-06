@@ -36,6 +36,13 @@ This file contains instructions for AI agents working on this repository.
 1. Plan changes.
 1. Implement changes.
 1. Verify with `tox -e check` (lint/types) and `tox -e py312-cover` (tests).
+1. **`tox.ini` and `.github/workflows/github-actions.yml` are generated.** Their
+   source is `ci/templates/`, rendered by `ci/bootstrap.py` from the matrix in
+   `setup.cfg`. Never edit the generated files alone -- change the template and
+   run `tox -e bootstrap`, then commit both. The `bootstrap drift` CI job fails
+   the build when they disagree. `.github/workflows/audit.yml` and
+   `codacy.yml`-style hand-written workflows are *not* generated and have no
+   template.
 1. Agents should proactively monitor the tests on GitHub and autonomously
    address any CI failures (excluding codacy, which is only advisory).
 1. Agents used should be explicitly acknowledged in PR descriptions and
