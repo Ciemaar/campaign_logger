@@ -135,6 +135,19 @@ For merging, you should:
 #. Add a note to ``CHANGELOG.rst`` about the changes.
 #. Add yourself to ``AUTHORS.rst``.
 
+Requirements
+============
+
+``docs/requirements.md`` records what the project is required to do and
+whether it currently does it, with the file and line that evidences each
+row. Read it before changing behaviour, and update it when you change
+what is true.
+
+Where a requirement can be expressed as an assertion, prefer writing the
+test and citing it from the table over writing prose status -- a status
+column depends on someone rechecking it, a test does not. See `issue #52
+<https://github.com/Ciemaar/campaign_logger/issues/52>`_.
+
 Generated CI files
 ==================
 
