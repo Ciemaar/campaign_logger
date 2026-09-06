@@ -1,5 +1,11 @@
 name: build
 on: [push, pull_request]
+
+# Least privilege: nothing here writes to the repository. Without an explicit block
+# the jobs inherit the repository default, which may be read-write.
+permissions:
+  contents: read
+
 jobs:
   bootstrap-drift:
     # ci/templates/ is the source for tox.ini and this workflow. Dependabot only ever
