@@ -4,6 +4,14 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+  # .github/workflows/*.yml are generated from ci/templates/. Without this entry
+  # dependabot bumps only the generated copies, the templates go stale, and the next
+  # `tox -e bootstrap` reverts the bumps. The `bootstrap drift` CI job detects that;
+  # this entry is what prevents it. See issue #34.
+  - package-ecosystem: "github-actions"
+    directory: "/ci/templates"
+    schedule:
+      interval: "weekly"
   - package-ecosystem: "pip"
     directory: "/"
     schedule:

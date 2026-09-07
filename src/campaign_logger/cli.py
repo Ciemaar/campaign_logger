@@ -34,7 +34,7 @@ def load_config():
 
             if "default_log_id" in config and "CL_DEFAULT_LOG_ID" not in os.environ:
                 os.environ["CL_DEFAULT_LOG_ID"] = config["default_log_id"]
-        except Exception:
+        except (OSError, json.JSONDecodeError):
             pass
 
 

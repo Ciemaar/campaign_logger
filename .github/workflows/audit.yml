@@ -6,14 +6,19 @@ on:
   pull_request:
     branches: [ main ]
 
+# Least privilege: this workflow only reads the repository. Without an explicit
+# block the job inherits the repository default, which may be read-write.
+permissions:
+  contents: read
+
 jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v5.1.0
+      uses: astral-sh/setup-uv@v10.0.1
       with:
         enable-cache: true
 

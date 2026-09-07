@@ -135,6 +135,50 @@ For merging, you should:
 #. Add a note to ``CHANGELOG.rst`` about the changes.
 #. Add yourself to ``AUTHORS.rst``.
 
+Requirements
+============
+
+``docs/requirements.md`` records what the project is required to do and
+whether it currently does it, with the file and line that evidences each
+row. Read it before changing behaviour, and update it when you change
+what is true.
+
+Where a requirement can be expressed as an assertion, prefer writing the
+test and citing it from the table over writing prose status -- a status
+column depends on someone rechecking it, a test does not. See `issue #52
+<https://github.com/Ciemaar/campaign_logger/issues/52>`_.
+
+Generated CI files
+==================
+
+``tox.ini`` and ``.github/workflows/github-actions.yml`` are
+**generated**. Do not edit them directly -- your change will be reverted
+the next time anyone regenerates.
+
+Their source is ``ci/templates/``, rendered by ``ci/bootstrap.py`` from
+the matrix defined in the ``[matrix]`` section of ``setup.cfg``. That
+matrix (``py311``-``py314`` x ``cover``/``nocov``) expands to eight tox
+environments and twenty-six CI matrix entries, which is what the
+generator buys you.
+
+To change either file:
+
+.. code::
+
+   # edit ci/templates/... , then
+   tox -e bootstrap
+
+and commit the template and the regenerated output together.
+
+The ``bootstrap drift`` CI job regenerates and diffs on every push, so a
+template and its output that disagree will fail the build. This exists
+because Dependabot edits only the generated workflow; when the templates
+were left behind, running ``bootstrap`` silently reverted months of
+action version updates.
+
+Not every workflow is generated -- ``.github/workflows/audit.yml`` is
+hand-written and has no template.
+
 Tips
 ====
 
