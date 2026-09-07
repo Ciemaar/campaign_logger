@@ -92,6 +92,10 @@ You can also install the in-development version with:
 
 https://campaign-logger.readthedocs.io/
 
+`Requirements <docs/requirements.md>`_ records what this project is
+required to do and whether it currently does it, verified against the
+merged code.
+
 *************
  Development
 *************
