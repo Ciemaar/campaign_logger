@@ -196,6 +196,18 @@ def validate(ctx, target):
         click.echo(f"Error: {e}", err=True)
 
 
+@main.command()
+@click.option("--write", is_flag=True, help="Run the MCP server with write tools enabled")
+def mcp(write):
+    """Start the Campaign Logger MCP server."""
+    from .mcp_server import run_mcp_server
+
+    try:
+        run_mcp_server(read_only=not write)
+    except Exception as e:
+        click.echo(f"MCP Server Error: {e}", err=True)
+
+
 @main.group()
 @click.option("--url", default="https://logger.campaign-logger.com", help="API Base URL")
 @click.option("--client-id", envvar="CL_LOGGER_CLIENT_ID", help="API Client ID")
