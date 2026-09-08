@@ -8,6 +8,7 @@
    readme
    installation
    usage
+   mcp_integration
    reference/index
    requirements
    tooling_evaluation

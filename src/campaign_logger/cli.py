@@ -161,7 +161,7 @@ def generate(ctx, target):
                 else:
                     raise
 
-        click.echo(json.dumps(result, indent=2))
+        click.echo(json.dumps(result, indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -194,6 +194,18 @@ def validate(ctx, target):
             click.echo(f"Generator {target} is valid.")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
+
+
+@main.command()
+@click.option("--write", is_flag=True, help="Run the MCP server with write tools enabled")
+def mcp(write):
+    """Start the Campaign Logger MCP server."""
+    from .mcp_server import run_mcp_server
+
+    try:
+        run_mcp_server(read_only=not write)
+    except Exception as e:
+        click.echo(f"MCP Server Error: {e}", err=True)
 
 
 @main.group()
@@ -235,7 +247,7 @@ def get_campaign(ctx, campaign_id):
     """Fetch and print a specific campaign by its ID."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_campaign(campaign_id).to_dict(), indent=2))
+        click.echo(json.dumps(client.get_campaign(campaign_id).to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -248,7 +260,7 @@ def create_campaign(ctx, title, description):
     """Create a new top-level campaign with an optional description."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.create_campaign(title, description).to_dict(), indent=2))
+        click.echo(json.dumps(client.create_campaign(title, description).to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -267,7 +279,7 @@ def update_campaign(ctx, campaign_id, title, description):
             camp.title = title
         if description is not None:
             camp.description = description
-        click.echo(json.dumps(camp.save().to_dict(), indent=2))
+        click.echo(json.dumps(camp.save().to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -311,7 +323,7 @@ def get_log(ctx, log_id):
     """Fetch and print a specific log by its ID."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.get_log(log_id).to_dict(), indent=2))
+        click.echo(json.dumps(client.get_log(log_id).to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -325,7 +337,7 @@ def create_log(ctx, campaign_id, title, description):
     """Create a new log attached to a specific campaign."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.create_log(campaign_id, title, description).to_dict(), indent=2))
+        click.echo(json.dumps(client.create_log(campaign_id, title, description).to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -344,7 +356,7 @@ def update_log(ctx, log_id, title, description):
             log_obj.title = title
         if description is not None:
             log_obj.description = description
-        click.echo(json.dumps(log_obj.save().to_dict(), indent=2))
+        click.echo(json.dumps(log_obj.save().to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -506,7 +518,7 @@ def create_entry(ctx, log_id, text):
     """Append a new text entry to a specific log."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.create_log_entry(log_id, text).to_dict(), indent=2))
+        click.echo(json.dumps(client.create_log_entry(log_id, text).to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -521,7 +533,7 @@ def update_entry(ctx, entry_id, text):
     try:
         entry_obj = client.get_log_entry(entry_id)
         entry_obj.raw_text = text
-        click.echo(json.dumps(entry_obj.save().to_dict(), indent=2))
+        click.echo(json.dumps(entry_obj.save().to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -703,7 +715,7 @@ def create_page(ctx, campaign_id, text):
     """Create a new top-level page attached to a specific campaign."""
     client = ctx.obj["client"]
     try:
-        click.echo(json.dumps(client.create_campaign_entry(campaign_id, text).to_dict(), indent=2))
+        click.echo(json.dumps(client.create_campaign_entry(campaign_id, text).to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -718,7 +730,7 @@ def update_page(ctx, page_id, text):
     try:
         page_obj = client.get_campaign_entry(page_id)
         page_obj.raw_text = text
-        click.echo(json.dumps(page_obj.save().to_dict(), indent=2))
+        click.echo(json.dumps(page_obj.save().to_dict(), indent=2, sort_keys=True))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
