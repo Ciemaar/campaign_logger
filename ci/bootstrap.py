@@ -59,7 +59,6 @@ def main():
         trim_blocks=True,
         lstrip_blocks=True,
         keep_trailing_newline=True,
-        autoescape=True,  # Safe because templates only substitute config variables w/o HTML chars
     )
 
     tox_environments = {}

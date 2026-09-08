@@ -164,7 +164,7 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             else:
                 raise ToolError("Generator not found by ID or Name")
 
-        return json.dumps(result, indent=2)
+        return json.dumps(result, indent=2, sort_keys=True)
 
     # --- Write Tools (Conditional) ---
     if not read_only:
