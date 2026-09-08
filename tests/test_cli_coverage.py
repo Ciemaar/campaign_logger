@@ -264,6 +264,34 @@ def test_get_entry_without_rich(runner, monkeypatch, mocker):
     assert "text1" in result.output
 
 
+def test_get_player_entry_with_rich(runner, monkeypatch, mocker):
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+
+    mock_instance = MagicMock()
+    mock_instance.get_player_log_entry.return_value = type(
+        "MockEntry", (), {"id": "1", "raw_text": "# text1", "to_dict": lambda *args: {}}
+    )()
+    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
+
+    result = runner.invoke(main, ["logger", "player-entry", "get", "1"])
+    assert result.exit_code == 0
+    assert "text1" in result.output
+
+
+def test_get_player_entry_without_rich(runner, monkeypatch, mocker):
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+
+    mock_instance = MagicMock()
+    mock_instance.get_player_log_entry.return_value = type("MockEntry", (), {"id": "1", "raw_text": "text1", "to_dict": lambda *args: {}})()
+    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
+
+    result = runner.invoke(main, ["logger", "player-entry", "get", "1", "--raw"])
+    assert result.exit_code == 0
+    assert "text1" in result.output
+
+
 def test_get_page_without_rich(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
@@ -275,6 +303,123 @@ def test_get_page_without_rich(runner, monkeypatch, mocker):
     result = runner.invoke(main, ["logger", "page", "get", "1", "--raw"])
     assert result.exit_code == 0
     assert "text1" in result.output
+
+
+def test_list_player_entries_no_log_id(runner, monkeypatch, mocker):
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+    monkeypatch.delenv("CL_DEFAULT_LOG_ID", raising=False)
+
+    mock_instance = MagicMock()
+    mock_instance.get_player_log_entries.return_value = [
+        type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": "text"})(),
+    ]
+    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
+
+    result = runner.invoke(main, ["logger", "player-entry", "list"])
+    assert result.exit_code == 0
+    assert "1: text" in result.output
+
+
+def test_list_player_entries_no_first_line(runner, monkeypatch, mocker):
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+    monkeypatch.delenv("CL_DEFAULT_LOG_ID", raising=False)
+
+    mock_instance = MagicMock()
+    mock_instance.get_player_log_entries.return_value = [
+        type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": ""})(),
+    ]
+    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
+
+    result = runner.invoke(main, ["logger", "player-entry", "list"])
+    assert result.exit_code == 0
+    assert "1: (empty)" not in result.output
+
+
+def test_logger_cli_error_handling_coverage(runner, monkeypatch, mocker):
+    import requests
+
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+
+    mock_instance = MagicMock()
+    mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
+    mock_instance.get_campaigns.side_effect = requests.exceptions.HTTPError("Internal error")
+
+    result = runner.invoke(main, ["logger", "campaign", "list"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.get_campaign.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "campaign", "get", "c1"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.create_campaign.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "campaign", "create", "test"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.get_campaign.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "campaign", "update", "c1", "--title", "new"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.delete_campaign.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "campaign", "delete", "c1"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.get_player_logs.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-log", "list"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.get_player_log.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-log", "get", "c1"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.create_player_log.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-log", "create", "c1", "title"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.get_player_log.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-log", "update", "c1"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.delete_player_log.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-log", "delete", "c1"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.get_player_log_entries.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-entry", "list"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.get_player_log_entry.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-entry", "get", "c1"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.create_player_log_entry.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-entry", "create", "c1", "text"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.get_player_log_entry.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-entry", "update", "c1", "text"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
+
+    mock_instance.delete_player_log_entry.side_effect = requests.exceptions.HTTPError("Internal error")
+    result = runner.invoke(main, ["logger", "player-entry", "delete", "c1"])
+    assert result.exit_code == 0
+    assert "Error: Internal error" in result.output
 
 
 def test_list_entries_no_first_line(runner, monkeypatch, mocker):
