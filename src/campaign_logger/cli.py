@@ -34,7 +34,7 @@ def load_config():
 
             if "default_log_id" in config and "CL_DEFAULT_LOG_ID" not in os.environ:
                 os.environ["CL_DEFAULT_LOG_ID"] = config["default_log_id"]
-        except (OSError, json.JSONDecodeError):
+        except OSError:
             pass
 
 
@@ -389,7 +389,7 @@ def list_player_logs(ctx):
         res = client.get_player_logs()
         for log_obj in res:
             click.echo(f"{log_obj.id}: {log_obj.title}")
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -401,7 +401,7 @@ def get_player_log(ctx, log_id):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.get_player_log(log_id).to_dict(), indent=2))
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -415,7 +415,7 @@ def create_player_log(ctx, campaign_id, title, description):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_player_log(campaign_id, title, description).to_dict(), indent=2))
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -434,7 +434,7 @@ def update_player_log(ctx, log_id, title, description):
         if description is not None:
             log_obj.description = description
         click.echo(json.dumps(log_obj.save().to_dict(), indent=2))
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -447,7 +447,7 @@ def delete_player_log(ctx, log_id):
     try:
         client.delete_player_log(log_id)
         click.echo(f"Player Log {log_id} deleted.")
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -482,7 +482,7 @@ def list_entries(ctx, log_id):
             if not title:
                 continue
             click.echo(f"{e.id}: {title}")
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -506,7 +506,7 @@ def get_entry(ctx, entry_id, raw):
                 console.print(Markdown(entry_obj.raw_text or ""))
             except ImportError:
                 click.echo(entry_obj.raw_text or "")
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -616,7 +616,7 @@ def create_player_entry(ctx, log_id, text):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_player_log_entry(log_id, text).to_dict(), indent=2))
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -631,7 +631,7 @@ def update_player_entry(ctx, entry_id, text):
         entry_obj = client.get_player_log_entry(entry_id)
         entry_obj.raw_text = text
         click.echo(json.dumps(entry_obj.save().to_dict(), indent=2))
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
@@ -644,7 +644,7 @@ def delete_player_entry(ctx, entry_id):
     try:
         client.delete_player_log_entry(entry_id)
         click.echo(f"Player Entry {entry_id} deleted.")
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         click.echo(f"Error: {e}", err=True)
 
 
