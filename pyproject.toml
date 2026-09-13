@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 140
-target-version = "py311"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "D"]
@@ -29,7 +29,7 @@ forced-separate = ["test_campaign_logger"]
 default-section = "third-party"
 
 [tool.pyright]
-pythonVersion = "3.11"
+pythonVersion = "3.14"
 typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]
@@ -87,7 +87,7 @@ version = "0.0.1"
 description = "A module to support interaction with campaign logger https://campaign-logger.com/."
 authors = [{name = "Andy Fundinger", email = "andy@ciemaar.com"}]
 license = {file = "LICENSE"}
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -96,10 +96,8 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Utilities",
 ]
