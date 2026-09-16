@@ -15,8 +15,8 @@ from live_guard import WRITE
 from live_guard import HttpEffectGuard
 from live_guard import LiveGuardViolation
 
-LOGGER = "https://logger.campaign-logger.com"
-GENERATOR = "https://generator.campaign-logger.com"
+LOGGER = "https://logger-staging.campaign-logger.com"
+GENERATOR = "https://api.preview.campaign-logger.com"
 SACRIFICIAL = f"{LOGGER}/campaigns/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 REAL_CAMPAIGN = f"{LOGGER}/campaigns/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 

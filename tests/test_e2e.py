@@ -93,7 +93,12 @@ def live_generator_client(request, mock_requests):
         token = os.environ.get("CL_GENERATOR_TOKEN")
         if not token:
             pytest.skip("CL_GENERATOR_TOKEN environment variable is not set. Skipping live E2E test.")
-        url = os.environ.get("CL_GENERATOR_URL", "https://generator.campaign-logger.com")
+        # No production default: there is no known staging generator host, so a
+        # live run must name its target explicitly rather than fall back to the
+        # production generator. Fail closed.
+        url = os.environ.get("CL_GENERATOR_URL")
+        if not url:
+            pytest.skip("CL_GENERATOR_URL is not set; refusing to default to the production generator.")
         return GeneratorClient(base_url=url, token=token)
     else:
         # Request context ensures we are not modifying items directly but letting the test run with mocked data
@@ -110,7 +115,10 @@ def live_logger_client(request, mock_requests):
         client_secret = os.environ.get("CL_LOGGER_CLIENT_SECRET")
         if not client_id or not client_secret:
             pytest.skip("CL_LOGGER_CLIENT_ID or CL_LOGGER_CLIENT_SECRET environment variable is not set. Skipping live E2E test.")
-        url = os.environ.get("CL_LOGGER_URL", "https://logger.campaign-logger.com")
+        # Default to staging, never production: this test creates and deletes a
+        # campaign, so it must not be able to touch the real account by omitting
+        # a variable. Staging holds separate data.
+        url = os.environ.get("CL_LOGGER_URL", "https://logger-staging.campaign-logger.com")
         return LoggerClient(base_url=url, client_id=client_id, client_secret=client_secret)
     else:
         return LoggerClient(base_url="https://mock", client_id="mock", client_secret="mock")

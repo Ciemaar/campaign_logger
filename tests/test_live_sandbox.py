@@ -28,7 +28,7 @@ SANDBOX_ID = "f" * 32
 OTHER_ID = "a" * 32
 CREATED_LOG_ID = "b" * 32
 TITLE = "PYTEST-LIVE-sandbox"
-LOGGER = "https://logger.campaign-logger.com"
+LOGGER = "https://logger-staging.campaign-logger.com"
 
 GOOD_ENV = {
     "CL_LIVE_SACRIFICIAL_CAMPAIGN_ID": SANDBOX_ID,
