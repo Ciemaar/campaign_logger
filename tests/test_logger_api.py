@@ -1,6 +1,8 @@
 import pytest
+import requests
 import requests_mock
 
+from campaign_logger.api import BODY_PREVIEW_CHARS
 from campaign_logger.api import LoggerClient
 
 BASE_URL = "https://logger.campaign-logger.com"
@@ -606,3 +608,43 @@ def test_get_campaign_entries_filter(client):
         entries = client.get_campaign_entries(campaign_id="c1")
         assert len(entries) == 1
         assert entries[0].id == "ce1"
+
+
+def test_unparseable_response_truncates_the_body(client):
+    """Phase 0.3 (issue #62): a parse failure must not print the whole body.
+
+    The message lands in pytest output and any CI log, so on a live run the old
+    ``response.text`` interpolation printed the entire campaign payload. Only a
+    bounded preview is included now.
+    """
+    secret = "The party found the Duke's letter naming the traitor. " * 10
+    assert len(secret) > BODY_PREVIEW_CHARS  # nosec  the point of the test
+
+    with requests_mock.Mocker() as m:
+        m.get(f"{BASE_URL}/campaigns", text=secret, headers={"Content-Type": "text/html"})
+        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+            client.get_campaigns()
+
+    message = str(excinfo.value)
+    assert secret not in message  # nosec
+    assert secret[:BODY_PREVIEW_CHARS] in message  # nosec
+    assert secret[BODY_PREVIEW_CHARS:] not in message  # nosec
+    assert f"truncated from {len(secret)} chars" in message  # nosec
+    # Still diagnostic: where, what status, what type.
+    assert f"{BASE_URL}/campaigns" in message  # nosec
+    assert "text/html" in message  # nosec
+    # The full body remains reachable deliberately, via the attached response.
+    assert excinfo.value.response.text == secret  # nosec
+
+
+def test_unparseable_short_response_is_shown_whole(client):
+    """A body under the limit needs no truncation note."""
+    body = "not json"
+    with requests_mock.Mocker() as m:
+        m.get(f"{BASE_URL}/campaigns", text=body, headers={"Content-Type": "text/plain"})
+        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+            client.get_campaigns()
+
+    message = str(excinfo.value)
+    assert body in message  # nosec
+    assert "truncated" not in message  # nosec

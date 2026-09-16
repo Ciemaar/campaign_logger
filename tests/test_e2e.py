@@ -2,6 +2,7 @@ import os
 
 import pytest
 import requests_mock
+from conftest import live_phase_enabled
 
 from campaign_logger.api import GeneratorClient
 from campaign_logger.api import LoggerClient
@@ -9,7 +10,7 @@ from campaign_logger.api import LoggerClient
 
 @pytest.fixture
 def mock_requests(request):
-    is_live = request.config.getoption("--run-e2e") or os.environ.get("RUN_LIVE_E2E") == "1"
+    is_live = live_phase_enabled(request.config, "e2e")
 
     if is_live:
         yield None
@@ -86,7 +87,7 @@ def mock_requests(request):
 @pytest.fixture
 def live_generator_client(request, mock_requests):
     """Returns a GeneratorClient. Mocks if not running live."""
-    is_live = request.config.getoption("--run-e2e") or os.environ.get("RUN_LIVE_E2E") == "1"
+    is_live = live_phase_enabled(request.config, "e2e")
 
     if is_live:
         token = os.environ.get("CL_GENERATOR_TOKEN")
@@ -102,7 +103,7 @@ def live_generator_client(request, mock_requests):
 @pytest.fixture
 def live_logger_client(request, mock_requests):
     """Returns a LoggerClient. Mocks if not running live."""
-    is_live = request.config.getoption("--run-e2e") or os.environ.get("RUN_LIVE_E2E") == "1"
+    is_live = live_phase_enabled(request.config, "e2e")
 
     if is_live:
         client_id = os.environ.get("CL_LOGGER_CLIENT_ID")
@@ -116,6 +117,7 @@ def live_logger_client(request, mock_requests):
 
 
 @pytest.mark.e2e
+@pytest.mark.timeout(60)
 def test_generator_client_e2e(live_generator_client):
     """End-to-End test for GeneratorClient."""
     # List all generators to ensure the client connects and authenticates
@@ -131,6 +133,7 @@ def test_generator_client_e2e(live_generator_client):
 
 
 @pytest.mark.e2e
+@pytest.mark.timeout(60)
 def test_logger_client_e2e(live_logger_client):
     """End-to-End test for LoggerClient."""
     # 1. Fetch campaigns to ensure connection

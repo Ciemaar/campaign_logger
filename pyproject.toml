@@ -114,7 +114,8 @@ test = [
     "requests-mock",
     "pytest",
     "pytest-cov",
-    "pytest-mock"
+    "pytest-mock",
+    "pytest-timeout"
 ]
 cli = [
     "rich"

@@ -12,6 +12,11 @@ from .models import LogEntry
 from .models import PlayerLog
 from .models import PlayerLogEntry
 
+#: How much of an unparseable response body goes into the raised error message.
+#: The message reaches pytest output and CI logs, so on a live run this is real
+#: campaign content -- bounded here rather than printed whole (issue #62, 0.3).
+BODY_PREVIEW_CHARS = 100
+
 
 class GeneratorClient:
     """Client for the Campaign Logger Generator API."""
@@ -202,7 +207,16 @@ class LoggerClient:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.JSONDecodeError as e:
-            raise requests.exceptions.HTTPError(f"Failed to parse JSON response: {response.text}", response=response) from e
+            body = response.text
+            preview = body[:BODY_PREVIEW_CHARS]
+            elided = f" (truncated from {len(body)} chars)" if len(body) > BODY_PREVIEW_CHARS else ""
+            raise requests.exceptions.HTTPError(
+                f"Failed to parse JSON response from {url}: HTTP {response.status_code}, "
+                f"{len(response.content)} bytes, content-type "
+                f"{response.headers.get('Content-Type', 'unknown')!r}. "
+                f"Body preview: {preview!r}{elided}",
+                response=response,
+            ) from e
 
     def _delete(self, resource_type: str, item_id: str) -> None:
         """Delete a resource from the API."""
