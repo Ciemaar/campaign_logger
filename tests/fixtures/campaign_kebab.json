@@ -8,7 +8,7 @@
         "created-on": "2020-11-14T04:51:29.293273",
         "revision": "471a8ba889a9449a96e7c41e59c12f24",
         "updated-on": "2020-11-14T04:51:29.293274",
-        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+        "user-id": "cd0f000000000000000000000000FAKE"
       },
       "relationships": {
         "campaign-entries": {
@@ -16,8 +16,8 @@
             "reverse": "campaign"
           },
           "links": {
-            "self": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/campaign-entries",
-            "related": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/campaign-entries"
+            "self": "https://logger-staging.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/campaign-entries",
+            "related": "https://logger-staging.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/campaign-entries"
           }
         },
         "logs": {
@@ -25,8 +25,8 @@
             "reverse": "campaign"
           },
           "links": {
-            "self": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/logs",
-            "related": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/logs"
+            "self": "https://logger-staging.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/logs",
+            "related": "https://logger-staging.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/logs"
           }
         },
         "player-logs": {
@@ -34,8 +34,8 @@
             "reverse": "campaign"
           },
           "links": {
-            "self": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/player-logs",
-            "related": "https://logger.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/player-logs"
+            "self": "https://logger-staging.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/relationships/player-logs",
+            "related": "https://logger-staging.campaign-logger.com/campaigns/45ee4afaaeb745f9bda39f857a570bf4/player-logs"
           }
         }
       },

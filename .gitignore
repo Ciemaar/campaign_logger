@@ -63,6 +63,8 @@ docs/_build
 .build
 .ve
 .env
+.env.*
+!.env.example
 .cache
 .pytest
 .benchmarks
@@ -72,3 +74,6 @@ docs/_build
 
 # Mypy Cache
 .mypy_cache/
+
+# live capture output (staging payloads, not for git)
+.captures/

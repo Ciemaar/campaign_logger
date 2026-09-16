@@ -78,7 +78,8 @@ fail_under = 95
 ignore = [
     "AGENTS.md",
     "SESSION_INSTRUCTIONS.md",
-    "PYPI_UPLOAD_INSTRUCTIONS.md"
+    "PYPI_UPLOAD_INSTRUCTIONS.md",
+    ".env.example"
 ]
 
 [project]
@@ -114,7 +115,8 @@ test = [
     "requests-mock",
     "pytest",
     "pytest-cov",
-    "pytest-mock"
+    "pytest-mock",
+    "pytest-timeout"
 ]
 cli = [
     "rich"

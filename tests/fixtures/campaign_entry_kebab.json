@@ -10,7 +10,7 @@
         "created-on": "2024-02-11T20:34:23.125",
         "revision": "6066267352e64a25a7f76d8d0b1297a3",
         "updated-on": "2024-02-11T20:36:12.608441",
-        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+        "user-id": "cd0f000000000000000000000000FAKE"
       },
       "relationships": {
         "campaign": {
@@ -18,8 +18,8 @@
             "reverse": "campaign-entries"
           },
           "links": {
-            "self": "https://logger.campaign-logger.com/campaign-entries/13803ddeee244a9ebe29575da8e1414f/relationships/campaign",
-            "related": "https://logger.campaign-logger.com/campaign-entries/13803ddeee244a9ebe29575da8e1414f/campaign"
+            "self": "https://logger-staging.campaign-logger.com/campaign-entries/13803ddeee244a9ebe29575da8e1414f/relationships/campaign",
+            "related": "https://logger-staging.campaign-logger.com/campaign-entries/13803ddeee244a9ebe29575da8e1414f/campaign"
           },
           "data": {
             "type": "campaigns",
