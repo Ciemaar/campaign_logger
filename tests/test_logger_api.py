@@ -634,7 +634,9 @@ def test_unparseable_response_truncates_the_body(client):
     assert f"{BASE_URL}/campaigns" in message  # nosec
     assert "text/html" in message  # nosec
     # The full body remains reachable deliberately, via the attached response.
-    assert excinfo.value.response.text == secret  # nosec
+    response = excinfo.value.response
+    assert response is not None  # nosec
+    assert response.text == secret  # nosec
 
 
 def test_unparseable_short_response_is_shown_whole(client):

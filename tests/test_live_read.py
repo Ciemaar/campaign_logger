@@ -14,6 +14,7 @@ Run against the staging sandbox:
 
 import json
 import pathlib
+from typing import Any
 
 import pytest
 
@@ -24,7 +25,7 @@ pytestmark = [pytest.mark.live_read, pytest.mark.timeout(60)]
 CAPTURES = pathlib.Path(".captures")
 
 
-def _capture(client, name, path):
+def _capture(client, name, path) -> tuple[int, Any]:
     """GET ``path`` through the guarded session and record the raw payload.
 
     Tolerant by design: a non-2xx is recorded, not raised, so the capture step
@@ -86,8 +87,14 @@ def test_capture_wire_payloads(live_read_client, sandbox_config):
 
     # Inspect the attribute keys the server actually sent.
     data = campaigns.get("data") if isinstance(campaigns, dict) else None
-    first = (data[0] if isinstance(data, list) and data else data) or {}
-    attribute_keys = list((first.get("attributes") or {}).keys())
+    if isinstance(data, list):
+        first = data[0] if data else {}
+    elif isinstance(data, dict):
+        first = data
+    else:
+        first = {}
+    attributes = first.get("attributes") if isinstance(first, dict) else None
+    attribute_keys = list(attributes.keys()) if isinstance(attributes, dict) else []
     assert attribute_keys, "no attributes in the campaigns payload to inspect"  # nosec
 
     has_camel = any(any(c.isupper() for c in k) for k in attribute_keys)
