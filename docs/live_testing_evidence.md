@@ -5,11 +5,47 @@ deleted under Phase 0.4 of the live-server test plan (issue #62). The directory
 held hardcoded live credentials and could not be imported against `main`, so it
 was removed; this file preserves the only parts worth keeping.
 
-Everything below is **evidence, not confirmed behaviour**. The payloads were
-recorded by hand in 2022 against a host that may no longer exist. Each item is
-tied to the open question it bears on in §10 of the plan.
+It has since grown past that. Sections marked **ANSWERED** are confirmed
+against the live API definition, fetched unauthenticated on 2026-09-16.
+Sections marked *original 2022 evidence* are the weaker material the salvage
+started from, kept because it is what prompted the checks and because it
+records what the server looked like four years ago. Each item is tied to the
+open question it bears on in §10 of the plan.
 
-## Q3 — is there a staging host? Evidence: yes, in 2022
+## Q3 — ANSWERED: staging exists, is live, and is current
+
+Confirmed 2026-09-16 by unauthenticated probe. No credentials were sent.
+
+| | production | staging |
+| --- | --- | --- |
+| host | `logger.campaign-logger.com` | `logger-staging.campaign-logger.com` |
+| address | `104.40.250.100` (Azure West Europe) | `51.159.11.132` (Scaleway, Paris) |
+| server | Kestrel | Kestrel |
+| `GET /campaigns` unauthenticated | 401 | 401 |
+| `swagger/v3/swagger.json` | md5 `96f545971b42afca42ce8f3c19d8d29b` | **identical** |
+
+The differing address initially suggested a dangling DNS record, which would
+have made sending credentials there dangerous. It is not. The TLS certificate
+was issued **2026-09-15** and covers `logger-staging.campaign-logger.com`
+alongside `api.preview.campaign-logger.com`,
+`app.preview.campaign-logger.com`, `profiles.preview.campaign-identity.com`
+and, tellingly, `argocd.preview.cluster.jlj4.com` and
+`grafana.preview.cluster.jlj4.com` — a live, actively managed GitOps preview
+cluster, not a leftover.
+
+The byte-identical swagger is the important part: staging runs the **same API
+version** as production, so it is a faithful target rather than a stale fork.
+
+**Still unknown, and it is the question that matters:** whether staging holds
+separate *data*. That cannot be determined without authenticating. If it does,
+most of the G2/G3/G4 guard architecture becomes belt-and-braces rather than
+load-bearing. Ask Campaign Logger, or test with a staging-scoped credential.
+
+The separate `profiles.preview.campaign-identity.com` name suggests staging has
+its own identity service, which would imply separate accounts — suggestive, not
+proof.
+
+## Original 2022 evidence for Q3
 
 `tests_live/test_logger.py` did not merely *reference*
 `logger-staging.campaign-logger.com` — the recorded fixtures were **captured
@@ -21,15 +57,32 @@ response bodies, which are server-generated:
 "related": "https://logger-staging.campaign-logger.com/campaigns/<id>/logs"
 ```
 
-A host that serves populated JSON:API campaign responses existed at that name.
-Whether it still exists, whether the current credentials reach it, and whether
-it holds separate data are all still unknown.
+A host serving populated JSON:API campaign responses existed at that name in
+2022, which is what prompted the probe above. It still does.
 
-This raises Q3's priority: the plan already called a real staging host "a far
-better answer than every guard in §2", and this is evidence it is worth asking
-about rather than assuming.
+## Q1 — ANSWERED: delete is soft, and reversible
 
-## Q1 — soft delete and revisions
+The staging swagger (identical to production's) defines, for **every** resource
+type — campaigns, logs, log-entries, campaign-entries, player-logs and
+player-log-entries:
+
+| Endpoint | Method | Meaning |
+| --- | --- | --- |
+| `/{type}/cl:deleted` | GET | list deleted objects |
+| `/{type}/{id}/cl:undelete` | POST | restore a deleted object |
+| `/{type}/{id}/cl:revisions/{rev}` | GET | fetch one revision |
+| `/{type}/{id}/cl:head-revisions` | GET | current revision heads |
+| `/{type}/{id}/cl:revision-tree` | GET | full revision history |
+
+Thirty endpoints in total, none of which exist in `api.py`.
+
+Section 7 of the plan recommended never running delete against the real
+account, on the stated assumption that delete might be irreversible. It is not.
+That recommendation should be re-argued on the new facts rather than carried
+forward. Delete being recoverable is not the same as delete being free — Q2
+(cascade) is still open, and an undelete still has to be performed by someone.
+
+## Original 2022 evidence for Q1
 
 Two distinct sources, which disagree, and the distinction matters:
 
@@ -44,12 +97,36 @@ with `isDeleted: False`, `deletedOn: ""`, `previousRevision: None` and
 `revision: None`. These are local defaults on a model that no longer exists in
 `campaign_logger.models`.
 
-Critically, `isDeleted` and `deletedOn` appear **zero times** in the recorded
-server payloads. So the soft-delete hint comes only from a stale client model,
-while the revision system is corroborated by real server output. Q1 remains
-open, and the weaker half of its evidence is weaker than it first appeared.
+`isDeleted` and `deletedOn` appear **zero times** in the recorded server
+payloads, so at the time this looked like a stale client-model artefact with
+only the revision half corroborated. The swagger shows both attributes are
+real on every resource; their absence from the 2022 payloads is unexplained,
+and may be a sparse-fieldset or serializer difference worth noting when a live
+response is finally captured.
 
-## New: attribute key casing is unresolved (bears on #44 and §5)
+## #44 — the field coverage table, from the swagger
+
+Generated 2026-09-16 from the authoritative swagger, no live run required.
+Collection and relationship properties are excluded; scalar attributes only.
+
+| Resource | Modelled | Swagger attrs | Missing scalar attributes |
+| --- | --- | --- | --- |
+| `Campaign` | 3 | 14 | `createdOn`, `deletedOn`, `imageUrl`, `invitedPlayers`, `isDeleted`, `joinedPlayers`, `previousRevision`, `revision`, `stringId`, `updatedOn`, `userId` |
+| `Log` | 4 | 14 | `createdOn`, `deletedOn`, `imageUrl`, `isDeleted`, `isPinned`, `previousRevision`, `revision`, `stringId`, `updatedOn`, `userId` |
+| `LogEntry` | 4 | 16 | `createdOn`, `deletedOn`, `isDeleted`, `isShared`, `ordering`, `previousRevision`, `rawPrefix`, `rawSuffix`, `revision`, `stringId`, `updatedOn`, `userId` |
+| `CampaignEntry` | 4 | 17 | `createdOn`, `deletedOn`, `isDeleted`, `labels`, `previousRevision`, `rawPublic`, `rawSummary`, `revision`, `stringId`, `tagSymbol`, `tagValueCaseInsensitive`, `updatedOn`, `userId` |
+| `PlayerLog` | 4 | 14 | `createdOn`, `deletedOn`, `imageUrl`, `isDeleted`, `isPinned`, `previousRevision`, `revision`, `stringId`, `updatedOn`, `userId` |
+| `PlayerLogEntry` | 4 | 16 | `createdOn`, `deletedOn`, `isDeleted`, `isShared`, `ordering`, `previousRevision`, `rawPrefix`, `rawSuffix`, `revision`, `stringId`, `updatedOn`, `userId` |
+
+Missing from **every** resource: `createdOn`, `deletedOn`, `isDeleted`, `previousRevision`, `revision`, `stringId`, `updatedOn`, `userId`
+
+Every resource is missing its audit trail (`createdOn`, `updatedOn`, `userId`),
+its soft-delete state (`isDeleted`, `deletedOn`) and its revision pointers
+(`revision`, `previousRevision`), plus `stringId`. Beyond those, the notable
+per-resource gaps are `CampaignEntry.rawPublic` / `rawSummary` / `labels` and
+the `rawPrefix` / `rawSuffix` / `ordering` / `isShared` set on both entry types.
+
+## Attribute key casing is unresolved (bears on §5)
 
 The recorded staging payloads use **kebab-case** attribute keys:
 
@@ -67,13 +144,15 @@ campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
 
 That hedge is the tell: the codebase does not know which casing the server
 sends, and the mocks assert one while the only real recorded payload shows the
-other. The Phase 1 capture in §5 should settle this first, because every
-`_parse_*` method depends on it and the #44 field table cannot be written until
-it is known.
+other. The swagger schemas use **camelCase** (`campaignId`, `rawText`, `createdOn`),
+which matches the mocks and not the recorded payloads. So the wire format and
+the schema names may simply differ — a JSON:API serializer emitting kebab-case
+attribute names over camelCase schema properties would explain it. Unresolved
+until a real response is captured; the hedge in `_parse_log` should stay.
 
-Also visible in the staging payloads but absent from every current model:
-`created-on`, `updated-on`, `image-url`, `invited-players`, `user-id`. These
-belong in the #44 coverage table as candidate gaps.
+The 2022 payloads showed `created-on`, `updated-on`, `image-url`,
+`invited-players` and `user-id`, all of which the swagger confirms as real
+attributes. They are in the table above.
 
 ## What was discarded
 
