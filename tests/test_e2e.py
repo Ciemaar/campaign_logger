@@ -2,6 +2,7 @@ import os
 
 import pytest
 import requests_mock
+from conftest import live_phase_enabled
 
 from campaign_logger.api import GeneratorClient
 from campaign_logger.api import LoggerClient
@@ -9,7 +10,7 @@ from campaign_logger.api import LoggerClient
 
 @pytest.fixture
 def mock_requests(request):
-    is_live = request.config.getoption("--run-e2e") or os.environ.get("RUN_LIVE_E2E") == "1"
+    is_live = live_phase_enabled(request.config, "e2e")
 
     if is_live:
         yield None
@@ -86,13 +87,18 @@ def mock_requests(request):
 @pytest.fixture
 def live_generator_client(request, mock_requests):
     """Returns a GeneratorClient. Mocks if not running live."""
-    is_live = request.config.getoption("--run-e2e") or os.environ.get("RUN_LIVE_E2E") == "1"
+    is_live = live_phase_enabled(request.config, "e2e")
 
     if is_live:
         token = os.environ.get("CL_GENERATOR_TOKEN")
         if not token:
             pytest.skip("CL_GENERATOR_TOKEN environment variable is not set. Skipping live E2E test.")
-        url = os.environ.get("CL_GENERATOR_URL", "https://generator.campaign-logger.com")
+        # No production default: there is no known staging generator host, so a
+        # live run must name its target explicitly rather than fall back to the
+        # production generator. Fail closed.
+        url = os.environ.get("CL_GENERATOR_URL")
+        if not url:
+            pytest.skip("CL_GENERATOR_URL is not set; refusing to default to the production generator.")
         return GeneratorClient(base_url=url, token=token)
     else:
         # Request context ensures we are not modifying items directly but letting the test run with mocked data
@@ -102,20 +108,24 @@ def live_generator_client(request, mock_requests):
 @pytest.fixture
 def live_logger_client(request, mock_requests):
     """Returns a LoggerClient. Mocks if not running live."""
-    is_live = request.config.getoption("--run-e2e") or os.environ.get("RUN_LIVE_E2E") == "1"
+    is_live = live_phase_enabled(request.config, "e2e")
 
     if is_live:
         client_id = os.environ.get("CL_LOGGER_CLIENT_ID")
         client_secret = os.environ.get("CL_LOGGER_CLIENT_SECRET")
         if not client_id or not client_secret:
             pytest.skip("CL_LOGGER_CLIENT_ID or CL_LOGGER_CLIENT_SECRET environment variable is not set. Skipping live E2E test.")
-        url = os.environ.get("CL_LOGGER_URL", "https://logger.campaign-logger.com")
+        # Default to staging, never production: this test creates and deletes a
+        # campaign, so it must not be able to touch the real account by omitting
+        # a variable. Staging holds separate data.
+        url = os.environ.get("CL_LOGGER_URL", "https://logger-staging.campaign-logger.com")
         return LoggerClient(base_url=url, client_id=client_id, client_secret=client_secret)
     else:
         return LoggerClient(base_url="https://mock", client_id="mock", client_secret="mock")
 
 
 @pytest.mark.e2e
+@pytest.mark.timeout(60)
 def test_generator_client_e2e(live_generator_client):
     """End-to-End test for GeneratorClient."""
     # List all generators to ensure the client connects and authenticates
@@ -131,6 +141,7 @@ def test_generator_client_e2e(live_generator_client):
 
 
 @pytest.mark.e2e
+@pytest.mark.timeout(60)
 def test_logger_client_e2e(live_logger_client):
     """End-to-End test for LoggerClient."""
     # 1. Fetch campaigns to ensure connection

@@ -6,7 +6,7 @@ import requests_mock
 from campaign_logger.api import GeneratorClient
 from campaign_logger.models import GeneratorModel
 
-BASE_URL = "https://generator.campaign-logger.com"
+BASE_URL = "https://api.preview.campaign-logger.com"
 
 
 @pytest.fixture

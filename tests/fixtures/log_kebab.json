@@ -8,7 +8,7 @@
         "created-on": "2020-11-14T16:08:39.933088",
         "revision": "e1b60c4b34594acdb5e5ff8dd98ea145",
         "updated-on": "2020-11-14T16:08:39.933088",
-        "user-id": "cd0f022b335c4cb9941ba2e19ddb4090"
+        "user-id": "cd0f000000000000000000000000FAKE"
       },
       "relationships": {
         "campaign": {
@@ -16,8 +16,8 @@
             "reverse": "logs"
           },
           "links": {
-            "self": "https://logger.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/relationships/campaign",
-            "related": "https://logger.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/campaign"
+            "self": "https://logger-staging.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/relationships/campaign",
+            "related": "https://logger-staging.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/campaign"
           },
           "data": {
             "type": "campaigns",
@@ -29,8 +29,8 @@
             "reverse": "log"
           },
           "links": {
-            "self": "https://logger.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/relationships/log-entries",
-            "related": "https://logger.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/log-entries"
+            "self": "https://logger-staging.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/relationships/log-entries",
+            "related": "https://logger-staging.campaign-logger.com/logs/4ddd887e1988489498989162dca92bd2/log-entries"
           }
         }
       },
