@@ -19,6 +19,8 @@ into a shell and forgotten, or ride through a ``passenv = *`` in tox; a
 command-line flag has to be typed for the run it applies to.
 """
 
+import os
+
 import pytest
 
 #: Marker name -> flag that enables it. Deliberately not a hierarchy.
@@ -106,3 +108,49 @@ def pytest_collection_modifyitems(config, items):
             if marker in item.keywords and not live_phase_enabled(config, marker):
                 item.add_marker(pytest.mark.skip(reason=f"need {LIVE_PHASES.get(marker, '--run-live-read')} option to run"))
                 break
+
+
+# --- Phase 1 live read-only fixtures (issue #62) -----------------------------
+
+
+@pytest.fixture(scope="session")
+def sandbox_config():
+    """The verified sacrificial-campaign config, or skip if not set up.
+
+    Reads never need the sandbox, but the read tests assert against it to prove
+    they are talking to the account we think they are.
+    """
+    from live_sandbox import SandboxConfigError
+    from live_sandbox import load_sandbox_config
+
+    try:
+        return load_sandbox_config(os.environ)
+    except SandboxConfigError as exc:
+        pytest.skip(f"live sandbox not configured: {exc}")
+
+
+@pytest.fixture
+def live_read_client():
+    """A LoggerClient in READ phase, built from the environment.
+
+    Skips cleanly when the credentials are absent, so the suite is safe to run
+    without them. The guard forces a timeout and refuses anything but GET (plus
+    the effect-free generator POSTs, which are not enabled here).
+    """
+    client_id = os.environ.get("CL_LOGGER_CLIENT_ID")
+    client_secret = os.environ.get("CL_LOGGER_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        pytest.skip("CL_LOGGER_CLIENT_ID / CL_LOGGER_CLIENT_SECRET not set")
+
+    from live_guard import READ
+    from live_guard import HttpEffectGuard
+
+    from campaign_logger.api import LoggerClient
+
+    client = LoggerClient(
+        base_url=os.environ.get("CL_LOGGER_URL", "https://logger-staging.campaign-logger.com"),
+        client_id=client_id,
+        client_secret=client_secret,
+    )
+    HttpEffectGuard(READ).install(client.session)
+    return client

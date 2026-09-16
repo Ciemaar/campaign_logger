@@ -126,33 +126,53 @@ its soft-delete state (`isDeleted`, `deletedOn`) and its revision pointers
 per-resource gaps are `CampaignEntry.rawPublic` / `rawSummary` / `labels` and
 the `rawPrefix` / `rawSuffix` / `ordering` / `isShared` set on both entry types.
 
-## Attribute key casing is unresolved (bears on §5)
+## Attribute key casing — ANSWERED: the wire is kebab-case
 
-The recorded staging payloads use **kebab-case** attribute keys:
+Confirmed 2026-09-16 by a live read against the staging sandbox
+(`tests/test_live_read.py`, phase 1). The server sends **kebab-case** attribute
+keys on every endpoint checked — campaigns, logs, log-entries and
+campaign-entries:
 
 ```
-"image-url", "invited-players", "created-on", "updated-on", "user-id", "revision"
+created-on  updated-on  user-id  image-url  invited-players  revision
+is-pinned   is-shared   raw-text  raw-prefix  raw-suffix  raw-public
+raw-summary tag-value   tag-symbol  labels  ordering
 ```
 
-The mocked fixtures in `tests/test_e2e.py` use **camelCase** (`campaignId`,
-`rawText`), and `_parse_campaign` (`api.py:213`) reads only `title` and
-`description` — both casing-neutral. `_parse_log` (`api.py:228`) already hedges:
+So the three sources disagreed and the live wire is the tie-breaker:
 
-```python
-campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
-```
+| source | casing |
+| --- | --- |
+| swagger schemas | camelCase (`campaignId`, `rawText`) |
+| `tests/test_e2e.py` mocks | camelCase |
+| **live wire (staging + the 2022 fixtures)** | **kebab-case** |
 
-That hedge is the tell: the codebase does not know which casing the server
-sends, and the mocks assert one while the only real recorded payload shows the
-other. The swagger schemas use **camelCase** (`campaignId`, `rawText`, `createdOn`),
-which matches the mocks and not the recorded payloads. So the wire format and
-the schema names may simply differ — a JSON:API serializer emitting kebab-case
-attribute names over camelCase schema properties would explain it. Unresolved
-until a real response is captured; the hedge in `_parse_log` should stay.
+Consequences:
 
-The 2022 payloads showed `created-on`, `updated-on`, `image-url`,
-`invited-players` and `user-id`, all of which the swagger confirms as real
-attributes. They are in the table above.
+- The `_parse_*` methods hedge, e.g.
+  `attrs.get("rawText", attrs.get("raw-text", ""))`. The **kebab-case fallback
+  is the branch that actually fires against the server**; the camelCase branch
+  exists only for the mocks. The parsers are correct because of the hedge --
+  remove it in favour of camelCase and every field would silently read empty
+  against the real API.
+- The mocks in `test_e2e.py` are therefore **unrealistic**: they assert a casing
+  the server never sends. They pass only because the hedge tolerates both. A
+  fixture that mirrored the real wire would catch a regression that removed the
+  fallback; worth doing when that suite is next touched.
+- The real `logs` payload carries **no** `campaign-id` attribute at all, in
+  either casing. `_parse_log` gets it from the JSON:API `relationships` block
+  instead. The attribute-level hedge is dead code for logs; the relationship
+  fallback is load-bearing.
+
+## Pagination — partially answered (§10 Q4)
+
+The `log-entries` listing returns top-level `meta: {"total-records": N}` and
+**no** `links.next` at sandbox scale. So the API does report totals, which
+strongly implies page-based access exists (`page[...]` params), but nothing
+triggered a cursor at this volume. `_get` still has no pagination handling, so
+`get_log_entries` on a real account large enough to page would silently return
+only the first page. Re-check against a populated account before relying on any
+full-listing read.
 
 ## What was discarded
 

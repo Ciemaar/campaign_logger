@@ -74,3 +74,6 @@ docs/_build
 
 # Mypy Cache
 .mypy_cache/
+
+# live capture output (staging payloads, not for git)
+.captures/
