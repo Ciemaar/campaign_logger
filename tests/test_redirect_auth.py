@@ -20,8 +20,8 @@ from campaign_logger.api import GeneratorClient
 from campaign_logger.api import LoggerClient
 from campaign_logger.api import LoggerSession
 
-API_HOST = "https://logger.campaign-logger.com"
-GENERATOR_HOST = "https://generator.campaign-logger.com"
+API_HOST = "https://logger-staging.campaign-logger.com"
+GENERATOR_HOST = "https://api.preview.campaign-logger.com"
 OTHER_HOST = "https://elsewhere.example.com"
 
 # Generated per run rather than hardcoded, per the convention in tests/test_api.py.

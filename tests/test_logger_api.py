@@ -5,7 +5,7 @@ import requests_mock
 from campaign_logger.api import BODY_PREVIEW_CHARS
 from campaign_logger.api import LoggerClient
 
-BASE_URL = "https://logger.campaign-logger.com"
+BASE_URL = "https://logger-staging.campaign-logger.com"
 
 
 @pytest.fixture
