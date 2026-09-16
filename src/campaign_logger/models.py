@@ -1,10 +1,23 @@
 """Pydantic models for Campaign Logger APIs."""
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import PrivateAttr
+from pydantic import field_validator
+
+
+def _to_kebab(field_name: str) -> str:
+    """Map a snake_case field to the kebab-case key the API sends on the wire.
+
+    The wire format is kebab-case (``created-on``, ``raw-text``); the swagger
+    schema names are camelCase but that is not what crosses the wire. We support
+    only what the API actually sends. See docs/live_testing_evidence.md.
+    """
+    return field_name.replace("_", "-")
 
 
 class VariableModel(BaseModel):
@@ -77,12 +90,51 @@ class GeneratorModel(BaseModel):
 # High-Level Object-Oriented Models
 
 
+class Player(BaseModel):
+    """A player invited to or joined into a campaign."""
+
+    model_config = ConfigDict(alias_generator=_to_kebab, populate_by_name=True, extra="ignore")
+
+    email_address: str | None = None
+    email_address_case_insensitive: str | None = None
+    joined_campaigns: list[str] | None = None
+
+
 class BaseEntity(BaseModel):
-    """Base model for high-level object-oriented wrappers."""
+    """Base model for high-level object-oriented wrappers.
+
+    Attributes come off the wire in kebab-case; the ``alias_generator`` maps each
+    snake_case field to its kebab-case key, and ``populate_by_name`` still allows
+    constructing an entity with the field names directly (as the tests do).
+    ``extra="ignore"`` tolerates attributes the model does not yet cover.
+
+    The audit-trail, soft-delete and revision fields below are present on every
+    resource in the API, so they live here rather than being repeated.
+    """
+
+    model_config = ConfigDict(alias_generator=_to_kebab, populate_by_name=True, extra="ignore")
 
     id: str
     type: str
+
+    created_on: datetime | None = None
+    updated_on: datetime | None = None
+    deleted_on: datetime | None = None
+    is_deleted: bool = False
+    revision: str | None = None
+    previous_revision: str | None = None
+    string_id: str | None = None
+    user_id: str | None = None
+
     _client: Any = PrivateAttr(default=None)
+
+    @field_validator("created_on", "updated_on", "deleted_on", mode="before")
+    @classmethod
+    def _empty_string_is_none(cls, value: Any) -> Any:
+        """Coerce the API's empty-string timestamp (e.g. ``deleted-on: ""``) to None."""
+        if value == "":
+            return None
+        return value
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the entity to a dictionary for CLI output."""
@@ -128,9 +180,11 @@ class CampaignEntry(BaseEntity):
 class Log(BaseEntity):
     """Model representing a Log."""
 
-    title: str
-    description: str
-    campaign_id: str
+    title: str | None = None
+    description: str | None = None
+    campaign_id: str | None = None
+    image_url: str | None = None
+    is_pinned: bool = False
 
     def get_entries(self) -> list[LogEntry]:
         """Get all log entries for this log."""
@@ -157,8 +211,11 @@ class Log(BaseEntity):
 class Campaign(BaseEntity):
     """Model representing a Campaign."""
 
-    title: str
-    description: str
+    title: str | None = None
+    description: str | None = None
+    image_url: str | None = None
+    invited_players: list[str] | None = None
+    joined_players: list[Player] | None = None
 
     def get_logs(self) -> list[Log]:
         """Get all logs for this campaign."""

@@ -213,7 +213,7 @@ def create_log_body(campaign_id):
         {
             "data": {
                 "type": "logs",
-                "attributes": {"title": "PYTEST-LIVE-s1", "description": "", "campaignId": campaign_id},
+                "attributes": {"title": "PYTEST-LIVE-s1", "description": "", "campaign-id": campaign_id},
                 "relationships": {"campaign": {"data": {"type": "campaigns", "id": campaign_id}}},
             }
         }
@@ -251,7 +251,7 @@ def test_create_with_an_unparseable_body_is_refused():
 
 def test_body_naming_two_campaigns_is_refused_unless_both_are_ours():
     guard = guard_for(WRITE, CreatedLedger(config()))
-    body = json.dumps({"data": [{"campaignId": SANDBOX_ID}, {"campaignId": OTHER_ID}]})
+    body = json.dumps({"data": [{"campaign-id": SANDBOX_ID}, {"campaign-id": OTHER_ID}]})
     with pytest.raises(LiveGuardViolation):
         guard.check("POST", f"{LOGGER}/logs", body)
 
@@ -272,13 +272,13 @@ def test_entry_under_a_log_we_created_is_allowed():
     ledger = CreatedLedger(config())
     ledger.record("logs", CREATED_LOG_ID)
     guard = guard_for(WRITE, ledger)
-    body = json.dumps({"data": {"attributes": {"rawText": "PYTEST-LIVE-x", "logId": CREATED_LOG_ID}}})
+    body = json.dumps({"data": {"attributes": {"raw-text": "PYTEST-LIVE-x", "log-id": CREATED_LOG_ID}}})
     guard.check("POST", f"{LOGGER}/log-entries", body)
 
 
 def test_entry_under_a_log_we_did_not_create_is_refused():
     guard = guard_for(WRITE, CreatedLedger(config()))
-    body = json.dumps({"data": {"attributes": {"rawText": "x", "logId": OTHER_ID}}})
+    body = json.dumps({"data": {"attributes": {"raw-text": "x", "log-id": OTHER_ID}}})
     with pytest.raises(LiveGuardViolation):
         guard.check("POST", f"{LOGGER}/log-entries", body)
 

@@ -34,10 +34,10 @@ ID_SHAPE = re.compile(r"^[0-9a-f]{32}$")
 FORBIDDEN_TARGET_VARS = ("CL_DEFAULT_CAMPAIGN_ID", "CL_DEFAULT_LOG_ID")
 
 #: Body keys that name the campaign a create is attached to.
-CAMPAIGN_KEYS = ("campaignId", "campaign-id", "campaign_id")
+CAMPAIGN_KEYS = ("campaign-id", "campaign-id", "campaign_id")
 
 #: Body keys naming a parent that is itself an object, resolved via the ledger.
-PARENT_KEYS = ("logId", "log-id", "log_id", "entryId", "entry-id")
+PARENT_KEYS = ("log-id", "log-id", "log_id", "entryId", "entry-id")
 
 
 class SandboxConfigError(AssertionError):

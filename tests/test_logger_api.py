@@ -162,7 +162,7 @@ def test_delete_campaign_entry(client):
 
 def test_get_player_logs(client):
     with requests_mock.Mocker() as m:
-        m.get(f"{BASE_URL}/player-logs", json={"data": [{"id": "pl1", "type": "player-logs", "attributes": {"campaignId": "c1"}}]})
+        m.get(f"{BASE_URL}/player-logs", json={"data": [{"id": "pl1", "type": "player-logs", "attributes": {"campaign-id": "c1"}}]})
         result = client.get_player_logs()
         assert len(result) == 1  # nosec
         assert result[0].id == "pl1"  # nosec
@@ -172,7 +172,7 @@ def test_get_player_log(client):
     with requests_mock.Mocker() as m:
         m.get(
             f"{BASE_URL}/player-logs/pl1",
-            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"campaignId": "c1"}}},
+            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"campaign-id": "c1"}}},
         )
         result = client.get_player_log("pl1")
         assert result.id == "pl1"  # nosec
@@ -182,7 +182,7 @@ def test_create_player_log(client):
     with requests_mock.Mocker() as m:
         m.post(
             f"{BASE_URL}/player-logs",
-            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"title": "Player Log", "campaignId": "c1"}}},
+            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"title": "Player Log", "campaign-id": "c1"}}},
         )
         result = client.create_player_log("c1", "Player Log", "Desc")
         assert result.id == "pl1"  # nosec
@@ -208,7 +208,7 @@ def test_get_player_log_entries(client):
     with requests_mock.Mocker() as m:
         m.get(
             f"{BASE_URL}/player-log-entries",
-            json={"data": [{"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}]},
+            json={"data": [{"id": "ple1", "type": "player-log-entries", "attributes": {"log-id": "pl1"}}]},
         )
         result = client.get_player_log_entries()
         assert len(result) == 1  # nosec
@@ -219,7 +219,7 @@ def test_get_player_log_entry(client):
     with requests_mock.Mocker() as m:
         m.get(
             f"{BASE_URL}/player-log-entries/ple1",
-            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"log-id": "pl1"}}},
         )
         result = client.get_player_log_entry("ple1")
         assert result.id == "ple1"  # nosec
@@ -229,7 +229,7 @@ def test_create_player_log_entry(client):
     with requests_mock.Mocker() as m:
         m.post(
             f"{BASE_URL}/player-log-entries",
-            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"log-id": "pl1"}}},
         )
         result = client.create_player_log_entry("pl1", "text")
         assert result.id == "ple1"  # nosec
@@ -239,7 +239,7 @@ def test_update_player_log_entry(client):
     with requests_mock.Mocker() as m:
         m.patch(
             f"{BASE_URL}/player-log-entries/ple1",
-            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"log-id": "pl1"}}},
         )
         result = client.update_player_log_entry("ple1", "new text")
         assert result.id == "ple1"  # nosec
@@ -256,25 +256,25 @@ def test_campaign_methods(client):
         m.get(f"{BASE_URL}/campaigns/c1", json={"data": {"id": "c1", "type": "campaigns"}})
         campaign = client.get_campaign("c1")
 
-        m.get(f"{BASE_URL}/logs", json={"data": [{"id": "l1", "type": "logs", "attributes": {"campaignId": "c1"}}]})
+        m.get(f"{BASE_URL}/logs", json={"data": [{"id": "l1", "type": "logs", "attributes": {"campaign-id": "c1"}}]})
         logs = campaign.get_logs()
         assert len(logs) == 1  # nosec
         assert logs[0].id == "l1"  # nosec
 
-        m.post(f"{BASE_URL}/logs", json={"data": {"id": "l2", "type": "logs", "attributes": {"campaignId": "c1"}}})
+        m.post(f"{BASE_URL}/logs", json={"data": {"id": "l2", "type": "logs", "attributes": {"campaign-id": "c1"}}})
         new_log = campaign.create_log("Test Log")
         assert new_log.id == "l2"  # nosec
 
         m.get(
             f"{BASE_URL}/campaign-entries",
-            json={"data": [{"id": "ce1", "type": "campaign-entries", "attributes": {"campaignId": "c1"}}]},
+            json={"data": [{"id": "ce1", "type": "campaign-entries", "attributes": {"campaign-id": "c1"}}]},
         )
         entries = campaign.get_entries()
         assert len(entries) == 1  # nosec
 
         m.post(
             f"{BASE_URL}/campaign-entries",
-            json={"data": {"id": "ce2", "type": "campaign-entries", "attributes": {"campaignId": "c1"}}},
+            json={"data": {"id": "ce2", "type": "campaign-entries", "attributes": {"campaign-id": "c1"}}},
         )
         new_entry = campaign.create_entry("text")
         assert new_entry.id == "ce2"  # nosec
@@ -290,14 +290,14 @@ def test_campaign_methods(client):
 
         m.get(
             f"{BASE_URL}/player-logs",
-            json={"data": [{"id": "pl1", "type": "player-logs", "attributes": {"campaignId": "c1"}}]},
+            json={"data": [{"id": "pl1", "type": "player-logs", "attributes": {"campaign-id": "c1"}}]},
         )
         plogs = campaign.get_player_logs()
         assert len(plogs) == 1  # nosec
 
         m.post(
             f"{BASE_URL}/player-logs",
-            json={"data": {"id": "pl2", "type": "player-logs", "attributes": {"campaignId": "c1"}}},
+            json={"data": {"id": "pl2", "type": "player-logs", "attributes": {"campaign-id": "c1"}}},
         )
         new_plog = campaign.create_player_log("Title")
         assert new_plog.id == "pl2"  # nosec
@@ -307,20 +307,20 @@ def test_player_log_methods(client):
     with requests_mock.Mocker() as m:
         m.get(
             f"{BASE_URL}/player-logs/pl1",
-            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"campaignId": "c1"}}},
+            json={"data": {"id": "pl1", "type": "player-logs", "attributes": {"campaign-id": "c1"}}},
         )
         plog = client.get_player_log("pl1")
 
         m.get(
             f"{BASE_URL}/player-log-entries",
-            json={"data": [{"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}]},
+            json={"data": [{"id": "ple1", "type": "player-log-entries", "attributes": {"log-id": "pl1"}}]},
         )
         entries = plog.get_entries()
         assert len(entries) == 1  # nosec
 
         m.post(
             f"{BASE_URL}/player-log-entries",
-            json={"data": {"id": "ple2", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+            json={"data": {"id": "ple2", "type": "player-log-entries", "attributes": {"log-id": "pl1"}}},
         )
         new_entry = plog.create_entry("text")
         assert new_entry.id == "ple2"  # nosec
@@ -339,7 +339,7 @@ def test_player_log_entry_methods(client):
     with requests_mock.Mocker() as m:
         m.get(
             f"{BASE_URL}/player-log-entries/ple1",
-            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"logId": "pl1"}}},
+            json={"data": {"id": "ple1", "type": "player-log-entries", "attributes": {"log-id": "pl1"}}},
         )
         entry = client.get_player_log_entry("ple1")
 
@@ -355,14 +355,14 @@ def test_player_log_entry_methods(client):
 
 def test_log_methods(client):
     with requests_mock.Mocker() as m:
-        m.get(f"{BASE_URL}/logs/l1", json={"data": {"id": "l1", "type": "logs", "attributes": {"campaignId": "c1"}}})
+        m.get(f"{BASE_URL}/logs/l1", json={"data": {"id": "l1", "type": "logs", "attributes": {"campaign-id": "c1"}}})
         log_obj = client.get_log("l1")
 
-        m.get(f"{BASE_URL}/log-entries", json={"data": [{"id": "le1", "type": "log-entries", "attributes": {"logId": "l1"}}]})
+        m.get(f"{BASE_URL}/log-entries", json={"data": [{"id": "le1", "type": "log-entries", "attributes": {"log-id": "l1"}}]})
         entries = log_obj.get_entries()
         assert len(entries) == 1  # nosec
 
-        m.post(f"{BASE_URL}/log-entries", json={"data": {"id": "le2", "type": "log-entries", "attributes": {"logId": "l1"}}})
+        m.post(f"{BASE_URL}/log-entries", json={"data": {"id": "le2", "type": "log-entries", "attributes": {"log-id": "l1"}}})
         new_entry = log_obj.create_entry("text")
         assert new_entry.id == "le2"  # nosec
 
@@ -378,7 +378,7 @@ def test_log_methods(client):
 
 def test_log_entry_methods(client):
     with requests_mock.Mocker() as m:
-        m.get(f"{BASE_URL}/log-entries/le1", json={"data": {"id": "le1", "type": "log-entries", "attributes": {"logId": "l1"}}})
+        m.get(f"{BASE_URL}/log-entries/le1", json={"data": {"id": "le1", "type": "log-entries", "attributes": {"log-id": "l1"}}})
         entry = client.get_log_entry("le1")
 
         m.patch(f"{BASE_URL}/log-entries/le1", json={"data": {"id": "le1", "type": "log-entries"}})
@@ -395,7 +395,7 @@ def test_campaign_entry_methods(client):
     with requests_mock.Mocker() as m:
         m.get(
             f"{BASE_URL}/campaign-entries/ce1",
-            json={"data": {"id": "ce1", "type": "campaign-entries", "attributes": {"campaignId": "c1"}}},
+            json={"data": {"id": "ce1", "type": "campaign-entries", "attributes": {"campaign-id": "c1"}}},
         )
         entry = client.get_campaign_entry("ce1")
 
@@ -584,8 +584,8 @@ def test_get_log_entries_filter(client):
             f"{BASE_URL}/log-entries",
             json={
                 "data": [
-                    {"id": "e1", "type": "log-entries", "attributes": {"logId": "l1"}},
-                    {"id": "e2", "type": "log-entries", "attributes": {"logId": "l2"}},
+                    {"id": "e1", "type": "log-entries", "attributes": {"log-id": "l1"}},
+                    {"id": "e2", "type": "log-entries", "attributes": {"log-id": "l2"}},
                 ]
             },
         )
@@ -600,8 +600,8 @@ def test_get_campaign_entries_filter(client):
             f"{BASE_URL}/campaign-entries",
             json={
                 "data": [
-                    {"id": "ce1", "type": "campaign-entries", "attributes": {"campaignId": "c1"}},
-                    {"id": "ce2", "type": "campaign-entries", "attributes": {"campaignId": "c2"}},
+                    {"id": "ce1", "type": "campaign-entries", "attributes": {"campaign-id": "c1"}},
+                    {"id": "ce2", "type": "campaign-entries", "attributes": {"campaign-id": "c2"}},
                 ]
             },
         )

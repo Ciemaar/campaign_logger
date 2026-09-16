@@ -224,32 +224,36 @@ class LoggerClient:
         response = self.session.delete(url)
         response.raise_for_status()
 
+    @staticmethod
+    def _entity_data(resource: dict[str, Any]) -> dict[str, Any]:
+        """Build the dict a model validates from: wire attributes plus id/type.
+
+        Attributes arrive kebab-case and are matched by each model's alias
+        generator. id and type come from the JSON:API resource level, where they
+        always appear, and override any same-named attribute.
+        """
+        attrs = dict(resource.get("attributes", {}))
+        attrs["id"] = str(resource.get("id", ""))
+        attrs["type"] = resource.get("type", "")
+        return attrs
+
+    @staticmethod
+    def _relationship_id(resource: dict[str, Any], name: str) -> str:
+        """Return the id of a JSON:API relationship, or '' if absent."""
+        data = resource.get("relationships", {}).get(name, {}).get("data", {})
+        return str(data.get("id", "")) if data else ""
+
     def _parse_campaign(self, resource: dict[str, Any]) -> Campaign:
-        attrs = resource.get("attributes", {})
-        camp = Campaign(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            title=str(attrs.get("title", "")),
-            description=str(attrs.get("description", "")),
-        )
+        camp = Campaign.model_validate(self._entity_data(resource))
         camp._client = self
         return camp
 
     def _parse_log(self, resource: dict[str, Any]) -> Log:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        campaign_rel = rels.get("campaign", {}).get("data", {})
-        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
-        if not campaign_id and campaign_rel:
-            campaign_id = str(campaign_rel.get("id", ""))
-
-        log_obj = Log(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            title=str(attrs.get("title", "")),
-            description=str(attrs.get("description", "")),
-            campaign_id=campaign_id,
-        )
+        log_obj = Log.model_validate(self._entity_data(resource))
+        # The wire log payload carries no campaign-id attribute; it comes from
+        # the relationships block. Fall back to it when the attribute is absent.
+        if not log_obj.campaign_id:
+            log_obj.campaign_id = self._relationship_id(resource, "campaign")
         log_obj._client = self
         return log_obj
 
