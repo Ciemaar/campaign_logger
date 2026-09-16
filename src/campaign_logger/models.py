@@ -144,9 +144,13 @@ class BaseEntity(BaseModel):
 class LogEntry(BaseEntity):
     """Model representing a Log Entry."""
 
-    raw_text: str
+    raw_text: str | None = None
     title: str | None = None
-    log_id: str
+    log_id: str | None = None
+    is_shared: bool = False
+    ordering: str | None = None
+    raw_prefix: str | None = None
+    raw_suffix: str | None = None
 
     def save(self) -> "LogEntry":
         """Save changes to this log entry."""
@@ -162,9 +166,14 @@ class LogEntry(BaseEntity):
 class CampaignEntry(BaseEntity):
     """Model representing a Campaign Entry (Page)."""
 
-    raw_text: str
+    raw_text: str | None = None
     tag_value: str | None = None
-    campaign_id: str
+    campaign_id: str | None = None
+    raw_public: str | None = None
+    raw_summary: str | None = None
+    tag_symbol: str | None = None
+    tag_value_case_insensitive: str | None = None
+    labels: list[str] | None = None
 
     def save(self) -> "CampaignEntry":
         """Save changes to this campaign entry."""
@@ -264,9 +273,13 @@ class Campaign(BaseEntity):
 class PlayerLogEntry(BaseEntity):
     """Model representing a Player Log Entry."""
 
-    raw_text: str
+    raw_text: str | None = None
     title: str | None = None
-    log_id: str
+    log_id: str | None = None
+    is_shared: bool = False
+    ordering: str | None = None
+    raw_prefix: str | None = None
+    raw_suffix: str | None = None
 
     def save(self) -> "PlayerLogEntry":
         """Save changes to this player log entry."""
@@ -282,9 +295,11 @@ class PlayerLogEntry(BaseEntity):
 class PlayerLog(BaseEntity):
     """Model representing a Player Log."""
 
-    title: str
-    description: str
-    campaign_id: str
+    title: str | None = None
+    description: str | None = None
+    campaign_id: str | None = None
+    image_url: str | None = None
+    is_pinned: bool = False
 
     def get_entries(self) -> list[PlayerLogEntry]:
         """Get all player log entries for this log."""

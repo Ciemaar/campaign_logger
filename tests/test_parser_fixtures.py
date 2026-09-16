@@ -136,3 +136,65 @@ def test_parse_log_relationships():
     client = LoggerClient()
     log_obj = client._parse_log(payload)
     assert log_obj.campaign_id == "rel_campaign_id"
+
+
+def test_parse_campaign_populates_new_scalars():
+    """#44: the audit-trail, revision and Campaign-specific scalars populate."""
+    fixture_path = os.path.join(os.path.dirname(__file__), "fixtures", "campaign_kebab.json")
+    with open(fixture_path, "r") as f:
+        data = json.load(f)["data"]
+    camp = LoggerClient()._parse_campaign(data)
+
+    assert camp.revision == "471a8ba889a9449a96e7c41e59c12f24"
+    assert camp.user_id == "cd0f000000000000000000000000FAKE"
+    assert camp.created_on is not None and camp.created_on.year == 2020
+    assert camp.updated_on is not None
+    assert camp.is_deleted is False
+    assert camp.image_url == ""
+
+
+def test_parse_log_populates_new_scalars():
+    fixture_path = os.path.join(os.path.dirname(__file__), "fixtures", "log_kebab.json")
+    with open(fixture_path, "r") as f:
+        data = json.load(f)["data"]
+    log_obj = LoggerClient()._parse_log(data)
+
+    assert log_obj.revision == "e1b60c4b34594acdb5e5ff8dd98ea145"
+    assert log_obj.is_pinned is False
+    assert log_obj.created_on is not None and log_obj.created_on.year == 2020
+
+
+def test_parse_log_entry_populates_new_scalars():
+    fixture_path = os.path.join(os.path.dirname(__file__), "fixtures", "log_entry_kebab.json")
+    with open(fixture_path, "r") as f:
+        data = json.load(f)["data"]
+    entry = LoggerClient()._parse_log_entry(data)
+
+    assert entry.revision == "6c651e4903514c838e56fb369a244a29"
+    assert entry.is_shared is False
+    assert entry.raw_prefix is None
+    assert entry.created_on is not None
+
+
+def test_parse_campaign_entry_populates_new_scalars():
+    fixture_path = os.path.join(os.path.dirname(__file__), "fixtures", "campaign_entry_kebab.json")
+    with open(fixture_path, "r") as f:
+        data = json.load(f)["data"]
+    entry = LoggerClient()._parse_campaign_entry(data)
+
+    assert entry.revision == "6066267352e64a25a7f76d8d0b1297a3"
+    assert entry.tag_symbol == "~"
+    assert entry.tag_value == "Quick Character Creation"
+    assert entry.user_id == "cd0f000000000000000000000000FAKE"
+
+
+def test_timestamp_empty_string_becomes_none():
+    """The API sends deleted-on as "" for a live object; it must parse to None."""
+    payload = {
+        "id": "x",
+        "type": "campaigns",
+        "attributes": {"title": "t", "deleted-on": "", "created-on": "2020-01-01T00:00:00"},
+    }
+    camp = LoggerClient()._parse_campaign(payload)
+    assert camp.deleted_on is None
+    assert camp.created_on is not None

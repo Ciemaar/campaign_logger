@@ -258,92 +258,37 @@ class LoggerClient:
         return log_obj
 
     def _parse_log_entry(self, resource: dict[str, Any]) -> LogEntry:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        log_rel = rels.get("log", {}).get("data", {})
-
-        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
-        title = str(attrs.get("title", ""))
-
-        log_id = str(attrs.get("logId", attrs.get("log-id", "")))
-        if not log_id and log_rel:
-            log_id = str(log_rel.get("id", ""))
-
-        entry = LogEntry(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            raw_text=raw_text,
-            title=title if title else None,
-            log_id=log_id,
-        )
+        entry = LogEntry.model_validate(self._entity_data(resource))
+        if not entry.log_id:
+            entry.log_id = self._relationship_id(resource, "log")
         entry._client = self
         return entry
 
     def _parse_player_log(self, resource: dict[str, Any]) -> PlayerLog:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        campaign_rel = rels.get("campaign", {}).get("data", {})
-        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
-        if not campaign_id and campaign_rel:
-            campaign_id = str(campaign_rel.get("id", ""))
-
-        log_obj = PlayerLog(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            title=str(attrs.get("title", "")),
-            description=str(attrs.get("description", "")),
-            campaign_id=campaign_id,
-        )
+        log_obj = PlayerLog.model_validate(self._entity_data(resource))
+        if not log_obj.campaign_id:
+            log_obj.campaign_id = self._relationship_id(resource, "campaign")
         log_obj._client = self
         return log_obj
 
     def _parse_player_log_entry(self, resource: dict[str, Any]) -> PlayerLogEntry:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        log_rel = rels.get("playerLog", rels.get("player-log", {})).get("data", {})
-
-        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
-        title = str(attrs.get("title", ""))
-
-        log_id = str(attrs.get("logId", attrs.get("log-id", "")))
-        if not log_id and log_rel:
-            log_id = str(log_rel.get("id", ""))
-
-        entry = PlayerLogEntry(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            raw_text=raw_text,
-            title=title if title else None,
-            log_id=log_id,
-        )
+        entry = PlayerLogEntry.model_validate(self._entity_data(resource))
+        if not entry.log_id:
+            entry.log_id = (
+                self._relationship_id(resource, "player-log")
+                or self._relationship_id(resource, "playerLog")
+                or self._relationship_id(resource, "log")
+            )
         entry._client = self
         return entry
 
     def _parse_campaign_entry(self, resource: dict[str, Any]) -> CampaignEntry:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        campaign_rel = rels.get("campaign", {}).get("data", {})
-
-        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
-        raw_public = str(attrs.get("rawPublic", attrs.get("raw-public", "")))
-
-        tag_value = str(attrs.get("tagValue", attrs.get("tag-value", "")))
-
-        # In Campaign Logger, the full content of a page is sometimes spread out.
-        if not raw_text and raw_public:
-            raw_text = raw_public.strip()
-
-        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
-        if not campaign_id and campaign_rel:
-            campaign_id = str(campaign_rel.get("id", ""))
-
-        entry = CampaignEntry(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            raw_text=raw_text,
-            tag_value=tag_value if tag_value else None,
-            campaign_id=campaign_id,
-        )
+        entry = CampaignEntry.model_validate(self._entity_data(resource))
+        # A page's body is sometimes only in raw-public; fall back to it.
+        if not entry.raw_text and entry.raw_public:
+            entry.raw_text = entry.raw_public.strip()
+        if not entry.campaign_id:
+            entry.campaign_id = self._relationship_id(resource, "campaign")
         entry._client = self
         return entry
 
