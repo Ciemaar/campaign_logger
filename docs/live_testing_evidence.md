@@ -52,7 +52,7 @@ proof.
 from it**. The host appears in JSON:API `self` and `related` link fields inside
 response bodies, which are server-generated:
 
-```
+```text
 "self":    "https://logger-staging.campaign-logger.com/campaigns/<id>/relationships/logs"
 "related": "https://logger-staging.campaign-logger.com/campaigns/<id>/logs"
 ```
