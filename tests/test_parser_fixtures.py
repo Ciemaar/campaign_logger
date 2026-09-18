@@ -198,3 +198,22 @@ def test_timestamp_empty_string_becomes_none():
     camp = LoggerClient()._parse_campaign(payload)
     assert camp.deleted_on is None
     assert camp.created_on is not None
+
+
+def test_to_dict_is_json_serialisable_with_timestamps():
+    """cli.py does json.dumps(obj.to_dict()); datetimes must render as strings.
+
+    Regression: adding datetime fields (#44) made model_dump() return datetime
+    objects, which json.dumps cannot serialise. The mocks did not carry
+    created-on, so only real data hit it.
+    """
+    payload = {
+        "id": "c1",
+        "type": "campaigns",
+        "attributes": {"title": "T", "created-on": "2020-11-14T04:51:29.293273"},
+    }
+    camp = LoggerClient()._parse_campaign(payload)
+    as_dict = camp.to_dict()
+
+    assert isinstance(as_dict["created_on"], str)
+    json.dumps(as_dict)  # must not raise

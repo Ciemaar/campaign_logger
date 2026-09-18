@@ -137,8 +137,13 @@ class BaseEntity(BaseModel):
         return value
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert the entity to a dictionary for CLI output."""
-        return self.model_dump()
+        """Convert the entity to a JSON-safe dictionary for CLI output.
+
+        ``mode="json"`` matters: the timestamp fields are real ``datetime``
+        objects, and ``cli.py`` passes this straight to ``json.dumps``, which
+        cannot serialise them. This renders them as ISO strings instead.
+        """
+        return self.model_dump(mode="json")
 
 
 class LogEntry(BaseEntity):
