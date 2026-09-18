@@ -1,3 +1,5 @@
+import pathlib
+
 import pytest
 import requests
 import requests_mock
@@ -739,24 +741,78 @@ def test_create_log_and_player_log_send_kebab_case_campaign_id(client):
         assert _sent_attributes(m)["campaign-id"] == "c1"  # nosec
 
 
-def test_no_write_payload_uses_camelcase_attributes():
-    """A tripwire for write methods nobody remembered to assert on.
+def _write_payload_call_sites():
+    """Every ``self.write_payload(...)`` call in api.py, parsed from the source.
 
-    This is deliberately shallow. It only sees an indented, double-quoted,
-    colon-terminated key -- the shape the payload dicts are written in today. It
-    does NOT catch a one-line dict, single quotes, ``update(rawText=...)`` or a
-    computed key, all of which would reintroduce the bug and pass here.
-
-    The per-method assertions above, which check the body the client actually
-    sends, are the load-bearing protection. Do not delete them on the grounds
-    that this test covers the surface -- it does not.
+    Read with ``ast`` rather than a regex: the keys are dict literals whose
+    position on the line depends on how the formatter broke the call, and a
+    regex that pins them to the start of a line stops seeing them the moment
+    anything is reflowed. It also means docstrings and comments mentioning
+    ``rawText`` are not mistaken for code.
     """
-    import pathlib
-    import re
+    import ast
 
-    source = pathlib.Path("src/campaign_logger/api.py").read_text()
-    offenders = re.findall(r'^\s+"([a-z]+[A-Z]\w*)"\s*:', source, re.MULTILINE)
-    assert not offenders, f"write payloads must use kebab-case, found: {sorted(set(offenders))}"  # nosec
+    tree = ast.parse(pathlib.Path("src/campaign_logger/api.py").read_text())
+    return [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "write_payload"
+    ]
+
+
+def _literal_dict_keys(node):
+    """String keys of a dict literal argument, or [] if it is not a literal."""
+    import ast
+
+    if not isinstance(node, ast.Dict):
+        return []
+    return [k.value for k in node.keys if isinstance(k, ast.Constant) and isinstance(k.value, str)]
+
+
+def test_the_write_funnel_is_actually_used():
+    """Guard the guard: the checks below are vacuous if nothing routes through it.
+
+    This is not hypothetical. The previous version of this check was a regex
+    anchored to the start of a line; consolidating the payloads moved every key
+    into a call-site dict literal and the check silently began passing on an
+    empty set.
+    """
+    calls = _write_payload_call_sites()
+    assert len(calls) >= 6, f"expected every write to route through write_payload, found {len(calls)} call sites"  # nosec
+
+
+def test_write_payload_call_sites_use_kebab_case_attributes():
+    """Attribute keys must be kebab-case at every call site.
+
+    A camelCase key is accepted by the server with 201 and silently discarded
+    (#75), so this is the shape of a data-loss bug, not a style violation.
+    """
+    import ast
+
+    offenders = {}
+    for call in _write_payload_call_sites():
+        attributes = call.args[1] if len(call.args) > 1 else None
+        for keyword in call.keywords:
+            if keyword.arg == "attributes":
+                attributes = keyword.value
+        for key in _literal_dict_keys(attributes) if isinstance(attributes, ast.Dict) else []:
+            if any(character.isupper() for character in key):
+                offenders.setdefault(getattr(call.args[0], "value", "?"), []).append(key)
+
+    assert not offenders, f"write payloads must use kebab-case attribute keys: {offenders}"  # nosec
+
+
+def test_write_payload_call_sites_use_kebab_case_relationship_names():
+    """Relationship member names too -- "playerLog" orphaned every entry it created."""
+    offenders = {}
+    for call in _write_payload_call_sites():
+        for keyword in call.keywords:
+            if keyword.arg == "relationships":
+                for key in _literal_dict_keys(keyword.value):
+                    if any(character.isupper() for character in key):
+                        offenders.setdefault(getattr(call.args[0], "value", "?"), []).append(key)
+
+    assert not offenders, f"relationship members must use kebab-case: {offenders}"  # nosec
 
 
 def test_create_player_log_entry_uses_the_player_log_relationship_name(client):
