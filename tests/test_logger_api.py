@@ -736,7 +736,17 @@ def test_create_log_and_player_log_send_kebab_case_campaign_id(client):
 
 
 def test_no_write_payload_uses_camelcase_attributes():
-    """Guard the whole surface, not just the methods above."""
+    """A tripwire for write methods nobody remembered to assert on.
+
+    This is deliberately shallow. It only sees an indented, double-quoted,
+    colon-terminated key -- the shape the payload dicts are written in today. It
+    does NOT catch a one-line dict, single quotes, ``update(rawText=...)`` or a
+    computed key, all of which would reintroduce the bug and pass here.
+
+    The per-method assertions above, which check the body the client actually
+    sends, are the load-bearing protection. Do not delete them on the grounds
+    that this test covers the surface -- it does not.
+    """
     import pathlib
     import re
 
