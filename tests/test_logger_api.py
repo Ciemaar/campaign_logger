@@ -1,6 +1,7 @@
 import pytest
 import requests
 import requests_mock
+import wire
 
 from campaign_logger.api import BODY_PREVIEW_CHARS
 from campaign_logger.api import LoggerClient
@@ -23,7 +24,7 @@ def test_get_campaigns(client):
 
 def test_get_campaign(client):
     with requests_mock.Mocker() as m:
-        m.get(f"{BASE_URL}/campaigns/c1", json={"data": {"id": "c1", "type": "campaigns"}})
+        m.get(f"{BASE_URL}/campaigns/c1", json=wire.document("campaigns", "c1", title="My Campaign"))
         result = client.get_campaign("c1")
         assert result.id == "c1"  # nosec
 
@@ -253,7 +254,7 @@ def test_delete_player_log_entry(client):
 
 def test_campaign_methods(client):
     with requests_mock.Mocker() as m:
-        m.get(f"{BASE_URL}/campaigns/c1", json={"data": {"id": "c1", "type": "campaigns"}})
+        m.get(f"{BASE_URL}/campaigns/c1", json=wire.document("campaigns", "c1", title="My Campaign"))
         campaign = client.get_campaign("c1")
 
         m.get(f"{BASE_URL}/logs", json={"data": [{"id": "l1", "type": "logs", "attributes": {"campaign-id": "c1"}}]})
