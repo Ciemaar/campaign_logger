@@ -307,6 +307,11 @@ def split_campaign_command(ctx, campaign_id, output_dir, strip_code_from_notes):
     Fetches the campaign, its entries and its logs read-only, and writes
     <campaign>.public.txt, <campaign>.private.txt and one <log title>.txt per log.
 
+    Only <campaign>.public.txt is safe to hand to players. Log entries have no
+    public variant in the API, so the per-log files hold the full log text and are
+    as sensitive as the private file even though their names do not say so. Log
+    entries carry an is-shared flag that this command ignores.
+
     Caveat: get_log_entries(log_id) and get_campaign_entries(campaign_id) fetch every
     entry in the account and filter client-side, and _get does not follow pagination,
     so on an account large enough to page the output may be silently truncated. See

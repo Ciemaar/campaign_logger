@@ -12,6 +12,19 @@ Three kinds of output are produced in ``output_dir``:
 2. ``<campaign>.private.txt`` -- the same headings with the ``raw_text`` body.
 3. ``<log title>.txt`` -- one file per log, each log entry's title then its text.
 
+.. warning::
+
+   Only the ``.public.txt`` file is safe to hand to players. The public/private
+   split exists for campaign entries, which carry both a ``raw_public`` and a
+   ``raw_text`` body. **Log entries have no public variant at all** -- the API
+   gives them only ``raw_text`` -- so the per-log files contain the full log
+   text and should be treated exactly like the private file, despite their
+   names saying nothing either way.
+
+   Log entries do carry an ``is_shared`` flag, which this command ignores: every
+   entry is written regardless. If you need a player-safe export of the logs,
+   that flag is the signal to filter on, and it is not implemented here.
+
 Everything here is read-only: only ``get_*`` methods of the client are called.
 
 The writers are ported from ``rag.ipynb`` and are intended to stay byte-comparable
