@@ -417,3 +417,33 @@ def test_cli_split_needs_credentials(runner, tmp_path, monkeypatch):
     result = runner.invoke(main, ["logger", "campaign", "split", "c1", "--output-dir", str(tmp_path)])
     assert result.exit_code == 1  # nosec
     assert "Error: Missing client ID or secret" in result.output  # nosec
+
+
+def test_log_cannot_overwrite_the_campaign_output_files(tmp_path):
+    """A log titled like the campaign's own output must not clobber it.
+
+    The campaign writes <stem>.public.txt and <stem>.private.txt first; the log
+    filenames are deduped against a fresh set, so without seeding that set a log
+    titled "<stem>.public" silently overwrote the public file.
+    """
+    from types import SimpleNamespace as NS
+
+    class Client:
+        def get_campaign(self, campaign_id):
+            return NS(title="Camp")
+
+        def get_campaign_entries(self, campaign_id):
+            return [NS(tag_symbol="@", tag_value="Bob", raw_text="private body", raw_public="public body")]
+
+        def get_logs(self):
+            return [NS(id="l1", title="Camp.public", campaign_id="c1"), NS(id="l2", title="Camp.private", campaign_id="c1")]
+
+        def get_log_entries(self, log_id):
+            return [NS(title="T", raw_text="LOG BODY")]
+
+    written = split_campaign(Client(), "c1", output_dir=tmp_path)
+
+    assert len({path.name for path in written}) == len(written)  # nosec  no two outputs share a name
+    assert "LOG BODY" not in (tmp_path / "Camp.public.txt").read_text()  # nosec
+    assert "public body" in (tmp_path / "Camp.public.txt").read_text()  # nosec
+    assert "LOG BODY" not in (tmp_path / "Camp.private.txt").read_text()  # nosec

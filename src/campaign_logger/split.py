@@ -157,20 +157,22 @@ def write_campaign_entries(entries, public_path, private_path, strip_code_from_n
     return [Path(public_path), Path(private_path)]
 
 
-def write_logs(logs_with_entries, output_dir):
+def write_logs(logs_with_entries, output_dir, used=None):
     """Write one text file per log, named after the log's sanitised title.
 
     Args:
         logs_with_entries: An iterable of ``(log, entries)`` pairs, so the caller owns
             the fetching and this stays a pure writer.
         output_dir: Directory the log files are written into.
+        used: Stems already taken, so a log cannot overwrite a file written earlier.
+            The caller seeds this with the campaign's own output stems.
 
     Returns:
         list[Path]: The paths written, in the order given.
     """
     output_dir = Path(output_dir)
     written = []
-    used = set()
+    used = set() if used is None else used
     for log, entries in logs_with_entries:
         path = output_dir / f"{sanitise_filename(log.title, used)}.txt"
         with open(path, "wt", encoding="utf-8") as log_file:
@@ -210,6 +212,10 @@ def split_campaign(client, campaign_id, output_dir=None, strip_code_from_notes=T
         strip_code_from_notes=strip_code_from_notes,
     )
 
+    # Seed the taken stems with the two files just written, so a log titled
+    # "<campaign>.public" cannot overwrite the campaign's own output.
+    used = {path.stem.lower() for path in written}
+
     logs = [log for log in client.get_logs() if log.campaign_id == campaign_id]
-    written.extend(write_logs(((log, client.get_log_entries(log.id)) for log in logs), output_dir))
+    written.extend(write_logs(((log, client.get_log_entries(log.id)) for log in logs), output_dir, used=used))
     return written
