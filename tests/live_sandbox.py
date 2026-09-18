@@ -33,11 +33,15 @@ ID_SHAPE = re.compile(r"^[0-9a-f]{32}$")
 #: from ``~/.campaign_logger.json``; the live suite never calls ``load_config``.
 FORBIDDEN_TARGET_VARS = ("CL_DEFAULT_CAMPAIGN_ID", "CL_DEFAULT_LOG_ID")
 
-#: Body keys that name the campaign a create is attached to.
-CAMPAIGN_KEYS = ("campaign-id", "campaign-id", "campaign_id")
+#: Body keys that name the campaign a create is attached to. The wire format is
+#: kebab-case; the snake_case spellings are kept for a body built by hand. A
+#: camelCase key is deliberately absent: it is no longer emitted, and if one ever
+#: reappeared the guard would fail to resolve the target and refuse the write,
+#: which is the safe direction.
+CAMPAIGN_KEYS = ("campaign-id", "campaign_id")
 
 #: Body keys naming a parent that is itself an object, resolved via the ledger.
-PARENT_KEYS = ("log-id", "log-id", "log_id", "entryId", "entry-id")
+PARENT_KEYS = ("log-id", "log_id", "entry-id", "entry_id")
 
 
 class SandboxConfigError(AssertionError):
