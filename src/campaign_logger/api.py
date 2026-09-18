@@ -377,7 +377,7 @@ class LoggerClient:
                 "attributes": {
                     "title": title,
                     "description": description,
-                    "campaignId": campaign_id,
+                    "campaign-id": campaign_id,
                 },
                 "relationships": {"campaign": {"data": {"type": "campaigns", "id": campaign_id}}},
             }
@@ -439,8 +439,8 @@ class LoggerClient:
             "data": {
                 "type": "log-entries",
                 "attributes": {
-                    "rawText": raw_text,
-                    "logId": log_id,
+                    "raw-text": raw_text,
+                    "log-id": log_id,
                 },
                 "relationships": {"log": {"data": {"type": "logs", "id": log_id}}},
             }
@@ -461,7 +461,7 @@ class LoggerClient:
                 "type": "log-entries",
                 "id": entry_id,
                 "attributes": {
-                    "rawText": raw_text,
+                    "raw-text": raw_text,
                 },
             }
         }
@@ -504,8 +504,8 @@ class LoggerClient:
             "data": {
                 "type": "campaign-entries",
                 "attributes": {
-                    "rawText": raw_text,
-                    "campaignId": campaign_id,
+                    "raw-text": raw_text,
+                    "campaign-id": campaign_id,
                 },
                 "relationships": {"campaign": {"data": {"type": "campaigns", "id": campaign_id}}},
             }
@@ -526,7 +526,7 @@ class LoggerClient:
                 "type": "campaign-entries",
                 "id": entry_id,
                 "attributes": {
-                    "rawText": raw_text,
+                    "raw-text": raw_text,
                 },
             }
         }
@@ -568,7 +568,7 @@ class LoggerClient:
                 "attributes": {
                     "title": title,
                     "description": description,
-                    "campaignId": campaign_id,
+                    "campaign-id": campaign_id,
                 },
                 "relationships": {"campaign": {"data": {"type": "campaigns", "id": campaign_id}}},
             }
@@ -630,8 +630,8 @@ class LoggerClient:
             "data": {
                 "type": "player-log-entries",
                 "attributes": {
-                    "rawText": raw_text,
-                    "logId": log_id,
+                    "raw-text": raw_text,
+                    "log-id": log_id,
                 },
                 "relationships": {"playerLog": {"data": {"type": "player-logs", "id": log_id}}},
             }
@@ -652,7 +652,7 @@ class LoggerClient:
                 "type": "player-log-entries",
                 "id": entry_id,
                 "attributes": {
-                    "rawText": raw_text,
+                    "raw-text": raw_text,
                 },
             }
         }

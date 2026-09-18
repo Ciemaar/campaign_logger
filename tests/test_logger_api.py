@@ -651,3 +651,95 @@ def test_unparseable_short_response_is_shown_whole(client):
     message = str(excinfo.value)
     assert body in message  # nosec
     assert "truncated" not in message  # nosec
+
+
+# --- #75: write payloads must use the kebab-case the API actually reads ------
+
+
+def _sent_attributes(mocker) -> dict:
+    """The attributes block of the last request the client sent."""
+    return mocker.last_request.json()["data"]["attributes"]
+
+
+def test_create_log_entry_sends_kebab_case_body(client):
+    """Confirmed live: the API 201s and silently drops a camelCase rawText."""
+    with requests_mock.Mocker() as m:
+        m.post(f"{BASE_URL}/log-entries", json=wire.document("log-entries", "le1"))
+        client.create_log_entry("l1", "some text")
+        attrs = _sent_attributes(m)
+
+    assert attrs["raw-text"] == "some text"  # nosec
+    assert attrs["log-id"] == "l1"  # nosec
+    assert "rawText" not in attrs  # nosec
+    assert "logId" not in attrs  # nosec
+
+
+def test_update_log_entry_sends_kebab_case_body(client):
+    with requests_mock.Mocker() as m:
+        m.patch(f"{BASE_URL}/log-entries/le1", json=wire.document("log-entries", "le1"))
+        client.update_log_entry("le1", "new text")
+        attrs = _sent_attributes(m)
+
+    assert attrs["raw-text"] == "new text"  # nosec
+    assert "rawText" not in attrs  # nosec
+
+
+def test_create_campaign_entry_sends_kebab_case_body(client):
+    with requests_mock.Mocker() as m:
+        m.post(f"{BASE_URL}/campaign-entries", json=wire.document("campaign-entries", "ce1"))
+        client.create_campaign_entry("c1", "page text")
+        attrs = _sent_attributes(m)
+
+    assert attrs["raw-text"] == "page text"  # nosec
+    assert attrs["campaign-id"] == "c1"  # nosec
+    assert "rawText" not in attrs  # nosec
+
+
+def test_update_campaign_entry_sends_kebab_case_body(client):
+    with requests_mock.Mocker() as m:
+        m.patch(f"{BASE_URL}/campaign-entries/ce1", json=wire.document("campaign-entries", "ce1"))
+        client.update_campaign_entry("ce1", "new page text")
+        attrs = _sent_attributes(m)
+
+    assert attrs["raw-text"] == "new page text"  # nosec
+    assert "rawText" not in attrs  # nosec
+
+
+def test_create_player_log_entry_sends_kebab_case_body(client):
+    with requests_mock.Mocker() as m:
+        m.post(f"{BASE_URL}/player-log-entries", json=wire.document("player-log-entries", "ple1"))
+        client.create_player_log_entry("pl1", "player text")
+        attrs = _sent_attributes(m)
+
+    assert attrs["raw-text"] == "player text"  # nosec
+    assert attrs["log-id"] == "pl1"  # nosec
+
+
+def test_update_player_log_entry_sends_kebab_case_body(client):
+    with requests_mock.Mocker() as m:
+        m.patch(f"{BASE_URL}/player-log-entries/ple1", json=wire.document("player-log-entries", "ple1"))
+        client.update_player_log_entry("ple1", "new player text")
+        attrs = _sent_attributes(m)
+
+    assert attrs["raw-text"] == "new player text"  # nosec
+
+
+def test_create_log_and_player_log_send_kebab_case_campaign_id(client):
+    with requests_mock.Mocker() as m:
+        m.post(f"{BASE_URL}/logs", json=wire.document("logs", "l1"))
+        client.create_log("c1", "My Log", "desc")
+        assert _sent_attributes(m)["campaign-id"] == "c1"  # nosec
+
+        m.post(f"{BASE_URL}/player-logs", json=wire.document("player-logs", "pl1"))
+        client.create_player_log("c1", "My Player Log", "desc")
+        assert _sent_attributes(m)["campaign-id"] == "c1"  # nosec
+
+
+def test_no_write_payload_uses_camelcase_attributes():
+    """Guard the whole surface, not just the methods above."""
+    import pathlib
+    import re
+
+    source = pathlib.Path("src/campaign_logger/api.py").read_text()
+    offenders = re.findall(r'^\s+"([a-z]+[A-Z]\w*)"\s*:', source, re.MULTILINE)
+    assert not offenders, f"write payloads must use kebab-case, found: {sorted(set(offenders))}"  # nosec
