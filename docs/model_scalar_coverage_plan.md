@@ -16,6 +16,19 @@ the observed wire format captured in `docs/live_testing_evidence.md`.
   (`raw_text` → `raw-text`) replaces every hand-written
   `attrs.get("rawText", attrs.get("raw-text"))` hedge. The mocks are corrected
   to kebab-case to match reality.
+
+  Checked against the Pydantic documentation rather than assumed: an
+  `alias_generator` in `model_config` is what Pydantic recommends for applying
+  a naming convention across every field, in preference to per-field aliases —
+  *"You can use the `alias_generator` parameter of `Config` to specify a
+  callable ... that will generate aliases for all fields in a model."* A plain
+  callable applies the same transform to validation and serialisation, which is
+  what we want since the wire format is symmetric; `AliasGenerator` exists for
+  the asymmetric case and we do not need it. `populate_by_name` remains valid in
+  Pydantic 2.13 (verified: no deprecation warning) and lets the field names
+  still be used directly, which the tests rely on. Serialisation defaults to
+  field names, so `model_dump()` and the MCP server's `model_dump_json()` are
+  unaffected; `by_alias=True` produces the kebab wire form when needed.
 - **Types match API limits.** Nullable attributes become `X | None`; timestamps
   become `datetime`. `is-deleted` / `is-pinned` / `is-shared` are `bool`.
 - **A `Player` model** is added for `joined-players`.

@@ -557,7 +557,11 @@ def test_kebab_case_parsing(client):
         entry = client.get_campaign_entry("ce_kebab")
         assert entry.id == "ce_kebab"  # nosec
         assert entry.campaign_id == "c1"  # nosec
-        assert entry.raw_text == "This is public text"  # nosec
+        # The server sent no raw-text, so raw_text reports exactly that and the
+        # public body surfaces through the derived .text property.
+        assert entry.raw_text is None  # nosec
+        assert entry.raw_public == "This is public text"  # nosec
+        assert entry.text == "This is public text"  # nosec
 
         # Test Log Entry parsing with kebab-case
         m.get(
@@ -753,3 +757,28 @@ def test_no_write_payload_uses_camelcase_attributes():
     source = pathlib.Path("src/campaign_logger/api.py").read_text()
     offenders = re.findall(r'^\s+"([a-z]+[A-Z]\w*)"\s*:', source, re.MULTILINE)
     assert not offenders, f"write payloads must use kebab-case, found: {sorted(set(offenders))}"  # nosec
+
+
+def test_create_player_log_entry_uses_the_player_log_relationship_name(client):
+    """Verified live: "playerLog" and "log" are accepted with 201 and orphan the entry.
+
+    Only "player-log" actually attaches it, so this member name is load-bearing
+    in exactly the way the camelCase attribute keys were (#75).
+    """
+    with requests_mock.Mocker() as m:
+        m.post(f"{BASE_URL}/player-log-entries", json=wire.document("player-log-entries", "ple1"))
+        client.create_player_log_entry("pl1", "text")
+        rels = m.last_request.json()["data"]["relationships"]
+
+    assert "player-log" in rels  # nosec
+    assert rels["player-log"]["data"] == {"type": "player-logs", "id": "pl1"}  # nosec
+    assert "playerLog" not in rels  # nosec
+
+
+def test_every_write_goes_through_write_payload(client):
+    """The envelope is built in one place, so its shape cannot drift per method."""
+    import inspect
+
+    source = inspect.getsource(LoggerClient)
+    # The only literal {"data": ...} envelope left is the relationship helper.
+    assert source.count('"data": {') == 1  # nosec

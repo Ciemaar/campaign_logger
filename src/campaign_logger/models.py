@@ -10,7 +10,7 @@ from pydantic import PrivateAttr
 from pydantic import field_validator
 
 
-def _to_kebab(field_name: str) -> str:
+def to_kebab(field_name: str) -> str:
     """Map a snake_case field to the kebab-case key the API sends on the wire.
 
     The wire format is kebab-case (``created-on``, ``raw-text``); the swagger
@@ -93,7 +93,7 @@ class GeneratorModel(BaseModel):
 class Player(BaseModel):
     """A player invited to or joined into a campaign."""
 
-    model_config = ConfigDict(alias_generator=_to_kebab, populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(alias_generator=to_kebab, populate_by_name=True, extra="ignore")
 
     email_address: str | None = None
     email_address_case_insensitive: str | None = None
@@ -112,7 +112,7 @@ class BaseEntity(BaseModel):
     resource in the API, so they live here rather than being repeated.
     """
 
-    model_config = ConfigDict(alias_generator=_to_kebab, populate_by_name=True, extra="ignore")
+    model_config = ConfigDict(alias_generator=to_kebab, populate_by_name=True, extra="ignore")
 
     id: str
     type: str
@@ -179,6 +179,26 @@ class CampaignEntry(BaseEntity):
     tag_symbol: str | None = None
     tag_value_case_insensitive: str | None = None
     labels: list[str] | None = None
+
+    @property
+    def text(self) -> str | None:
+        """The page's body: :attr:`raw_text`, falling back to :attr:`raw_public`.
+
+        A page's content sometimes lives only in the public field. Read through
+        this rather than reaching for :attr:`raw_text` directly, so the two
+        stored fields keep reporting exactly what the server sent and the
+        fallback stays a property of reading, not of parsing.
+        """
+        if self.raw_text:
+            return self.raw_text
+        if self.raw_public:
+            return self.raw_public.strip()
+        return None
+
+    @text.setter
+    def text(self, value: str) -> None:
+        """Refuse assignment: ``text`` is derived, so there is no sound target."""
+        raise NotImplementedError("CampaignEntry.text is read-only; set raw_text or raw_public instead")
 
     def save(self) -> "CampaignEntry":
         """Save changes to this campaign entry."""

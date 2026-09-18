@@ -84,78 +84,49 @@ here would turn a silent data loss into an obvious, immediately fixable error.
 If strictness would be a breaking change for existing clients, even documenting
 the kebab-case requirement would help.
 
-## 4. Query parameters are supported but not documented
+## 4. Pagination works but is not documented
 
 The swagger lists **no parameters** for the collection endpoints
 (`GET /logs`, `/log-entries`, `/campaign-entries`, `/campaigns`,
-`/player-log-entries`). In practice several work:
+`/player-log-entries`), yet paging works:
 
 | request | result |
 | --- | --- |
 | `GET /log-entries?page[size]=1` | 200, one item, `meta.total-records: 551` |
 | `GET /log-entries?page[size]=2&page[number]=2` | 200, second page |
-| `GET /logs?filter[title]=x` | 200, filtered (0 matches) |
 
 `meta.total-records` on the unparameterised listing is genuinely useful, and
-pagination working is reassuring. Documenting these — particularly whether
+pagination working is reassuring. Documenting it — particularly whether
 there is a maximum page size, and what the default is when `page[size]` is
 omitted — would let clients size their requests responsibly. We did not find a
 cap: `page[size]=1000` against a 551-record collection returned all 551.
 
-## 5. `filter=equals(...)` returns HTTP 500
+## 5. Relationship linkage is present on some resources and absent on others
 
-The expression-style filter syntax appears to be partially wired up:
-
-```
-GET /logs?filter=equals(title,'x')
-→ 500
-  {"errors":[{"title":"IndexOutOfRangeException",
-              "detail":"Index was outside the bounds of the array.","status":"500"}]}
-```
-
-`GET /logs?filter=equals(campaign-id,'<id>')` fails the same way. The
-bracket form (`filter[title]=x`) works, so this looks like an unsupported
-syntax reaching code that assumes it has already been parsed. Returning `400`
-for a filter expression the server does not support would be friendlier than a
-500, and would tell a client author which syntax to use.
-
-## 6. Filtering a collection by its parent id is rejected
-
-Both spellings are refused:
+A log entry's `log` relationship carries its `data` linkage, so a client can see
+which log an entry belongs to straight from the entry:
 
 ```
-GET /logs?filter[campaign-id]=<id>  → 400 "'campaign-id' is not a valid attribute."
-GET /logs?filter[campaignId]=<id>   → 400 "'campaignId' is not a valid attribute."
+GET /log-entries/{id}
+→ "relationships": {"log": {"data": {"type": "logs", "id": "..."}}}
 ```
 
-We take this to mean relationships are not filterable as attributes, which is
-consistent with JSON:API. The related-resource routes (below) do the job well,
-so this is not a gap so much as a place where a pointer in the documentation
-would help — the error message is accurate but does not suggest the alternative.
-
-## 7. The related-resource routes work well and deserve to be more visible
-
-These are the efficient way to scope a collection, and they behave exactly as
-hoped:
+The equivalent on a player log entry does not. It carries `meta` and `links` but
+no `data`:
 
 ```
-GET /campaigns/{id}/logs          → only that campaign's logs
-GET /logs/{id}/log-entries        → only that log's entries (99, where the
-                                    unscoped collection returns 551)
-GET /campaigns/{id}/campaign-entries
+GET /player-log-entries/{id}
+→ "relationships": {"player-log": {"meta": {...}, "links": {...}}}
 ```
 
-In the swagger they appear only as a generic
-`/{resource}/{id}/{relationshipName}`, so there is no way to discover which
-relationship names are valid for which type without trying them. Listing the
-valid relationship names per resource would make this discoverable — it is a
-much better answer than client-side filtering, and we only found it by noticing
-the `related` links inside response payloads.
+JSON:API permits omitting linkage, and `?include=player-log` works, so this is
+legitimate — but the inconsistency between two otherwise parallel resources is
+surprising, and it means a client that reads a parent id directly from one has
+to take a different route for the other. If the difference is deliberate we
+would be glad to know the rule; if it is incidental, matching log entries would
+be the less surprising behaviour.
 
-One small note: these routes return no `meta.total-records`, where the
-top-level collections do. Not a problem, just an inconsistency we noticed.
-
-## 8. Responses declare no content type in the swagger
+## 6. Responses declare no content type in the swagger
 
 The `responses` entries for the collection GETs have an empty `content` object,
 so a generated client cannot infer the response media type or schema. Given
