@@ -10,6 +10,7 @@ import requests
 from .api import GeneratorClient
 from .api import LoggerClient
 from .models import GeneratorModel
+from .split import split_campaign
 
 
 def load_config():
@@ -282,6 +283,39 @@ def update_campaign(ctx, campaign_id, title, description):
         if description is not None:
             camp.description = description
         click.echo(json.dumps(camp.save().to_dict(), indent=2, sort_keys=True))
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+
+
+@campaign.command(name="split")
+@click.argument("campaign_id")
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, path_type=Path),
+    default=".",
+    help="Directory for the generated files (default: the current directory)",
+)
+@click.option(
+    "--strip-code-from-notes/--no-strip-code-from-notes",
+    default=True,
+    help="Strip pasted import lines from '&' note bodies in the private file",
+)
+@click.pass_context
+def split_campaign_command(ctx, campaign_id, output_dir, strip_code_from_notes):
+    """Split a live campaign into public, private and per-log text files.
+
+    Fetches the campaign, its entries and its logs read-only, and writes
+    <campaign>.public.txt, <campaign>.private.txt and one <log title>.txt per log.
+
+    Caveat: get_log_entries(log_id) and get_campaign_entries(campaign_id) fetch every
+    entry in the account and filter client-side, and _get does not follow pagination,
+    so on an account large enough to page the output may be silently truncated. See
+    docs/live_testing_evidence.md, section 10 Q4.
+    """
+    client = ctx.obj["client"]
+    try:
+        for path in split_campaign(client, campaign_id, output_dir=output_dir, strip_code_from_notes=strip_code_from_notes):
+            click.echo(str(path))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
