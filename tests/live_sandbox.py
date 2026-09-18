@@ -34,14 +34,20 @@ ID_SHAPE = re.compile(r"^[0-9a-f]{32}$")
 FORBIDDEN_TARGET_VARS = ("CL_DEFAULT_CAMPAIGN_ID", "CL_DEFAULT_LOG_ID")
 
 #: Body keys that name the campaign a create is attached to. The wire format is
-#: kebab-case; the snake_case spellings are kept for a body built by hand. A
-#: camelCase key is deliberately absent: it is no longer emitted, and if one ever
-#: reappeared the guard would fail to resolve the target and refuse the write,
-#: which is the safe direction.
+#: kebab-case; the snake_case spellings are kept for a body built by hand.
+#:
+#: Narrowing these tuples is safe by construction, not merely because of what the
+#: client happens to emit today: :func:`make_sacrificial_predicate` is an
+#: allowlist that tries each resolution path in turn and then returns False, so a
+#: key missing from these tuples resolves nothing and the write is *refused*.
+#: Removing a key can only refuse more, never permit more. Adding one is the
+#: direction that needs justification.
 CAMPAIGN_KEYS = ("campaign-id", "campaign_id")
 
 #: Body keys naming a parent that is itself an object, resolved via the ledger.
-PARENT_KEYS = ("log-id", "log_id", "entry-id", "entry_id")
+#: No client payload carries an entry id, so the ``entry-*`` spelling is
+#: speculative and kept only because it predates this change.
+PARENT_KEYS = ("log-id", "log_id", "entry-id")
 
 
 class SandboxConfigError(AssertionError):
