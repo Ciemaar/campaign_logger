@@ -433,7 +433,20 @@ def test_log_cannot_overwrite_the_campaign_output_files(tmp_path):
             return NS(title="Camp")
 
         def get_campaign_entries(self, campaign_id):
-            return [NS(tag_symbol="@", tag_value="Bob", raw_text="private body", raw_public="public body")]
+            # A real model, not a namespace: split.py reads the derived .text
+            # property, and a hand-rolled fake silently drifts from the model.
+            from campaign_logger.models import CampaignEntry
+
+            return [
+                CampaignEntry(
+                    id="ce1",
+                    type="campaign-entries",
+                    tag_symbol="@",
+                    tag_value="Bob",
+                    raw_text="private body",
+                    raw_public="public body",
+                )
+            ]
 
         def get_logs(self):
             return [NS(id="l1", title="Camp.public", campaign_id="c1"), NS(id="l2", title="Camp.private", campaign_id="c1")]

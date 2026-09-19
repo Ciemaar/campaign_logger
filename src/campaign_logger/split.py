@@ -9,7 +9,8 @@ camelCase keys of a hand-exported dump.  Every one of those fields is
 Three kinds of output are produced in ``output_dir``:
 
 1. ``<campaign>.public.txt`` -- legend header plus every entry's ``raw_public`` body.
-2. ``<campaign>.private.txt`` -- the same headings with the ``raw_text`` body.
+2. ``<campaign>.private.txt`` -- the same headings with the entry's ``text``
+   (``raw_text``, or ``raw_public`` where a page has only a public body).
 3. ``<log title>.txt`` -- one file per log, each log entry's title then its text.
 
 .. warning::
@@ -162,7 +163,10 @@ def write_campaign_entries(entries, public_path, private_path, strip_code_from_n
             heading = f'\n{entry.tag_symbol or ""}"{entry.tag_value or ""}"\n\n'
             public.write(heading)
             private.write(heading)
-            private_text = normalise_spaces(entry.raw_text)
+            # Read through .text, not raw_text: a page whose body lives only in
+            # raw_public surfaces through the property (#70). raw_text reports
+            # exactly what the server sent, which for such a page is nothing.
+            private_text = normalise_spaces(entry.text)
             if strip_code_from_notes and entry.tag_symbol == NOTE_TAG_SYMBOL:
                 private_text = strip_code(private_text)
             private.write(private_text)
