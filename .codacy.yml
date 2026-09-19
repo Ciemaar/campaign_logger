@@ -1,0 +1,60 @@
+---
+# Codacy repository configuration -- see
+# https://docs.codacy.com/repositories-configure/codacy-configuration-file/
+#
+# What this file can and cannot do (verified against Codacy's documentation,
+# issue #69):
+#   * It CAN exclude paths, globally or per analysis engine.
+#   * It CANNOT enable or disable a tool -- only the Code patterns page can.
+#   * It CANNOT turn an individual pattern (for example C0301) on or off, and it
+#     has no field for pointing a tool at its native config file.  Per-pattern
+#     Pylint settings therefore live in the committed ./.pylintrc, which Codacy
+#     reads only while the "Configuration file" toggle is active for Pylint on
+#     the repository Code patterns page.
+#
+# IMPORTANT: once this file exists, the "Ignored files" settings configured in
+# the Codacy UI stop applying and must be restated here instead.  Before this
+# lands, check the repository's UI exclusion list and copy any entry that is
+# still wanted into `exclude_paths` below.
+
+engines:
+  # Pylint, current tool.  `pylintpython3` is the name Codacy expects for it.
+  #
+  # The test tree, the bootstrap scripts and the Sphinx config are excluded
+  # from Pylint because every Pylint finding Codacy reports in them is a
+  # disagreement with how this project is deliberately written, not a defect:
+  #   * W0621 redefined-outer-name -- a pytest test taking a fixture of the
+  #     same name.  Idiomatic pytest; renaming fixtures to satisfy it would
+  #     make the tests worse.
+  #   * C0116/C0114 missing docstring -- `pyproject.toml` already exempts
+  #     these same paths from ruff's D100/D103/D104 for the same reason.
+  #   * C0103 invalid-name -- pytest parameter ids, and the module-level
+  #     lower-case names that `docs/conf.py` is required by Sphinx to use.
+  #   * W0212 protected-access -- the parser tests exercise `_parse_*` on
+  #     purpose.
+  # ruff (configured in `pyproject.toml`) still lints these paths in CI, so
+  # they are not going unchecked.
+  pylintpython3:
+    exclude_paths:
+      - "tests/**"
+      - "ci/**"
+      - "docs/conf.py"
+
+  # Pylint 1.9 legacy tool.  The name `pylint` is deprecated but still
+  # accepted, and this repository is still receiving alerts from it (including
+  # C0326/C0330, checks Pylint removed years ago).  Excluded on the same
+  # grounds; ideally the legacy tool is switched off entirely on the Code
+  # patterns page -- see issue #38.
+  pylint:
+    exclude_paths:
+      - "tests/**"
+      - "ci/**"
+      - "docs/conf.py"
+
+  # Prospector bundles its own Pylint run, so it reproduces the same
+  # disagreements on the same paths.
+  prospector:
+    exclude_paths:
+      - "tests/**"
+      - "ci/**"
+      - "docs/conf.py"

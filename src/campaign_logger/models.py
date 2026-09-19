@@ -55,7 +55,7 @@ class GeneratorModel(BaseModel):
     categories: list[str] | None = Field(None, description="List of category tags applied to this generator.")
     formatting: int | None = Field(None, description="Formatting flag for the output (0 or 1).")
     resultPattern: str | None = Field(None, description="The pattern defining how the final generated result is structured.")
-    wrapResultInCurlyBraces: bool | None = Field(False, description=("Whether the final result string should be wrapped in curly braces."))
+    wrapResultInCurlyBraces: bool | None = Field(False, description="Whether the final result string should be wrapped in curly braces.")
     globals: dict[str, VariableModel] | None = Field(None, description="Global variables defined for the generator.")
     variables: dict[str, VariableModel] | None = Field(None, description="Local variables defined for the generator.")
     tables: list[TableModel] | None = Field(None, description="The collection of tables used by the generator.")
