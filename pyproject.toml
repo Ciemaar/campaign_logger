@@ -108,6 +108,7 @@ dependencies = [
     "requests",
     "pydantic>=2.0",
     "mcp",
+    "pathvalidate",
 ]
 
 [project.optional-dependencies]
