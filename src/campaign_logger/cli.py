@@ -18,7 +18,7 @@ def load_config():
     config_path = Path.home() / ".campaign_logger.json"
     if config_path.is_file():
         try:
-            with open(config_path, "r") as f:
+            with open(config_path, "r", encoding="utf-8") as f:
                 config = json.load(f)
 
             if "token" in config and "CL_GENERATOR_TOKEN" not in os.environ:
@@ -87,7 +87,7 @@ def get_generator(ctx, generator_id):
             if e.response is not None and e.response.status_code == 404:
                 generator_obj = client.get_generator_by_name(generator_id)
                 if generator_obj is None:
-                    raise Exception("Generator not found by ID or Name")
+                    raise click.ClickException("Generator not found by ID or Name") from e
             else:
                 raise
         click.echo(generator_obj.model_dump_json(indent=2))
@@ -147,7 +147,7 @@ def generate(ctx, target):
     client = ctx.obj["client"]
     try:
         if os.path.isfile(target):
-            with open(target, "r") as f:
+            with open(target, "r", encoding="utf-8") as f:
                 data = json.load(f)
             model = GeneratorModel(**data)
             result = client.generate(model)
@@ -160,7 +160,7 @@ def generate(ctx, target):
                     if gen and gen.id:
                         result = client.execute_operation(gen.id, "generate")
                     else:
-                        raise Exception("Generator not found by ID or Name")
+                        raise click.ClickException("Generator not found by ID or Name") from e
                 else:
                     raise
 
@@ -177,7 +177,7 @@ def validate(ctx, target):
     client = ctx.obj["client"]
     try:
         if os.path.isfile(target):
-            with open(target, "r") as f:
+            with open(target, "r", encoding="utf-8") as f:
                 data = json.load(f)
             model = GeneratorModel(**data)
             client.validate_generator(model)
@@ -191,7 +191,7 @@ def validate(ctx, target):
                     if gen and gen.id:
                         client.execute_operation(gen.id, "validate")
                     else:
-                        raise Exception("Generator not found by ID or Name")
+                        raise click.ClickException("Generator not found by ID or Name") from e
                 else:
                     raise
             click.echo(f"Generator {target} is valid.")
