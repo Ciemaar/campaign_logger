@@ -224,122 +224,106 @@ class LoggerClient:
         response = self.session.delete(url)
         response.raise_for_status()
 
+    @staticmethod
+    def write_payload(
+        resource_type: str,
+        attributes: dict[str, Any],
+        object_id: str | None = None,
+        relationships: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Build the JSON:API document a create or update sends.
+
+        Every write goes through here so the envelope is described once. That
+        matters beyond tidiness: the attribute keys must be kebab-case, and when
+        each method spelled its own payload a camelCase key slipped in and the
+        server accepted it, returned 201 and silently discarded the value (#75).
+
+        Args:
+            resource_type: The JSON:API ``type``, e.g. ``"log-entries"``.
+            attributes: Attribute members, keyed in kebab-case.
+            object_id: The resource id, for an update.
+            relationships: Relationship members, usually from :meth:`relationship`.
+
+        Returns:
+            dict: The ``{"data": ...}`` document to send as the request body.
+        """
+        data: dict[str, Any] = {"type": resource_type}
+        if object_id is not None:
+            data["id"] = object_id
+        data["attributes"] = attributes
+        if relationships:
+            data["relationships"] = relationships
+        return {"data": data}
+
+    @staticmethod
+    def relationship(resource_type: str, object_id: str) -> dict[str, Any]:
+        """Build one JSON:API relationship member pointing at a resource."""
+        return {"data": {"type": resource_type, "id": object_id}}
+
+    @staticmethod
+    def entity_data(resource: dict[str, Any]) -> dict[str, Any]:
+        """Build the dict a model validates from: wire attributes plus id/type.
+
+        Attributes arrive kebab-case and are matched by each model's alias
+        generator. id and type come from the JSON:API resource level, where they
+        always appear, and override any same-named attribute.
+        """
+        attrs = dict(resource.get("attributes", {}))
+        attrs["id"] = str(resource.get("id", ""))
+        attrs["type"] = resource.get("type", "")
+        return attrs
+
+    @staticmethod
+    def relationship_id(resource: dict[str, Any], name: str) -> str:
+        """Return the id of a JSON:API relationship, or '' if absent."""
+        data = resource.get("relationships", {}).get(name, {}).get("data", {})
+        return str(data.get("id", "")) if data else ""
+
     def _parse_campaign(self, resource: dict[str, Any]) -> Campaign:
-        attrs = resource.get("attributes", {})
-        camp = Campaign(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            title=str(attrs.get("title", "")),
-            description=str(attrs.get("description", "")),
-        )
+        camp = Campaign.model_validate(self.entity_data(resource))
         camp._client = self
         return camp
 
     def _parse_log(self, resource: dict[str, Any]) -> Log:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        campaign_rel = rels.get("campaign", {}).get("data", {})
-        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
-        if not campaign_id and campaign_rel:
-            campaign_id = str(campaign_rel.get("id", ""))
-
-        log_obj = Log(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            title=str(attrs.get("title", "")),
-            description=str(attrs.get("description", "")),
-            campaign_id=campaign_id,
-        )
+        log_obj = Log.model_validate(self.entity_data(resource))
+        # The wire log payload carries no campaign-id attribute; it comes from
+        # the relationships block. Fall back to it when the attribute is absent.
+        if not log_obj.campaign_id:
+            log_obj.campaign_id = self.relationship_id(resource, "campaign")
         log_obj._client = self
         return log_obj
 
     def _parse_log_entry(self, resource: dict[str, Any]) -> LogEntry:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        log_rel = rels.get("log", {}).get("data", {})
-
-        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
-        title = str(attrs.get("title", ""))
-
-        log_id = str(attrs.get("logId", attrs.get("log-id", "")))
-        if not log_id and log_rel:
-            log_id = str(log_rel.get("id", ""))
-
-        entry = LogEntry(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            raw_text=raw_text,
-            title=title if title else None,
-            log_id=log_id,
-        )
+        entry = LogEntry.model_validate(self.entity_data(resource))
+        if not entry.log_id:
+            entry.log_id = self.relationship_id(resource, "log")
         entry._client = self
         return entry
 
     def _parse_player_log(self, resource: dict[str, Any]) -> PlayerLog:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        campaign_rel = rels.get("campaign", {}).get("data", {})
-        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
-        if not campaign_id and campaign_rel:
-            campaign_id = str(campaign_rel.get("id", ""))
-
-        log_obj = PlayerLog(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            title=str(attrs.get("title", "")),
-            description=str(attrs.get("description", "")),
-            campaign_id=campaign_id,
-        )
+        log_obj = PlayerLog.model_validate(self.entity_data(resource))
+        if not log_obj.campaign_id:
+            log_obj.campaign_id = self.relationship_id(resource, "campaign")
         log_obj._client = self
         return log_obj
 
     def _parse_player_log_entry(self, resource: dict[str, Any]) -> PlayerLogEntry:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        log_rel = rels.get("playerLog", rels.get("player-log", {})).get("data", {})
-
-        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
-        title = str(attrs.get("title", ""))
-
-        log_id = str(attrs.get("logId", attrs.get("log-id", "")))
-        if not log_id and log_rel:
-            log_id = str(log_rel.get("id", ""))
-
-        entry = PlayerLogEntry(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            raw_text=raw_text,
-            title=title if title else None,
-            log_id=log_id,
-        )
+        entry = PlayerLogEntry.model_validate(self.entity_data(resource))
+        if not entry.log_id:
+            entry.log_id = (
+                self.relationship_id(resource, "player-log")
+                or self.relationship_id(resource, "playerLog")
+                or self.relationship_id(resource, "log")
+            )
         entry._client = self
         return entry
 
     def _parse_campaign_entry(self, resource: dict[str, Any]) -> CampaignEntry:
-        attrs = resource.get("attributes", {})
-        rels = resource.get("relationships", {})
-        campaign_rel = rels.get("campaign", {}).get("data", {})
-
-        raw_text = str(attrs.get("rawText", attrs.get("raw-text", "")))
-        raw_public = str(attrs.get("rawPublic", attrs.get("raw-public", "")))
-
-        tag_value = str(attrs.get("tagValue", attrs.get("tag-value", "")))
-
-        # In Campaign Logger, the full content of a page is sometimes spread out.
-        if not raw_text and raw_public:
-            raw_text = raw_public.strip()
-
-        campaign_id = str(attrs.get("campaignId", attrs.get("campaign-id", "")))
-        if not campaign_id and campaign_rel:
-            campaign_id = str(campaign_rel.get("id", ""))
-
-        entry = CampaignEntry(
-            id=str(resource.get("id", "")),
-            type=resource.get("type", ""),
-            raw_text=raw_text,
-            tag_value=tag_value if tag_value else None,
-            campaign_id=campaign_id,
-        )
+        entry = CampaignEntry.model_validate(self.entity_data(resource))
+        # The raw-public fallback lives on CampaignEntry.text, so raw_text keeps
+        # reporting what the server actually sent rather than a parse-time guess.
+        if not entry.campaign_id:
+            entry.campaign_id = self.relationship_id(resource, "campaign")
         entry._client = self
         return entry
 
@@ -363,15 +347,7 @@ class LoggerClient:
     def create_campaign(self, title: str, description: str = "") -> Campaign:
         """Create a new top-level campaign entity."""
         url = f"{self.base_url}/campaigns"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "campaigns",
-                "attributes": {
-                    "title": title,
-                    "description": description,
-                },
-            }
-        }
+        payload = self.write_payload("campaigns", {"title": title, "description": description})
         response = self.session.post(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
@@ -389,7 +365,7 @@ class LoggerClient:
         if description is not None:
             attributes["description"] = description
 
-        payload: dict[str, Any] = {"data": {"type": "campaigns", "id": campaign_id, "attributes": attributes}}
+        payload = self.write_payload("campaigns", attributes, object_id=campaign_id)
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
@@ -422,17 +398,11 @@ class LoggerClient:
     def create_log(self, campaign_id: str, title: str, description: str = "") -> Log:
         """Create a new child log attached to a specific campaign."""
         url = f"{self.base_url}/logs"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "logs",
-                "attributes": {
-                    "title": title,
-                    "description": description,
-                    "campaignId": campaign_id,
-                },
-                "relationships": {"campaign": {"data": {"type": "campaigns", "id": campaign_id}}},
-            }
-        }
+        payload = self.write_payload(
+            "logs",
+            {"title": title, "description": description, "campaign-id": campaign_id},
+            relationships={"campaign": self.relationship("campaigns", campaign_id)},
+        )
         response = self.session.post(url, json=payload, timeout=30)
         response.raise_for_status()
         json_resp = response.json()
@@ -450,7 +420,7 @@ class LoggerClient:
         if description is not None:
             attributes["description"] = description
 
-        payload: dict[str, Any] = {"data": {"type": "logs", "id": log_id, "attributes": attributes}}
+        payload = self.write_payload("logs", attributes, object_id=log_id)
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
@@ -486,16 +456,11 @@ class LoggerClient:
     def create_log_entry(self, log_id: str, raw_text: str) -> LogEntry:
         """Create a new text entry attached to a specific log."""
         url = f"{self.base_url}/log-entries"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "log-entries",
-                "attributes": {
-                    "rawText": raw_text,
-                    "logId": log_id,
-                },
-                "relationships": {"log": {"data": {"type": "logs", "id": log_id}}},
-            }
-        }
+        payload = self.write_payload(
+            "log-entries",
+            {"raw-text": raw_text, "log-id": log_id},
+            relationships={"log": self.relationship("logs", log_id)},
+        )
         response = self.session.post(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
@@ -507,15 +472,7 @@ class LoggerClient:
     def update_log_entry(self, entry_id: str, raw_text: str) -> LogEntry:
         """Update the textual content of an existing log entry."""
         url = f"{self.base_url}/log-entries/{entry_id}"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "log-entries",
-                "id": entry_id,
-                "attributes": {
-                    "rawText": raw_text,
-                },
-            }
-        }
+        payload = self.write_payload("log-entries", {"raw-text": raw_text}, object_id=entry_id)
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
@@ -551,16 +508,11 @@ class LoggerClient:
     def create_campaign_entry(self, campaign_id: str, raw_text: str) -> CampaignEntry:
         """Create a new top-level page (Campaign Entry) attached to a specific campaign."""
         url = f"{self.base_url}/campaign-entries"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "campaign-entries",
-                "attributes": {
-                    "rawText": raw_text,
-                    "campaignId": campaign_id,
-                },
-                "relationships": {"campaign": {"data": {"type": "campaigns", "id": campaign_id}}},
-            }
-        }
+        payload = self.write_payload(
+            "campaign-entries",
+            {"raw-text": raw_text, "campaign-id": campaign_id},
+            relationships={"campaign": self.relationship("campaigns", campaign_id)},
+        )
         response = self.session.post(url, json=payload, timeout=30)
         response.raise_for_status()
         json_resp = response.json()
@@ -572,15 +524,7 @@ class LoggerClient:
     def update_campaign_entry(self, entry_id: str, raw_text: str) -> CampaignEntry:
         """Update the text content of an existing campaign entry (page)."""
         url = f"{self.base_url}/campaign-entries/{entry_id}"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "campaign-entries",
-                "id": entry_id,
-                "attributes": {
-                    "rawText": raw_text,
-                },
-            }
-        }
+        payload = self.write_payload("campaign-entries", {"raw-text": raw_text}, object_id=entry_id)
         response = self.session.patch(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
@@ -613,17 +557,11 @@ class LoggerClient:
     def create_player_log(self, campaign_id: str, title: str, description: str = "") -> PlayerLog:
         """Create a new child player log attached to a specific campaign."""
         url = f"{self.base_url}/player-logs"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "player-logs",
-                "attributes": {
-                    "title": title,
-                    "description": description,
-                    "campaignId": campaign_id,
-                },
-                "relationships": {"campaign": {"data": {"type": "campaigns", "id": campaign_id}}},
-            }
-        }
+        payload = self.write_payload(
+            "player-logs",
+            {"title": title, "description": description, "campaign-id": campaign_id},
+            relationships={"campaign": self.relationship("campaigns", campaign_id)},
+        )
         response = self.session.post(url, json=payload, timeout=30)
         response.raise_for_status()
         json_resp = response.json()
@@ -641,7 +579,7 @@ class LoggerClient:
         if description is not None:
             attributes["description"] = description
 
-        payload: dict[str, Any] = {"data": {"type": "player-logs", "id": log_id, "attributes": attributes}}
+        payload = self.write_payload("player-logs", attributes, object_id=log_id)
         response = self.session.patch(url, json=payload, timeout=30)
         response.raise_for_status()
         json_resp = response.json()
@@ -677,16 +615,14 @@ class LoggerClient:
     def create_player_log_entry(self, log_id: str, raw_text: str) -> PlayerLogEntry:
         """Create a new text entry attached to a specific player log."""
         url = f"{self.base_url}/player-log-entries"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "player-log-entries",
-                "attributes": {
-                    "rawText": raw_text,
-                    "logId": log_id,
-                },
-                "relationships": {"playerLog": {"data": {"type": "player-logs", "id": log_id}}},
-            }
-        }
+        # The relationship member is "player-log", like every other wire name.
+        # "playerLog" and "log" are both accepted with 201 and silently leave the
+        # entry orphaned, so this spelling is load-bearing. Verified live.
+        payload = self.write_payload(
+            "player-log-entries",
+            {"raw-text": raw_text, "log-id": log_id},
+            relationships={"player-log": self.relationship("player-logs", log_id)},
+        )
         response = self.session.post(url, json=payload, timeout=30)
         response.raise_for_status()
         json_resp = response.json()
@@ -698,15 +634,7 @@ class LoggerClient:
     def update_player_log_entry(self, entry_id: str, raw_text: str) -> PlayerLogEntry:
         """Update the textual content of an existing player log entry."""
         url = f"{self.base_url}/player-log-entries/{entry_id}"
-        payload: dict[str, Any] = {
-            "data": {
-                "type": "player-log-entries",
-                "id": entry_id,
-                "attributes": {
-                    "rawText": raw_text,
-                },
-            }
-        }
+        payload = self.write_payload("player-log-entries", {"raw-text": raw_text}, object_id=entry_id)
         response = self.session.patch(url, json=payload, timeout=30)
         response.raise_for_status()
         json_resp = response.json()

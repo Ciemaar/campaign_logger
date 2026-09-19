@@ -438,3 +438,34 @@ def test_logger_cli_error_handling(runner, mock_logger_client, monkeypatch):
     mock_logger_client.delete_campaign_entry.side_effect = OSError("API error")
     result = runner.invoke(main, ["logger", "page", "delete", "1"])
     assert "Error: API error" in result.output  # nosec
+
+
+def test_campaign_get_outputs_valid_json_with_real_model(runner, mocker, monkeypatch):
+    """The CLI's json.dumps(to_dict()) must work on a REAL model, not a MagicMock.
+
+    Every other CLI test substitutes MockResource, which carries its own
+    to_dict(), so the real model's serialisation is never exercised. That gap let
+    the datetime fields (#44) break `campaign get` against real data without a
+    single test failing. This test drives the genuine parser and model.
+    """
+    import json as _json
+
+    from wire import realistic_campaign
+
+    from campaign_logger.api import LoggerClient
+
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+
+    real_campaign = LoggerClient()._parse_campaign(realistic_campaign())
+    instance = MagicMock()
+    instance.get_campaign.return_value = real_campaign
+    mocker.patch("campaign_logger.cli.LoggerClient", return_value=instance)
+
+    result = runner.invoke(main, ["logger", "campaign", "get", "c1"])
+
+    assert result.exit_code == 0, result.output  # nosec
+    payload = _json.loads(result.output)  # would raise if to_dict() were not JSON-safe
+    assert payload["id"] == "c1"  # nosec
+    assert payload["created_on"] == "2026-09-16T02:26:10.416000"  # nosec
+    assert payload["revision"] == "7ac376fe32bf42d6862f05743f75231b"  # nosec

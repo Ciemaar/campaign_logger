@@ -44,7 +44,7 @@ def mock_requests(request):
                 "data": {
                     "type": "logs",
                     "id": "mock_log_new",
-                    "attributes": {"title": "E2E Session 1", "description": "Testing log creation", "campaignId": "mock_camp_new"},
+                    "attributes": {"title": "E2E Session 1", "description": "Testing log creation", "campaign-id": "mock_camp_new"},
                 }
             },
         )
@@ -54,7 +54,7 @@ def mock_requests(request):
                 "data": {
                     "type": "log-entries",
                     "id": "mock_le_new",
-                    "attributes": {"rawText": "The party entered the E2E dungeon.", "logId": "mock_log_new"},
+                    "attributes": {"raw-text": "The party entered the E2E dungeon.", "log-id": "mock_log_new"},
                 }
             },
         )
@@ -64,7 +64,7 @@ def mock_requests(request):
                 "data": {
                     "type": "campaign-entries",
                     "id": "mock_ce_new",
-                    "attributes": {"rawText": "E2E Rules Page", "campaignId": "mock_camp_new"},
+                    "attributes": {"raw-text": "E2E Rules Page", "campaign-id": "mock_camp_new"},
                 }
             },
         )
@@ -74,7 +74,7 @@ def mock_requests(request):
                 "data": {
                     "type": "campaign-entries",
                     "id": "mock_ce_new",
-                    "attributes": {"rawText": "Updated E2E Rules Page", "campaignId": "mock_camp_new"},
+                    "attributes": {"raw-text": "Updated E2E Rules Page", "campaign-id": "mock_camp_new"},
                 }
             },
         )

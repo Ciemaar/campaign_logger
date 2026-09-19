@@ -77,3 +77,8 @@ docs/_build
 
 # live capture output (staging payloads, not for git)
 .captures/
+
+# Exploration notebooks and their checkpoints stay local — they hold real
+# campaign ids and are not part of the package.
+.ipynb_checkpoints/
+src/campaign_logger/*.ipynb

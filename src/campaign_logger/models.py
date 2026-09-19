@@ -1,10 +1,23 @@
 """Pydantic models for Campaign Logger APIs."""
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import PrivateAttr
+from pydantic import field_validator
+
+
+def to_kebab(field_name: str) -> str:
+    """Map a snake_case field to the kebab-case key the API sends on the wire.
+
+    The wire format is kebab-case (``created-on``, ``raw-text``); the swagger
+    schema names are camelCase but that is not what crosses the wire. We support
+    only what the API actually sends. See docs/live_testing_evidence.md.
+    """
+    return field_name.replace("_", "-")
 
 
 class VariableModel(BaseModel):
@@ -77,24 +90,72 @@ class GeneratorModel(BaseModel):
 # High-Level Object-Oriented Models
 
 
+class Player(BaseModel):
+    """A player invited to or joined into a campaign."""
+
+    model_config = ConfigDict(alias_generator=to_kebab, populate_by_name=True, extra="ignore")
+
+    email_address: str | None = None
+    email_address_case_insensitive: str | None = None
+    joined_campaigns: list[str] | None = None
+
+
 class BaseEntity(BaseModel):
-    """Base model for high-level object-oriented wrappers."""
+    """Base model for high-level object-oriented wrappers.
+
+    Attributes come off the wire in kebab-case; the ``alias_generator`` maps each
+    snake_case field to its kebab-case key, and ``populate_by_name`` still allows
+    constructing an entity with the field names directly (as the tests do).
+    ``extra="ignore"`` tolerates attributes the model does not yet cover.
+
+    The audit-trail, soft-delete and revision fields below are present on every
+    resource in the API, so they live here rather than being repeated.
+    """
+
+    model_config = ConfigDict(alias_generator=to_kebab, populate_by_name=True, extra="ignore")
 
     id: str
     type: str
+
+    created_on: datetime | None = None
+    updated_on: datetime | None = None
+    deleted_on: datetime | None = None
+    is_deleted: bool = False
+    revision: str | None = None
+    previous_revision: str | None = None
+    string_id: str | None = None
+    user_id: str | None = None
+
     _client: Any = PrivateAttr(default=None)
 
+    @field_validator("created_on", "updated_on", "deleted_on", mode="before")
+    @classmethod
+    def _empty_string_is_none(cls, value: Any) -> Any:
+        """Coerce the API's empty-string timestamp (e.g. ``deleted-on: ""``) to None."""
+        if value == "":
+            return None
+        return value
+
     def to_dict(self) -> dict[str, Any]:
-        """Convert the entity to a dictionary for CLI output."""
-        return self.model_dump()
+        """Convert the entity to a JSON-safe dictionary for CLI output.
+
+        ``mode="json"`` matters: the timestamp fields are real ``datetime``
+        objects, and ``cli.py`` passes this straight to ``json.dumps``, which
+        cannot serialise them. This renders them as ISO strings instead.
+        """
+        return self.model_dump(mode="json")
 
 
 class LogEntry(BaseEntity):
     """Model representing a Log Entry."""
 
-    raw_text: str
+    raw_text: str | None = None
     title: str | None = None
-    log_id: str
+    log_id: str | None = None
+    is_shared: bool = False
+    ordering: str | None = None
+    raw_prefix: str | None = None
+    raw_suffix: str | None = None
 
     def save(self) -> "LogEntry":
         """Save changes to this log entry."""
@@ -110,9 +171,34 @@ class LogEntry(BaseEntity):
 class CampaignEntry(BaseEntity):
     """Model representing a Campaign Entry (Page)."""
 
-    raw_text: str
+    raw_text: str | None = None
     tag_value: str | None = None
-    campaign_id: str
+    campaign_id: str | None = None
+    raw_public: str | None = None
+    raw_summary: str | None = None
+    tag_symbol: str | None = None
+    tag_value_case_insensitive: str | None = None
+    labels: list[str] | None = None
+
+    @property
+    def text(self) -> str | None:
+        """The page's body: :attr:`raw_text`, falling back to :attr:`raw_public`.
+
+        A page's content sometimes lives only in the public field. Read through
+        this rather than reaching for :attr:`raw_text` directly, so the two
+        stored fields keep reporting exactly what the server sent and the
+        fallback stays a property of reading, not of parsing.
+        """
+        if self.raw_text:
+            return self.raw_text
+        if self.raw_public:
+            return self.raw_public.strip()
+        return None
+
+    @text.setter
+    def text(self, value: str) -> None:
+        """Refuse assignment: ``text`` is derived, so there is no sound target."""
+        raise NotImplementedError("CampaignEntry.text is read-only; set raw_text or raw_public instead")
 
     def save(self) -> "CampaignEntry":
         """Save changes to this campaign entry."""
@@ -128,9 +214,11 @@ class CampaignEntry(BaseEntity):
 class Log(BaseEntity):
     """Model representing a Log."""
 
-    title: str
-    description: str
-    campaign_id: str
+    title: str | None = None
+    description: str | None = None
+    campaign_id: str | None = None
+    image_url: str | None = None
+    is_pinned: bool = False
 
     def get_entries(self) -> list[LogEntry]:
         """Get all log entries for this log."""
@@ -157,8 +245,11 @@ class Log(BaseEntity):
 class Campaign(BaseEntity):
     """Model representing a Campaign."""
 
-    title: str
-    description: str
+    title: str | None = None
+    description: str | None = None
+    image_url: str | None = None
+    invited_players: list[str] | None = None
+    joined_players: list[Player] | None = None
 
     def get_logs(self) -> list[Log]:
         """Get all logs for this campaign."""
@@ -207,9 +298,13 @@ class Campaign(BaseEntity):
 class PlayerLogEntry(BaseEntity):
     """Model representing a Player Log Entry."""
 
-    raw_text: str
+    raw_text: str | None = None
     title: str | None = None
-    log_id: str
+    log_id: str | None = None
+    is_shared: bool = False
+    ordering: str | None = None
+    raw_prefix: str | None = None
+    raw_suffix: str | None = None
 
     def save(self) -> "PlayerLogEntry":
         """Save changes to this player log entry."""
@@ -225,9 +320,11 @@ class PlayerLogEntry(BaseEntity):
 class PlayerLog(BaseEntity):
     """Model representing a Player Log."""
 
-    title: str
-    description: str
-    campaign_id: str
+    title: str | None = None
+    description: str | None = None
+    campaign_id: str | None = None
+    image_url: str | None = None
+    is_pinned: bool = False
 
     def get_entries(self) -> list[PlayerLogEntry]:
         """Get all player log entries for this log."""
