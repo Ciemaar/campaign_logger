@@ -1,4 +1,4 @@
-"""Split a live campaign into flat text files suitable for RAG ingestion.
+"""Export a live campaign as flat text files suitable for RAG ingestion.
 
 The campaign is fetched through :class:`~campaign_logger.api.LoggerClient`, so this
 module consumes the snake_case model objects from :mod:`campaign_logger.models`
@@ -35,6 +35,8 @@ with it for the same campaign content.
 import re
 from pathlib import Path
 
+from pathvalidate import sanitize_filename
+
 #: The symbol legend written at the top of both the public and the private file.
 SYMBOL_LEGEND = """Prefixes
 
@@ -65,12 +67,6 @@ NOTE_TAG_SYMBOL = "&"
 
 #: Campaign Logger stores U+00A0 where the editor saw a plain space.
 NON_BREAKING_SPACE = " "
-
-#: Characters that are unsafe in a filename on at least one supported platform.
-UNSAFE_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
-
-#: Device names Windows refuses to use as a filename, whatever the extension.
-RESERVED_FILENAMES = frozenset(["CON", "PRN", "AUX", "NUL"] + [f"COM{i}" for i in range(1, 10)] + [f"LPT{i}" for i in range(1, 10)])
 
 #: Longest filename stem we will emit, so a runaway title cannot break the filesystem.
 MAX_FILENAME_STEM = 120
@@ -109,10 +105,16 @@ def strip_code(text):
 def sanitise_filename(title, used=None, fallback=FALLBACK_LOG_STEM):
     """Turn a title into a filename stem that is safe on every platform.
 
-    Unsafe characters become underscores, surrounding whitespace and trailing dots
-    are dropped (Windows silently strips them), Windows device names are prefixed,
-    an empty result falls back to ``fallback``, and a stem already in ``used`` gains
-    a numeric suffix so two logs never overwrite each other.
+    Platform safety is delegated to :func:`pathvalidate.sanitize_filename` with
+    ``platform="universal"``, so the rules that differ per operating system --
+    reserved device names, trailing dots and spaces, the forbidden character set
+    -- are maintained upstream rather than hand-rolled here. It preserves
+    non-ASCII, which matters: a slug-style helper would flatten a campaign
+    titled "Steel & Chaos -- Tolkeen" into something unrecognisable.
+
+    Two things it deliberately does not do, because they are not its job:
+    an empty title still needs a ``fallback``, and a stem already in ``used``
+    gains a numeric suffix so two logs never overwrite each other.
 
     Args:
         title: The title, which may be ``None``, empty, or contain path separators.
@@ -122,12 +124,9 @@ def sanitise_filename(title, used=None, fallback=FALLBACK_LOG_STEM):
     Returns:
         str: A filename stem, without the ``.txt`` extension.
     """
-    stem = UNSAFE_FILENAME_CHARS.sub("_", title or "").strip()
-    stem = stem.rstrip(". ")[:MAX_FILENAME_STEM].rstrip(". ")
+    stem = sanitize_filename(title or "", platform="universal", max_len=MAX_FILENAME_STEM).strip()
     if not stem:
         stem = fallback
-    if stem.upper() in RESERVED_FILENAMES:
-        stem = f"_{stem}"
     if used is None:
         return stem
     candidate = stem
@@ -201,7 +200,7 @@ def write_logs(logs_with_entries, output_dir, used=None):
     return written
 
 
-def split_campaign(client, campaign_id, output_dir=None, strip_code_from_notes=True):
+def rag_export_campaign(client, campaign_id, output_dir=None, strip_code_from_notes=True):
     """Fetch a campaign and split it into public, private and per-log text files.
 
     Only ``get_*`` methods of the client are used, so this never writes to the server.

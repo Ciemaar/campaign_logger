@@ -19,15 +19,15 @@ from campaign_logger.cli import main
 from campaign_logger.models import CampaignEntry
 from campaign_logger.models import Log
 from campaign_logger.models import LogEntry
-from campaign_logger.split import FALLBACK_CAMPAIGN_STEM
-from campaign_logger.split import FALLBACK_LOG_STEM
-from campaign_logger.split import SYMBOL_LEGEND
-from campaign_logger.split import normalise_spaces
-from campaign_logger.split import sanitise_filename
-from campaign_logger.split import split_campaign
-from campaign_logger.split import strip_code
-from campaign_logger.split import write_campaign_entries
-from campaign_logger.split import write_logs
+from campaign_logger.rag_export import FALLBACK_CAMPAIGN_STEM
+from campaign_logger.rag_export import FALLBACK_LOG_STEM
+from campaign_logger.rag_export import SYMBOL_LEGEND
+from campaign_logger.rag_export import normalise_spaces
+from campaign_logger.rag_export import rag_export_campaign
+from campaign_logger.rag_export import sanitise_filename
+from campaign_logger.rag_export import strip_code
+from campaign_logger.rag_export import write_campaign_entries
+from campaign_logger.rag_export import write_logs
 
 BASE_URL = "https://logger-staging.campaign-logger.com"
 
@@ -65,7 +65,7 @@ def log_entry(**attrs):
 
 
 def register_campaign(mocker_obj, entries=(), logs=(), log_entries=(), title="Test Campaign"):
-    """Wire up the four read endpoints ``split_campaign`` calls."""
+    """Wire up the four read endpoints ``rag_export_campaign`` calls."""
     mocker_obj.get(f"{BASE_URL}/campaigns/c1", json=wire.document("campaigns", "c1", title=title))
     mocker_obj.get(f"{BASE_URL}/campaign-entries", json=wire.collection("campaign-entries", *entries))
     mocker_obj.get(f"{BASE_URL}/logs", json=wire.collection("logs", *logs))
@@ -105,11 +105,11 @@ def campaign_fixture_payloads():
 
 
 def run_split(client, tmp_path, **kwargs):
-    """Run ``split_campaign`` against the standard fixture campaign and read it back."""
+    """Run ``rag_export_campaign`` against the standard fixture campaign and read it back."""
     entries, logs, log_entries = campaign_fixture_payloads()
     with requests_mock.Mocker() as m:
         register_campaign(m, entries, logs, log_entries)
-        written = split_campaign(client, "c1", output_dir=tmp_path, **kwargs)
+        written = rag_export_campaign(client, "c1", output_dir=tmp_path, **kwargs)
     public = (tmp_path / "Test Campaign.public.txt").read_text(encoding="utf-8")
     private = (tmp_path / "Test Campaign.private.txt").read_text(encoding="utf-8")
     return public, private, written
@@ -144,14 +144,20 @@ def test_strip_code_is_greedy_to_the_last_newline():
 @pytest.mark.parametrize(
     ("title", "expected"),
     [
-        ("Session 1: The Road/Home", "Session 1_ The Road_Home"),
-        ('a*b?c"d<e>f|g\\h', "a_b_c_d_e_f_g_h"),
+        # pathvalidate removes forbidden characters rather than substituting,
+        # and suffixes reserved device names rather than prefixing them. Both are
+        # as safe as the hand-rolled rules they replaced; these expectations
+        # simply record the library's choices.
+        ("Session 1: The Road/Home", "Session 1 The RoadHome"),
+        ('a*b?c"d<e>f|g\\h', "abcdefgh"),
         ("trailing dots...", "trailing dots"),
         ("  padded  ", "padded"),
         ("", FALLBACK_LOG_STEM),
         (None, FALLBACK_LOG_STEM),
-        ("CON", "_CON"),
-        ("lpt1", "_lpt1"),
+        ("CON", "CON_"),
+        ("lpt1", "lpt1_"),
+        # Non-ASCII survives: a slug-style helper would flatten this.
+        ("Steel & Chaos \u2014 T\u00f6lkeen", "Steel & Chaos \u2014 T\u00f6lkeen"),
     ],
 )
 def test_sanitise_filename(title, expected):
@@ -253,7 +259,7 @@ def test_public_only_entry_is_mirrored_into_the_private_body(client, tmp_path):
     payload = [("ce1", {"tag-symbol": "^", "tag-value": "Guild", "raw-text": "", "raw-public": "A guild of thieves.", "campaign-id": "c1"})]
     with requests_mock.Mocker() as m:
         register_campaign(m, payload)
-        split_campaign(client, "c1", output_dir=tmp_path)
+        rag_export_campaign(client, "c1", output_dir=tmp_path)
     public = (tmp_path / "Test Campaign.public.txt").read_text(encoding="utf-8")
     private = (tmp_path / "Test Campaign.private.txt").read_text(encoding="utf-8")
     assert '\n^"Guild"\n\nA guild of thieves.' in public  # nosec
@@ -266,7 +272,7 @@ def test_public_only_entry_is_mirrored_into_the_private_body(client, tmp_path):
 def test_log_files_are_named_after_sanitised_titles(client, tmp_path):
     _, _, written = run_split(client, tmp_path)
     assert sorted(p.name for p in written) == [  # nosec
-        "Session 1_ The Road_Home.txt",
+        "Session 1 The RoadHome.txt",
         "Test Campaign.private.txt",
         "Test Campaign.public.txt",
         "log.txt",
@@ -275,7 +281,7 @@ def test_log_files_are_named_after_sanitised_titles(client, tmp_path):
 
 def test_log_file_contents(client, tmp_path):
     run_split(client, tmp_path)
-    assert (tmp_path / "Session 1_ The Road_Home.txt").read_text(encoding="utf-8") == "Arrival\nThey arrive.\n\n"  # nosec
+    assert (tmp_path / "Session 1 The RoadHome.txt").read_text(encoding="utf-8") == "Arrival\nThey arrive.\n\n"  # nosec
 
 
 def test_logs_are_filtered_to_the_requested_campaign(client, tmp_path):
@@ -302,7 +308,7 @@ def test_log_entry_with_none_fields_does_not_crash(tmp_path):
 def test_campaign_with_no_entries_and_no_logs(client, tmp_path):
     with requests_mock.Mocker() as m:
         register_campaign(m)
-        written = split_campaign(client, "c1", output_dir=tmp_path)
+        written = rag_export_campaign(client, "c1", output_dir=tmp_path)
     assert [p.name for p in written] == ["Test Campaign.public.txt", "Test Campaign.private.txt"]  # nosec
     assert written[0].read_text(encoding="utf-8") == SYMBOL_LEGEND  # nosec
     assert written[1].read_text(encoding="utf-8") == SYMBOL_LEGEND  # nosec
@@ -311,15 +317,15 @@ def test_campaign_with_no_entries_and_no_logs(client, tmp_path):
 def test_untitled_campaign_falls_back_to_a_safe_stem(client, tmp_path):
     with requests_mock.Mocker() as m:
         register_campaign(m, title="")
-        written = split_campaign(client, "c1", output_dir=tmp_path)
+        written = rag_export_campaign(client, "c1", output_dir=tmp_path)
     assert [p.name for p in written] == ["campaign.public.txt", "campaign.private.txt"]  # nosec
 
 
 def test_campaign_title_is_sanitised_for_the_output_filenames(client, tmp_path):
     with requests_mock.Mocker() as m:
         register_campaign(m, title="Cock a/Knee: Act 1")
-        written = split_campaign(client, "c1", output_dir=tmp_path)
-    assert written[0].name == "Cock a_Knee_ Act 1.public.txt"  # nosec
+        written = rag_export_campaign(client, "c1", output_dir=tmp_path)
+    assert written[0].name == "Cock aKnee Act 1.public.txt"  # nosec
 
 
 def test_output_dir_is_created_when_missing(client, tmp_path):
@@ -333,7 +339,7 @@ def test_output_dir_defaults_to_the_current_directory(client, tmp_path, monkeypa
     monkeypatch.chdir(tmp_path)
     with requests_mock.Mocker() as m:
         register_campaign(m)
-        written = split_campaign(client, "c1")
+        written = rag_export_campaign(client, "c1")
     assert all(p.parent == Path.cwd() for p in written)  # nosec
 
 
@@ -345,7 +351,7 @@ def test_split_is_read_only(tmp_path):
     stub.get_logs.return_value = [log(title="L", campaign_id="c1")]
     stub.get_log_entries.return_value = [log_entry(title="T", raw_text="t", log_id="l1")]
 
-    split_campaign(stub, "c1", output_dir=tmp_path)
+    rag_export_campaign(stub, "c1", output_dir=tmp_path)
 
     called = {name for name in WRITE_METHODS if getattr(stub, name).called}
     assert called == set()  # nosec
@@ -374,7 +380,7 @@ def cli_client(mocker, tmp_path):
 def test_cli_split(runner, cli_client, tmp_path, monkeypatch):
     monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
-    result = runner.invoke(main, ["logger", "campaign", "split", "c1", "--output-dir", str(tmp_path)])
+    result = runner.invoke(main, ["logger", "campaign", "rag-export", "c1", "--output-dir", str(tmp_path)])
     assert result.exit_code == 0  # nosec
     assert "CLI Campaign.public.txt" in result.output  # nosec
     cli_client.get_campaign.assert_called_once_with("c1")
@@ -382,14 +388,14 @@ def test_cli_split(runner, cli_client, tmp_path, monkeypatch):
     assert private.endswith('\n@"Alice"\n\nprivate body\n&"Scratch"\n\n\nSome prose.\n')  # nosec
     assert "import dill" not in private  # nosec
     assert (tmp_path / "CLI Campaign.public.txt").read_text(encoding="utf-8").endswith('\n@"Alice"\n\npublic body\n&"Scratch"\n\n')  # nosec
-    assert (tmp_path / "Session 1_ The Road_Home.txt").is_file()  # nosec
+    assert (tmp_path / "Session 1 The RoadHome.txt").is_file()  # nosec
 
 
 def test_cli_split_defaults_to_the_current_directory(runner, cli_client, tmp_path, monkeypatch):
     monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
     monkeypatch.chdir(tmp_path)
-    result = runner.invoke(main, ["logger", "campaign", "split", "c1"])
+    result = runner.invoke(main, ["logger", "campaign", "rag-export", "c1"])
     assert result.exit_code == 0  # nosec
     assert (tmp_path / "CLI Campaign.public.txt").is_file()  # nosec
 
@@ -397,7 +403,7 @@ def test_cli_split_defaults_to_the_current_directory(runner, cli_client, tmp_pat
 def test_cli_split_no_strip_flag(runner, cli_client, tmp_path, monkeypatch):
     monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
-    result = runner.invoke(main, ["logger", "campaign", "split", "c1", "--output-dir", str(tmp_path), "--no-strip-code-from-notes"])
+    result = runner.invoke(main, ["logger", "campaign", "rag-export", "c1", "--output-dir", str(tmp_path), "--no-strip-code-from-notes"])
     assert result.exit_code == 0  # nosec
     assert "import dill" in (tmp_path / "CLI Campaign.private.txt").read_text(encoding="utf-8")  # nosec
 
@@ -406,7 +412,7 @@ def test_cli_split_reports_api_errors(runner, cli_client, tmp_path, monkeypatch)
     monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
     cli_client.get_campaign.side_effect = json.JSONDecodeError("boom", "", 0)
-    result = runner.invoke(main, ["logger", "campaign", "split", "c1", "--output-dir", str(tmp_path)])
+    result = runner.invoke(main, ["logger", "campaign", "rag-export", "c1", "--output-dir", str(tmp_path)])
     assert result.exit_code == 0  # nosec
     assert "Error:" in result.output  # nosec
 
@@ -414,7 +420,7 @@ def test_cli_split_reports_api_errors(runner, cli_client, tmp_path, monkeypatch)
 def test_cli_split_needs_credentials(runner, tmp_path, monkeypatch):
     monkeypatch.delenv("CL_LOGGER_CLIENT_ID", raising=False)
     monkeypatch.delenv("CL_LOGGER_CLIENT_SECRET", raising=False)
-    result = runner.invoke(main, ["logger", "campaign", "split", "c1", "--output-dir", str(tmp_path)])
+    result = runner.invoke(main, ["logger", "campaign", "rag-export", "c1", "--output-dir", str(tmp_path)])
     assert result.exit_code == 1  # nosec
     assert "Error: Missing client ID or secret" in result.output  # nosec
 
@@ -454,7 +460,7 @@ def test_log_cannot_overwrite_the_campaign_output_files(tmp_path):
         def get_log_entries(self, log_id):
             return [NS(title="T", raw_text="LOG BODY")]
 
-    written = split_campaign(Client(), "c1", output_dir=tmp_path)
+    written = rag_export_campaign(Client(), "c1", output_dir=tmp_path)
 
     assert len({path.name for path in written}) == len(written)  # nosec  no two outputs share a name
     assert "LOG BODY" not in (tmp_path / "Camp.public.txt").read_text()  # nosec

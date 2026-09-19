@@ -10,7 +10,7 @@ import requests
 from .api import GeneratorClient
 from .api import LoggerClient
 from .models import GeneratorModel
-from .split import split_campaign
+from .rag_export import rag_export_campaign
 
 
 def load_config():
@@ -287,7 +287,7 @@ def update_campaign(ctx, campaign_id, title, description):
         click.echo(f"Error: {e}", err=True)
 
 
-@campaign.command(name="split")
+@campaign.command(name="rag-export")
 @click.argument("campaign_id")
 @click.option(
     "--output-dir",
@@ -301,8 +301,8 @@ def update_campaign(ctx, campaign_id, title, description):
     help="Strip pasted import lines from '&' note bodies in the private file",
 )
 @click.pass_context
-def split_campaign_command(ctx, campaign_id, output_dir, strip_code_from_notes):
-    """Split a live campaign into public, private and per-log text files.
+def rag_export_command(ctx, campaign_id, output_dir, strip_code_from_notes):
+    """Export a live campaign as flat text files for RAG ingestion.
 
     Fetches the campaign, its entries and its logs read-only, and writes
     <campaign>.public.txt, <campaign>.private.txt and one <log title>.txt per log.
@@ -319,7 +319,7 @@ def split_campaign_command(ctx, campaign_id, output_dir, strip_code_from_notes):
     """
     client = ctx.obj["client"]
     try:
-        for path in split_campaign(client, campaign_id, output_dir=output_dir, strip_code_from_notes=strip_code_from_notes):
+        for path in rag_export_campaign(client, campaign_id, output_dir=output_dir, strip_code_from_notes=strip_code_from_notes):
             click.echo(str(path))
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
