@@ -11,6 +11,8 @@ include tox.ini
 include .github/workflows/github-actions.yml
 include .readthedocs.yml
 include .pre-commit-config.yaml
+include .codacy.yml
+include .pylintrc
 include AUTHORS.rst
 include CHANGELOG.rst
 include CONTRIBUTING.rst

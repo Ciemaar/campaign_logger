@@ -162,10 +162,10 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
         """Fetch the configuration of a specific generator by its ID or Name."""
         try:
             generator = client.get_generator(generator_id)
-        except Exception:
+        except Exception as exc:
             generator = client.get_generator_by_name(generator_id)
             if not generator:
-                raise ToolError("Generator not found by ID or Name")
+                raise ToolError("Generator not found by ID or Name") from exc
         return generator.model_dump_json(indent=2)
 
     @server.tool()
@@ -177,12 +177,12 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
         """Generate a random outcome from a generator."""
         try:
             result = client.execute_operation(target, "generate")
-        except Exception:
+        except Exception as exc:
             gen = client.get_generator_by_name(target)
             if gen and gen.id:
                 result = client.execute_operation(gen.id, "generate")
             else:
-                raise ToolError("Generator not found by ID or Name")
+                raise ToolError("Generator not found by ID or Name") from exc
 
         return json.dumps(result, indent=2, sort_keys=True)
 

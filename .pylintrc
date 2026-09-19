@@ -1,0 +1,99 @@
+# Pylint configuration for this repository (issue #69).
+#
+# Codacy detects `pylintrc` and `.pylintrc` at the repository root.  It does NOT
+# read `[tool.pylint]` from `pyproject.toml`, which is why this settles into a
+# separate file rather than joining the ruff configuration.
+#
+# Codacy only honours this file while the per-tool "Configuration file" toggle
+# is active for Pylint on the repository Code patterns page.  Until a human
+# flips that toggle, Codacy keeps using the pattern set stored in its dashboard
+# and nothing here takes effect.  Codacy reads the copy of this file on the
+# branch under analysis, so the effect of a change is visible on its own pull
+# request.
+#
+# Every `disable` below records a decision, so the ruleset is reviewable in
+# version control instead of living only in dashboard state.  Message codes are
+# given numerically because those are the identifiers Codacy reports as
+# `PyLintPython3_<code>` on the code-scanning alerts.
+
+[MAIN]
+# Belt and braces with `.codacy.yml`: the same paths, excluded a second time at
+# the Pylint level so a local `pylint` run agrees with CI.  See `.codacy.yml`
+# for why these paths are out of scope for Pylint.
+ignore-paths =
+    ^tests/.*$,
+    ^ci/.*$,
+    ^docs/.*$
+
+[FORMAT]
+# Keep equal to `line-length` under `[tool.ruff]` in `pyproject.toml`.
+# Pylint's default is 100, which contradicts the formatter this project
+# actually runs, so C0301 fired on 27 lines in `src/` that `ruff format`
+# produced on purpose.  `tests/test_static_analysis_config.py` fails if these
+# two numbers ever drift apart again.
+max-line-length = 140
+
+[BASIC]
+# Pylint's default `good-names` (i, j, k, ex, Run, _) is narrower than this
+# codebase's consistent short-name style.  Each of these has a scope of one
+# statement or one comprehension:
+#   e -- the caught exception in an `except ... as e` block
+#   f -- the handle in a `with open(...) as f` block
+#   c, g, p, r -- the element of a single-line comprehension or loop body
+# This is configuration rather than a rename because renaming them is churn
+# across `cli.py`, `api.py` and `mcp_server.py` that makes nothing clearer.
+good-names =
+    i, j, k, ex, Run, _,
+    e, f,
+    c, g, p, r
+
+[MESSAGES CONTROL]
+disable =
+    # W0621 redefined-outer-name -- a pytest test function whose parameter
+    # names its fixture.  Idiomatic pytest, never shadowing.  Disabled here as
+    # well as excluded by path so it cannot come back if the exclusion moves.
+    W0621,
+    # E1136 unsubscriptable-object -- a false positive on PEP 585 builtin
+    # generics (`dict[str, Any]`, `list[GeneratorModel]`), which this project
+    # uses throughout and which requires Python 3.14 anyway.  The reported
+    # messages are literally "Value 'dict' is unsubscriptable".
+    E1136,
+    # W0703 broad-except -- the CLI catches `Exception` at each command
+    # boundary on purpose, to turn any failure into a one-line message on
+    # stderr plus an exit code rather than a traceback at the user.
+    W0703,
+    # C0415 import-outside-toplevel -- deliberate lazy imports of the optional
+    # `rich` extra and of the Click entry point, so that importing the package
+    # does not require optional dependencies.
+    C0415,
+    # R0903 too-few-public-methods -- the pydantic models in `models.py` are
+    # declarative by design and have no methods to count.
+    R0903,
+    # W0212 protected-access -- the `_parse_*` helpers are exercised directly
+    # by the parser tests, which is the point of having them.
+    W0212,
+    #
+    # The entries below are not in Codacy's current Pylint pattern set. They
+    # only start firing once the "Configuration file" toggle is on, because
+    # that swaps Codacy's curated pattern list for Pylint's own defaults. They
+    # are listed so switching the toggle on does not turn into a fresh wall of
+    # findings.
+    #
+    # E0401 import-error -- Codacy analyses the source without installing this
+    # project's dependencies, so every third-party import is unresolvable
+    # there. Real import mistakes are caught by pyright and by the test matrix.
+    E0401,
+    # R0801 duplicate-code -- the CLI and the MCP server deliberately render
+    # the same entry summary in two places, because they are two separate
+    # presentation layers over the same model.
+    R0801,
+    # R0401 cyclic-import -- `cli` imports `mcp_server` lazily inside the `mcp`
+    # command precisely so the cycle never exists at import time.
+    R0401,
+    # R0904 too-many-public-methods -- `LoggerClient` is a REST client with one
+    # method per endpoint; the count tracks the API surface, not complexity.
+    R0904,
+    # R0914 too-many-locals, R0915 too-many-statements -- both fire only on
+    # `run_mcp_server`, which is a flat registration block of tool closures.
+    R0914,
+    R0915
