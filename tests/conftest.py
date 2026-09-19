@@ -20,6 +20,7 @@ command-line flag has to be typed for the run it applies to.
 """
 
 import os
+from pathlib import Path
 
 import pytest
 
@@ -154,3 +155,29 @@ def live_read_client():
     )
     HttpEffectGuard(READ).install(client.session)
     return client
+
+
+# --- keep the test suite out of the developer's real home directory ---------
+
+
+@pytest.fixture(autouse=True)
+def isolate_user_config(tmp_path, monkeypatch):
+    """Point ``Path.home()`` at a scratch directory for every test.
+
+    ``cli.load_config()`` reads ``~/.campaign_logger.json`` and copies the
+    credentials it finds into ``os.environ``. So on a machine where someone
+    actually uses the CLI, the tests that assert a *missing* credential fails
+    cleanly were handed real credentials instead and exited 0. Deleting env vars
+    with ``monkeypatch.delenv`` was not enough, because the config file put them
+    straight back.
+
+    CI has no such file, so this only ever broke locally -- which is the worst
+    shape for a bug like this: it makes a developer's own environment look like
+    the thing that is wrong, and the workaround is to delete their config.
+
+    Autouse, because any test that invokes the CLI can pick the file up, not
+    only the ones that assert on its absence.
+    """
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
