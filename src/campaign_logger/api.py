@@ -1,5 +1,6 @@
 """API clients for interacting with Campaign Logger."""
 
+import warnings
 from typing import Any
 
 import requests
@@ -16,6 +17,31 @@ from .models import PlayerLogEntry
 #: The message reaches pytest output and CI logs, so on a live run this is real
 #: campaign content -- bounded here rather than printed whole (issue #62, 0.3).
 BODY_PREVIEW_CHARS = 100
+
+#: How many records one page asks for via ``page[size]`` when walking a collection.
+#:
+#: The size is a round-trip/response-size trade-off, bounded by what the server
+#: is known to accept. Live staging served ``page[size]=1000`` against a
+#: 551-record collection without clamping and without any documented maximum
+#: (#77), so 500 sits well inside the range observed to work while keeping one
+#: response small enough to hold comfortably in memory. It also means a normal
+#: account -- a few hundred records in a collection -- is still fetched in a
+#: single request, and a genuinely large one costs a handful, not dozens.
+#:
+#: A server that silently clamps the size to something smaller is handled
+#: anyway: paging advances by ``page[number]`` and counts the records that
+#: actually arrive, never the number it asked for.
+PAGE_SIZE = 500
+
+#: Hard ceiling on the requests one collection may cost, so a server that never
+#: reports the collection complete cannot spin forever. At :data:`PAGE_SIZE`
+#: this allows 25,000 records, far past any real campaign, so reaching it means
+#: something is wrong rather than that the data is big.
+MAX_PAGE_REQUESTS = 50
+
+
+class PaginationError(RuntimeError):
+    """Raised when a paged collection is still incomplete after the request cap."""
 
 
 class GeneratorClient:
@@ -198,11 +224,129 @@ class LoggerClient:
         )
 
     def _get(self, resource_type: str, item_id: str | None = None) -> dict[str, Any]:
-        """Get a resource from the API."""
+        """Get a resource from the API, following pagination for a collection.
+
+        A single-resource GET costs one request and its document is returned
+        untouched. A collection is walked with ``page[size]`` / ``page[number]``
+        until it holds as many records as ``meta.total-records`` promises, and
+        returned in the same ``{"data": [...]}`` shape a single page has, with
+        every page's resources concatenated in request order. Before this,
+        ``_get`` issued one request and returned whatever came back, so a
+        collection larger than a page was silently truncated (#77).
+
+        A document with no usable ``meta.total-records`` is returned exactly as
+        it arrived: the related-resource routes send no ``meta`` at all, and with
+        no total there is nothing to say whether another page exists, so paging
+        blindly would either guess or loop. Such a response is therefore still
+        as truncated as the server chose to make it -- see #76.
+
+        Args:
+            resource_type: The path under the base URL, e.g. ``"log-entries"``.
+            item_id: A resource id, for a single-resource GET.
+
+        Returns:
+            dict: The JSON:API document, with the whole collection under ``data``.
+
+        Raises:
+            PaginationError: If the collection is still incomplete after
+                :data:`MAX_PAGE_REQUESTS` requests.
+        """
         url = f"{self.base_url}/{resource_type}"
         if item_id:
-            url = f"{url}/{item_id}"
-        response = self.session.get(url)
+            return self._get_json(f"{url}/{item_id}")
+        return self._get_collection(resource_type, url)
+
+    def _get_collection(self, resource_type: str, url: str) -> dict[str, Any]:
+        """Walk a collection's pages and return one document holding all of them."""
+        first = self._get_json(url, self._page_params(1))
+        data = first.get("data")
+        total = self._total_records(first)
+        # Not a list: a single resource under a collection URL, nothing to page.
+        # No total: nothing to page against. Already complete: no second request,
+        # which is the common case and must not cost a wasted round trip.
+        if not isinstance(data, list) or total is None or len(data) >= total:
+            return first
+
+        items = list(data)
+        seen = {key for key in map(self._resource_key, data) if key is not None}
+        # Pages 2..MAX_PAGE_REQUESTS, so one collection costs at most that many
+        # requests including the first. Falling off the end means the server
+        # never reported the collection complete.
+        for page_number in range(2, MAX_PAGE_REQUESTS + 1):
+            page = self._get_json(url, self._page_params(page_number))
+            page_data = page.get("data")
+            added = 0
+            for resource in page_data if isinstance(page_data, list) else []:
+                key = self._resource_key(resource)
+                if key is not None:
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                items.append(resource)
+                added += 1
+            if added == 0:
+                # Either the collection ran out early -- records deleted between
+                # pages leave total-records above what can be read -- or the
+                # server keeps handing back the same page. Stop with what we
+                # have; spinning would never produce the missing records.
+                warnings.warn(
+                    f"Pagination of {resource_type} stopped at {len(items)} of {total} records: "
+                    f"page {page_number} returned nothing new. The result is incomplete.",
+                    stacklevel=3,
+                )
+                break
+            if len(items) >= total:
+                break
+        else:
+            raise PaginationError(
+                f"Pagination of {resource_type} hit the {MAX_PAGE_REQUESTS}-request cap with "
+                f"{len(items)} of {total} records. Refusing to keep requesting pages; "
+                f"raise MAX_PAGE_REQUESTS or PAGE_SIZE if the collection really is this large."
+            )
+
+        return {**first, "data": items}
+
+    @staticmethod
+    def _page_params(page_number: int) -> dict[str, int]:
+        """The query for one page of a collection.
+
+        The parameter names carry literal brackets, as JSON:API spells them and
+        as they were verified live. ``requests`` percent-encodes the brackets on
+        the wire -- ``page%5Bsize%5D`` -- and does so whether they are passed here
+        or written into the URL string by hand, so there is no way to send the
+        unencoded form from this client. The server is expected to decode them;
+        that is the one part of this not yet confirmed against staging.
+        """
+        return {"page[size]": PAGE_SIZE, "page[number]": page_number}
+
+    @staticmethod
+    def _total_records(document: dict[str, Any]) -> int | None:
+        """The collection's ``meta.total-records``, or None if it is absent or unusable."""
+        meta = document.get("meta")
+        if not isinstance(meta, dict):
+            return None
+        total = meta.get("total-records")
+        return total if isinstance(total, int) and not isinstance(total, bool) else None
+
+    @staticmethod
+    def _resource_key(resource: Any) -> tuple[str, str] | None:
+        """A resource's ``(type, id)`` identity, or None when it has no id to key on.
+
+        Paging dedupes on this so a server that repeats a page, or one whose
+        collection shifts under a concurrent insert, cannot inflate the count and
+        drive the loop past its own stopping condition. A resource with no id
+        cannot be recognised as a repeat and is always kept.
+        """
+        if not isinstance(resource, dict):
+            return None
+        resource_id = resource.get("id")
+        if resource_id is None:
+            return None
+        return str(resource.get("type", "")), str(resource_id)
+
+    def _get_json(self, url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        """GET one URL and return its parsed JSON document."""
+        response = self.session.get(url, params=params)
         try:
             response.raise_for_status()
             return response.json()
