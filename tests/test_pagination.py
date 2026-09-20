@@ -39,7 +39,7 @@ def paging_server(total, resource_type="log-entries"):
         number = int(request.qs["page[number]"][0])
         start = (number - 1) * size
         ids = [f"e{i}" for i in range(start, min(start + size, total))]
-        return wire.page(resource_type, ids, total_records=total, **{"raw-text": "text"})
+        return wire.page(resource_type, ids, total_records=total, attributes={"raw-text": "text"})
 
     return respond
 
@@ -67,7 +67,7 @@ def test_multi_page_collection_is_fetched_fully_and_in_order(client):
 def test_single_page_collection_costs_exactly_one_request(client):
     """A collection that fits in one page does not pay for a second request."""
     with requests_mock.Mocker() as m:
-        m.get(f"{BASE_URL}/campaigns", json=wire.page("campaigns", ["c1", "c2", "c3"], total_records=3, title="A"))
+        m.get(f"{BASE_URL}/campaigns", json=wire.page("campaigns", ["c1", "c2", "c3"], total_records=3, attributes={"title": "A"}))
         result = client._get("campaigns")
 
     assert len(result["data"]) == 3  # nosec
@@ -91,7 +91,7 @@ def test_response_without_meta_is_returned_as_is(client):
 
 def test_meta_without_a_usable_total_is_returned_as_is(client):
     """A ``meta`` block with no integer ``total-records`` is treated as no total."""
-    document = wire.page("log-entries", ["e1"], **{"raw-text": "text"})
+    document = wire.page("log-entries", ["e1"], attributes={"raw-text": "text"})
     document["meta"] = {"total-records": "many"}
     with requests_mock.Mocker() as m:
         m.get(f"{BASE_URL}/log-entries", json=document)
