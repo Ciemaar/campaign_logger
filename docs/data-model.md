@@ -160,7 +160,8 @@ returns nothing.
   `campaign_logger.models`; tag helpers in `campaign_logger.tags`.
 - **CLI**: `campaign-logger logger …`, and `campaign-logger logger campaign
   rag-export <id>` to dump a campaign to flat text.
-- **MCP**: `campaign-logger mcp`, read-only by default. See
+- **MCP**: `campaign-logger mcp`, read-only by default. The `get_tag_types` tool
+  serves the table below and needs no credentials. See
   [mcp-server.md](mcp-server.md).
 
 Auth is an `api-client` / `api-secret` header pair, from

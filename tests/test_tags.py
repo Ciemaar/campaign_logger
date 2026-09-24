@@ -4,6 +4,9 @@ A consumer asking for "the NPCs" is really asking for campaign entries whose
 ``tag_symbol`` is ``@``. That makes this mapping an interface, not a detail.
 """
 
+import re
+from pathlib import Path
+
 import pytest
 
 from campaign_logger.rag_export import SYMBOL_LEGEND as EXPORTER_LEGEND
@@ -68,3 +71,29 @@ def test_render_legend_takes_a_custom_header():
     rendered = render_legend("Key")
     assert rendered.startswith("Key\n\n")  # nosec
     assert rendered.endswith("& - Notes\n")  # nosec
+
+
+# --- the MCP docs quote exact tool counts; keep them true (#52) --------------
+
+
+def test_mcp_doc_tool_counts_match_the_server():
+    """``docs/mcp-server.md`` states tool counts; assert they are still right.
+
+    Adding ``get_tag_types`` silently falsified three numbers in a doc that had
+    merged the day before (#85). Counting them here means the next tool added
+    fails this test instead of quietly making the documentation wrong.
+    """
+    from campaign_logger.mcp_server import create_mcp_server
+
+    doc = (Path(__file__).parent.parent / "docs" / "mcp-server.md").read_text(encoding="utf-8")
+
+    read_only = len(create_mcp_server(read_only=True)._tool_manager._tools)
+    read_write = len(create_mcp_server(read_only=False)._tool_manager._tools)
+
+    assert re.search(rf"read-only\s+— {read_only} tools", doc), f"doc does not say {read_only} read-only tools"
+    assert re.search(rf"read\+write — {read_write} tools", doc), f"doc does not say {read_write} read+write tools"
+    assert f"The {read_only} tools available in read-only mode" in doc
+
+    # Every tool the read-only server registers must appear in the doc's table.
+    for name in create_mcp_server(read_only=True)._tool_manager._tools:
+        assert f"`{name}`" in doc, f"read-only tool {name} is undocumented"

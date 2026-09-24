@@ -7,8 +7,8 @@ starts it as a subprocess — there is no port to open and nothing to deploy.
 ## Read-only is the default
 
 ```
-campaign-logger mcp            # read-only  — 11 tools
-campaign-logger mcp --write    # read+write — 23 tools
+campaign-logger mcp            # read-only  — 12 tools
+campaign-logger mcp --write    # read+write — 24 tools
 ```
 
 Read-only is not a runtime check that could be argued past. The write tools are
@@ -16,7 +16,7 @@ Read-only is not a runtime check that could be argued past. The write tools are
 given. It cannot call `delete_campaign` because, as far as it can see, no such
 tool exists.
 
-The 11 tools available in read-only mode:
+The 12 tools available in read-only mode:
 
 | | |
 | --- | --- |
@@ -25,12 +25,30 @@ The 11 tools available in read-only mode:
 | Log entries | `list_log_entries`, `get_log_entry` |
 | Pages | `list_campaign_entries`, `get_campaign_entry` |
 | Generators | `list_generators`, `get_generator`, `generate_result` |
+| Tag types | `get_tag_types` |
 
 `get_*` returns the full object as JSON; `list_*` returns `id: title` summary
 lines. One nuance worth knowing: `generate_result` is a POST rather than a GET —
 it runs a generator and returns the result. It creates nothing and stores
 nothing, which is why it is included in read-only mode, but it is the one tool
 there that is not a plain read.
+
+`get_tag_types` is the odd one out in a more useful way: it needs **no
+credentials at all**, because the tag table is static. It is the only tool that
+answers on a fresh install, which makes it the quickest way to confirm the client
+is starting the server correctly before any keys are in place.
+
+It is worth giving the assistant early, because it is what makes the rest of the
+data legible. The API has no NPC or location model — a page carries a
+`tag-symbol` and a `tag-value`, and the symbol is the type. Without the table,
+"list the NPCs in this campaign" is unanswerable; with it, it means the campaign
+entries whose `tag-symbol` is `@`. `docs/data-model.md` covers this in full.
+
+The tool accepts an optional `campaign` (id or title) and **does not use it**.
+Tag meanings may vary per campaign, which is not settled yet (issue #97), so the
+argument exists now to keep the signature stable and the response reports
+`campaign-applied: null` and a `scope` of `campaign-logger-defaults`. Read those
+fields rather than assuming the answer was scoped to what you asked for.
 
 ## Credentials
 

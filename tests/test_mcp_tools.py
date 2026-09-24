@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 
 import pytest
@@ -6,6 +7,10 @@ import pytest
 from campaign_logger.api import GeneratorClient
 from campaign_logger.api import LoggerClient
 from campaign_logger.mcp_server import create_mcp_server
+from campaign_logger.tags import NOTE_TAG_SYMBOL
+from campaign_logger.tags import TAG_NAMES
+from campaign_logger.tags import TAG_TYPES
+from campaign_logger.tags import render_legend
 
 
 @pytest.fixture
@@ -321,3 +326,76 @@ def test_delete_campaign_entry(mock_logger_client, auth_env, mocker):
 
     result = asyncio.run(server.call_tool("delete_campaign_entry", {"entry_id": "ce1"}))
     assert "deleted" in str(result).lower()
+
+
+# --- get_tag_types: the one tool that needs no credentials (#87, #97) ---------
+
+
+@pytest.fixture
+def no_auth_env(mocker):
+    """No credentials at all, and no config file to supply any."""
+    mocker.patch.dict(os.environ, {}, clear=True)
+    mocker.patch("campaign_logger.mcp_server.load_config")
+
+
+def call_tag_types(server, arguments=None):
+    """Invoke ``get_tag_types`` and parse its JSON payload."""
+    result = asyncio.run(server.call_tool("get_tag_types", arguments or {}))
+    return json.loads(result.content[0].text)
+
+
+def test_get_tag_types_needs_no_credentials(no_auth_env):
+    """The table is static, so this must answer where every other tool raises.
+
+    Asserted against a server built with an empty environment: if the tool ever
+    acquires a ``require_logger``/``require_generator`` wrapper, this fails.
+    """
+    payload = call_tag_types(create_mcp_server(read_only=True))
+    assert payload["tag-types"]
+
+
+@pytest.mark.parametrize("read_only", [True, False])
+def test_get_tag_types_registered_in_both_modes(no_auth_env, read_only):
+    """Reading the type system is not a write, so --write must not be required."""
+    server = create_mcp_server(read_only=read_only)
+    assert "get_tag_types" in server._tool_manager._tools
+
+
+def test_get_tag_types_covers_every_symbol(no_auth_env):
+    """Every symbol in TAG_TYPES is reported, with its label and short name."""
+    payload = call_tag_types(create_mcp_server(read_only=True))
+
+    reported = {entry["symbol"]: entry for entry in payload["tag-types"]}
+    assert reported.keys() == TAG_TYPES.keys()
+    for symbol, label in TAG_TYPES.items():
+        assert reported[symbol]["label"] == label
+        assert reported[symbol]["name"] == TAG_NAMES[symbol]
+
+
+def test_get_tag_types_reports_the_legend_and_note_symbol(no_auth_env):
+    """The rendered legend is served as-is rather than re-derived by the caller."""
+    payload = call_tag_types(create_mcp_server(read_only=True))
+    assert payload["legend"] == render_legend()
+    assert payload["note-symbol"] == NOTE_TAG_SYMBOL
+
+
+def test_get_tag_types_accepts_a_campaign_and_says_it_did_not_apply_it(no_auth_env):
+    """The campaign argument is recorded, never silently treated as honoured.
+
+    This is the contract that keeps #97 visible: a caller passing a campaign must
+    be able to tell from the response that the answer is not campaign-scoped,
+    rather than having to know. When #97 lands, this assertion is what should
+    change -- deliberately, not by accident.
+    """
+    payload = call_tag_types(create_mcp_server(read_only=True), {"campaign": "Steel and Chaos"})
+
+    assert payload["campaign-requested"] == "Steel and Chaos"
+    assert payload["campaign-applied"] is None
+    assert payload["scope"] == "campaign-logger-defaults"
+    assert "#97" in payload["campaign-scoping"]
+
+
+def test_get_tag_types_campaign_is_optional(no_auth_env):
+    """Omitting the campaign is valid and reports no campaign requested."""
+    payload = call_tag_types(create_mcp_server(read_only=True))
+    assert payload["campaign-requested"] is None
