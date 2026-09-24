@@ -6,7 +6,7 @@ starts it as a subprocess — there is no port to open and nothing to deploy.
 
 ## Read-only is the default
 
-```
+```bash
 campaign-logger mcp            # read-only  — 12 tools
 campaign-logger mcp --write    # read+write — 24 tools
 ```

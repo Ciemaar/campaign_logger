@@ -105,7 +105,7 @@ Nullability follows the API: almost everything is optional, including `title`.
 
 The wire is **JSON:API with kebab-case members**:
 
-```
+```text
 GET /campaigns/{id}
 → {"data": {"id": "…", "type": "campaigns",
             "attributes": {"created-on": "…", "image-url": "…", "user-id": "…"}}}
