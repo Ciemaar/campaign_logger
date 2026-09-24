@@ -25,7 +25,9 @@ def test_mcp_server_creation_read_write():
     assert "create_campaign" in tool_names
     assert "update_log_entry" in tool_names
     assert "delete_campaign_entry" in tool_names
-    assert len(tool_names) == 23
+    # Reading the tag table is not a write, so it is present in both modes.
+    assert "get_tag_types" in tool_names
+    assert len(tool_names) == 24
 
 
 def test_mcp_server_creation_read_only():
@@ -42,7 +44,8 @@ def test_mcp_server_creation_read_only():
     assert "create_campaign" not in tool_names
     assert "update_log_entry" not in tool_names
     assert "delete_campaign_entry" not in tool_names
-    assert len(tool_names) == 11
+    assert "get_tag_types" in tool_names
+    assert len(tool_names) == 12
 
 
 def test_mcp_server_client_initialization(mocker):

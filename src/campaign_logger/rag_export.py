@@ -37,22 +37,8 @@ from pathlib import Path
 
 from pathvalidate import sanitize_filename
 
-#: The symbol legend written at the top of both the public and the private file.
-SYMBOL_LEGEND = """Prefixes
-
-@ - Cast of Characters - People
-^ - Organizations
-# - Gazetteer - Locations
-$ - Money
-! - Quartermaster - Equipment, Gear, Weapons
-% - Calendar
-* - Loopy Planning - Plot
-~ - Rules/Spells
-§ - Sections
-+ - Pluses
-- - Minuses
-& - Notes
-"""
+from .tags import NOTE_TAG_SYMBOL
+from .tags import SYMBOL_LEGEND
 
 #: Matches pasted Python import lines and ``%autoreload`` magics inside notes.
 #:
@@ -62,8 +48,6 @@ $ - Money
 #: ``*.private.txt`` files were generated with, so it is kept as-is and made opt-out.
 IMPORT_REGEX = re.compile(r"\n(\s*(import|from)|%.*autoreload).*\n", re.MULTILINE | re.DOTALL)
 
-#: The tag symbol used for free-form notes, which are the ones holding pasted code.
-NOTE_TAG_SYMBOL = "&"
 
 #: Campaign Logger stores U+00A0 where the editor saw a plain space.
 NON_BREAKING_SPACE = " "

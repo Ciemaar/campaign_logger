@@ -12,6 +12,10 @@ from pydantic import Field
 from .api import GeneratorClient
 from .api import LoggerClient
 from .cli import load_config
+from .tags import NOTE_TAG_SYMBOL
+from .tags import TAG_NAMES
+from .tags import TAG_TYPES
+from .tags import render_legend
 
 
 def create_mcp_server(read_only: bool = True) -> MCPServer:
@@ -53,6 +57,52 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
         return wrapper
 
     # --- Read Tools ---
+
+    @server.tool()
+    def get_tag_types(
+        campaign: str | None = Field(
+            None,
+            description=(
+                "Campaign id or title to scope the tag types to. Accepted but NOT yet honoured: "
+                "the table returned is the same for every campaign. See issue #97."
+            ),
+        ),
+    ) -> str:
+        """List the tag symbols Campaign Logger uses to type campaign entries.
+
+        A campaign entry (a "page") carries a ``tag-symbol`` and a ``tag-value``,
+        and the symbol is what says which kind of thing the page describes -- ``@``
+        for a person, ``#`` for a place. There is no NPC or location model in the
+        API, so this table is effectively the type system for campaign content:
+        "all the NPCs" means the campaign entries whose ``tag-symbol`` is ``@``.
+
+        Needs no credentials, unlike every other tool here, because the table is
+        static. It is therefore the one tool that answers on a fresh install.
+
+        ``campaign`` is accepted and echoed back but does not change the answer.
+        Tag meanings may in fact vary per campaign (#97); until that is settled the
+        response says so in ``campaign-applied`` and ``scope`` rather than leaving a
+        caller to assume the table was scoped to what they asked for.
+
+        Args:
+            campaign: A campaign id or title. Recorded, not applied.
+
+        Returns:
+            str: A JSON object with the symbol table, the note symbol, the rendered
+            legend, and the scope the answer actually has.
+        """
+        return json.dumps(
+            {
+                "scope": "campaign-logger-defaults",
+                "campaign-requested": campaign,
+                "campaign-applied": None,
+                "campaign-scoping": "not implemented -- see issue #97; this table is identical for every campaign",
+                "note-symbol": NOTE_TAG_SYMBOL,
+                "tag-types": [{"symbol": symbol, "label": label, "name": TAG_NAMES.get(symbol)} for symbol, label in TAG_TYPES.items()],
+                "legend": render_legend(),
+            },
+            indent=2,
+        )
 
     @server.tool()
     @require_logger
