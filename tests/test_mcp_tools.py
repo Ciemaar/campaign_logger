@@ -7,6 +7,8 @@ import pytest
 from campaign_logger.api import GeneratorClient
 from campaign_logger.api import LoggerClient
 from campaign_logger.mcp_server import create_mcp_server
+from campaign_logger.models import CampaignEntry
+from campaign_logger.models import LogEntry
 from campaign_logger.tags import NOTE_TAG_SYMBOL
 from campaign_logger.tags import TAG_NAMES
 from campaign_logger.tags import TAG_TYPES
@@ -90,11 +92,8 @@ def test_get_log(mock_logger_client, auth_env, mocker):
 def test_list_log_entries(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=True)
 
-    mock_entry = mocker.MagicMock()
-    mock_entry.id = "e1"
-    mock_entry.title = "Entry 1"
-    mock_entry.raw_text = "text"
-    mock_logger_client.get_log_entries.return_value = [mock_entry]
+    # A real model, so listing_label() is the one the MCP server actually calls.
+    mock_logger_client.get_log_entries.return_value = [LogEntry(id="e1", type="log-entries", title="Entry 1", raw_text="text")]
 
     result = asyncio.run(server.call_tool("list_log_entries", {}))
     assert "e1: Entry 1" in str(result)
@@ -114,11 +113,9 @@ def test_get_log_entry(mock_logger_client, auth_env, mocker):
 def test_list_campaign_entries(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=True)
 
-    mock_entry = mocker.MagicMock()
-    mock_entry.id = "ce1"
-    mock_entry.tag_value = "Camp Entry 1"
-    mock_entry.raw_text = "text"
-    mock_logger_client.get_campaign_entries.return_value = [mock_entry]
+    mock_logger_client.get_campaign_entries.return_value = [
+        CampaignEntry(id="ce1", type="campaign-entries", tag_value="Camp Entry 1", raw_text="text")
+    ]
 
     result = asyncio.run(server.call_tool("list_campaign_entries", {}))
     assert "ce1: Camp Entry 1" in str(result)

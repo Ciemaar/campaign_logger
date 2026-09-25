@@ -10,6 +10,9 @@ from click.testing import CliRunner
 
 from campaign_logger.cli import load_config
 from campaign_logger.cli import main
+from campaign_logger.models import CampaignEntry
+from campaign_logger.models import LogEntry
+from campaign_logger.models import PlayerLogEntry
 
 
 @pytest.fixture
@@ -75,12 +78,8 @@ def test_rich_import_error(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
 
     mock_instance = MagicMock()
-    mock_instance.get_log_entry.return_value = type(
-        "MockEntry", (), {"id": "1", "raw_text": "text", "to_dict": lambda *args: {"id": "1", "raw_text": "text"}}
-    )()
-    mock_instance.get_campaign_entry.return_value = type(
-        "MockPage", (), {"id": "1", "raw_text": "text", "to_dict": lambda *args: {"id": "1", "raw_text": "text"}}
-    )()
+    mock_instance.get_log_entry.return_value = LogEntry(id="1", type="log-entries", raw_text="text")
+    mock_instance.get_campaign_entry.return_value = CampaignEntry(id="1", type="campaign-entries", raw_text="text")
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     # Hide rich module
@@ -176,7 +175,7 @@ def test_list_entries_with_default_log_id(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_DEFAULT_LOG_ID", "1")
 
     mock_instance = MagicMock()
-    mock_instance.get_log_entries.return_value = [type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": "text1"})()]
+    mock_instance.get_log_entries.return_value = [LogEntry(id="1", type="log-entries", log_id="1", raw_text="text1")]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "entry", "list"])
@@ -191,7 +190,7 @@ def test_list_pages_with_default_campaign_id(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_DEFAULT_CAMPAIGN_ID", "1")
 
     mock_instance = MagicMock()
-    mock_instance.get_campaign_entries.return_value = [type("MockPage", (), {"id": "1", "campaign_id": "1", "raw_text": "text1"})()]
+    mock_instance.get_campaign_entries.return_value = [CampaignEntry(id="1", type="campaign-entries", campaign_id="1", raw_text="text1")]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "page", "list"])
@@ -207,15 +206,18 @@ def test_list_entries_no_log_id(runner, monkeypatch, mocker):
 
     mock_instance = MagicMock()
     mock_instance.get_log_entries.return_value = [
-        type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": "text1"})(),
-        type("MockEntry", (), {"id": "2", "log_id": "2", "raw_text": None})(),
+        LogEntry(id="1", type="log-entries", log_id="1", raw_text="text1"),
+        LogEntry(id="2", type="log-entries", log_id="2", raw_text=None),
     ]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "entry", "list"])
     assert result.exit_code == 0
     assert "1: text1" in result.output
-    assert "2: (empty)" not in result.output
+    # Reversed deliberately (#89, #98): an entry with no title used to be dropped
+    # from the listing entirely. It is now listed as untitled, because the id is
+    # what the caller needs and a skipped row reads as "no such object".
+    assert "2: (untitled)" in result.output
 
 
 def test_list_pages_no_campaign_id(runner, monkeypatch, mocker):
@@ -225,15 +227,18 @@ def test_list_pages_no_campaign_id(runner, monkeypatch, mocker):
 
     mock_instance = MagicMock()
     mock_instance.get_campaign_entries.return_value = [
-        type("MockPage", (), {"id": "1", "campaign_id": "1", "raw_text": "text1"})(),
-        type("MockPage", (), {"id": "2", "campaign_id": "2", "raw_text": None})(),
+        CampaignEntry(id="1", type="campaign-entries", campaign_id="1", raw_text="text1"),
+        CampaignEntry(id="2", type="campaign-entries", campaign_id="2", raw_text=None),
     ]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "page", "list"])
     assert result.exit_code == 0
     assert "1: text1" in result.output
-    assert "2: (empty)" not in result.output
+    # Reversed deliberately (#89, #98): an entry with no title used to be dropped
+    # from the listing entirely. It is now listed as untitled, because the id is
+    # what the caller needs and a skipped row reads as "no such object".
+    assert "2: (untitled)" in result.output
 
 
 def test_missing_config_file_handled(tmp_path, monkeypatch):
@@ -262,7 +267,7 @@ def test_get_entry_without_rich(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
 
     mock_instance = MagicMock()
-    mock_instance.get_log_entry.return_value = type("MockEntry", (), {"id": "1", "raw_text": "text1", "to_dict": lambda *args: {}})()
+    mock_instance.get_log_entry.return_value = LogEntry(id="1", type="log-entries", raw_text="text1")
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "entry", "get", "1", "--raw"])
@@ -275,9 +280,7 @@ def test_get_player_entry_with_rich(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
 
     mock_instance = MagicMock()
-    mock_instance.get_player_log_entry.return_value = type(
-        "MockEntry", (), {"id": "1", "raw_text": "# text1", "to_dict": lambda *args: {}}
-    )()
+    mock_instance.get_player_log_entry.return_value = PlayerLogEntry(id="1", type="player-log-entries", raw_text="# text1")
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "player-entry", "get", "1"])
@@ -290,7 +293,7 @@ def test_get_player_entry_without_rich(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
 
     mock_instance = MagicMock()
-    mock_instance.get_player_log_entry.return_value = type("MockEntry", (), {"id": "1", "raw_text": "text1", "to_dict": lambda *args: {}})()
+    mock_instance.get_player_log_entry.return_value = LogEntry(id="1", type="log-entries", raw_text="text1")
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "player-entry", "get", "1", "--raw"])
@@ -303,7 +306,7 @@ def test_get_page_without_rich(runner, monkeypatch, mocker):
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
 
     mock_instance = MagicMock()
-    mock_instance.get_campaign_entry.return_value = type("MockPage", (), {"id": "1", "raw_text": "text1", "to_dict": lambda *args: {}})()
+    mock_instance.get_campaign_entry.return_value = CampaignEntry(id="1", type="campaign-entries", raw_text="text1")
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "page", "get", "1", "--raw"])
@@ -318,7 +321,7 @@ def test_list_player_entries_no_log_id(runner, monkeypatch, mocker):
 
     mock_instance = MagicMock()
     mock_instance.get_player_log_entries.return_value = [
-        type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": "text"})(),
+        PlayerLogEntry(id="1", type="player-log-entries", log_id="1", raw_text="text"),
     ]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
@@ -334,13 +337,14 @@ def test_list_player_entries_no_first_line(runner, monkeypatch, mocker):
 
     mock_instance = MagicMock()
     mock_instance.get_player_log_entries.return_value = [
-        type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": ""})(),
+        PlayerLogEntry(id="1", type="player-log-entries", log_id="1", raw_text=""),
     ]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "player-entry", "list"])
     assert result.exit_code == 0
-    assert "1: (empty)" not in result.output
+    # Reversed deliberately (#89, #98): see the note in test_list_entries_no_log_id.
+    assert "1: (untitled)" in result.output
 
 
 def test_logger_cli_error_handling_coverage(runner, monkeypatch, mocker):
@@ -435,13 +439,14 @@ def test_list_entries_no_first_line(runner, monkeypatch, mocker):
 
     mock_instance = MagicMock()
     mock_instance.get_log_entries.return_value = [
-        type("MockEntry", (), {"id": "1", "log_id": "1", "raw_text": ""})(),
+        LogEntry(id="1", type="log-entries", log_id="1", raw_text=""),
     ]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "entry", "list"])
     assert result.exit_code == 0
-    assert "1: (empty)" not in result.output
+    # Reversed deliberately (#89, #98): see the note in test_list_entries_no_log_id.
+    assert "1: (untitled)" in result.output
 
 
 def test_list_pages_no_first_line(runner, monkeypatch, mocker):
@@ -451,13 +456,14 @@ def test_list_pages_no_first_line(runner, monkeypatch, mocker):
 
     mock_instance = MagicMock()
     mock_instance.get_campaign_entries.return_value = [
-        type("MockPage", (), {"id": "1", "campaign_id": "1", "raw_text": ""})(),
+        CampaignEntry(id="1", type="campaign-entries", campaign_id="1", raw_text=""),
     ]
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=mock_instance)
 
     result = runner.invoke(main, ["logger", "page", "list"])
     assert result.exit_code == 0
-    assert "1: (empty)" not in result.output
+    # Reversed deliberately (#89, #98): see the note in test_list_entries_no_log_id.
+    assert "1: (untitled)" in result.output
 
 
 def test_json_decode_error_in_cli_commands(runner, monkeypatch, mocker):

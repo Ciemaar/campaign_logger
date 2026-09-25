@@ -4,6 +4,12 @@ import pytest
 from click.testing import CliRunner
 
 from campaign_logger.cli import main
+from campaign_logger.models import Campaign
+from campaign_logger.models import CampaignEntry
+from campaign_logger.models import Log
+from campaign_logger.models import LogEntry
+from campaign_logger.models import PlayerLog
+from campaign_logger.models import PlayerLogEntry
 
 
 @pytest.fixture
@@ -11,35 +17,34 @@ def runner():
     return CliRunner()
 
 
-class MockResource(MagicMock):
-    """Mock for JSON API Resource."""
+def bind(entity, client):
+    """Attach ``client`` to a real model so its ``save()`` can round-trip.
 
-    def __init__(self, data, *args, **kwargs):
-        """Initialize MockResource."""
-        super().__init__(*args, **kwargs)
-        self._data = data
-        self.id = data.get("id")
-        self.title = data.get("title")
-        self.raw_text = data.get("raw_text")
-        self.log_id = data.get("log_id")
-        self.campaign_id = data.get("campaign_id")
-
-    def to_dict(self):
-        """Return dict representation."""
-        return self._data
-
-    def save(self):
-        """Mock save method."""
-        return self
+    The models reach their client through the ``_client`` private attribute, so a
+    model built directly in a test has to be given one before the CLI's
+    ``obj.save().to_dict()`` path will work.
+    """
+    entity._client = client
+    return entity
 
 
 @pytest.fixture
 def mock_logger_client(mocker):
+    """A mocked client returning **real models**, not mock stubs.
+
+    These were ``MagicMock`` subclasses, which meant the CLI tests never
+    exercised a single real model: any attribute returned a mock, so every
+    ``exit_code == 0`` assertion passed regardless of what the CLI actually read
+    off the object. That is how #89 shipped -- `page get` read `raw_text`
+    directly and printed nothing for a page whose body is only in `raw_public`,
+    and no test noticed because the mock answered `raw_text` too. Using real
+    models makes the CLI's reads real (#95).
+    """
     mock_instance = MagicMock()
-    mock_c1 = MockResource({"id": "c1", "title": "Camp Title"})
-    mock_l1 = MockResource({"id": "l1", "title": "Log Title"})
-    mock_le1 = MockResource({"id": "le1", "raw_text": "Text 1"})
-    mock_ce1 = MockResource({"id": "ce1", "raw_text": "Page 1"})
+    mock_c1 = bind(Campaign(id="c1", type="campaigns", title="Camp Title"), mock_instance)
+    mock_l1 = bind(Log(id="l1", type="logs", title="Log Title"), mock_instance)
+    mock_le1 = bind(LogEntry(id="le1", type="log-entries", raw_text="Text 1"), mock_instance)
+    mock_ce1 = bind(CampaignEntry(id="ce1", type="campaign-entries", raw_text="Page 1"), mock_instance)
 
     mock_instance.get_campaigns.return_value = [mock_c1]
     mock_instance.get_campaign.return_value = mock_c1
@@ -61,8 +66,8 @@ def mock_logger_client(mocker):
     mock_instance.create_campaign_entry.return_value = mock_ce1
     mock_instance.update_campaign_entry.return_value = mock_ce1
 
-    mock_pl1 = MockResource({"id": "pl1", "title": "Player Log Title"})
-    mock_ple1 = MockResource({"id": "ple1", "raw_text": "Player Text 1"})
+    mock_pl1 = bind(PlayerLog(id="pl1", type="player-logs", title="Player Log Title"), mock_instance)
+    mock_ple1 = bind(PlayerLogEntry(id="ple1", type="player-log-entries", raw_text="Player Text 1"), mock_instance)
 
     mock_instance.get_player_logs.return_value = [mock_pl1]
     mock_instance.get_player_log.return_value = mock_pl1
