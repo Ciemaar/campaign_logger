@@ -17,6 +17,11 @@ from pathlib import Path
 import pytest
 import requests
 
+# ``requests/__init__.py`` does not re-export the ``adapters`` submodule, so
+# ``import requests`` alone leaves ``requests.adapters`` invisible to a type
+# checker even though it resolves at runtime.
+import requests.adapters  # noqa: F401
+
 from campaign_logger.api import DEFAULT_TIMEOUT
 from campaign_logger.api import GeneratorClient
 from campaign_logger.api import LoggerClient
