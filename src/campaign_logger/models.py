@@ -20,6 +20,12 @@ def to_kebab(field_name: str) -> str:
     return field_name.replace("_", "-")
 
 
+#: Shown in a listing for an object that carries no title and no body to derive
+#: one from. A placeholder rather than a skipped row: see
+#: :meth:`BaseEntity.listing_label`.
+UNTITLED_LABEL = "(untitled)"
+
+
 class VariableModel(BaseModel):
     """Model representing a variable in a Generator."""
 
@@ -136,6 +142,42 @@ class BaseEntity(BaseModel):
             return None
         return value
 
+    @property
+    def text(self) -> str | None:
+        """This object's body text, or None when it has none.
+
+        Defined on the base so a listing can derive a label without knowing which
+        concrete type it is holding. Subclasses whose body can live in more than
+        one field override it -- see :attr:`CampaignEntry.text`.
+        """
+        return getattr(self, "raw_text", None) or None
+
+    def listing_label(self) -> str:
+        """A single-line label for this object in a listing. Never empty.
+
+        Listings used to build a label inline and ``continue`` past any object
+        they could not label. That turned two separate problems into one silent
+        one: a page whose body is only in ``raw-public`` produced no label, so it
+        did not appear in the listing at all, and the caller was told the page
+        did not exist rather than that it had no title (#89, #98).
+
+        Falling back to :data:`UNTITLED_LABEL` keeps the id visible, which is the
+        part that matters -- an untitled page can still be fetched by id, but not
+        if the listing never mentions it.
+        """
+        for candidate in (self._listing_name(), self.text):
+            if candidate and candidate.strip():
+                return candidate.strip().splitlines()[0]
+        return UNTITLED_LABEL
+
+    def _listing_name(self) -> str | None:
+        """The field holding this object's own name, if it has one.
+
+        ``title`` for most resources; :class:`CampaignEntry` overrides it because
+        a page is named by its ``tag-value`` instead.
+        """
+        return getattr(self, "title", None)
+
     def to_dict(self) -> dict[str, Any]:
         """Convert the entity to a JSON-safe dictionary for CLI output.
 
@@ -199,6 +241,10 @@ class CampaignEntry(BaseEntity):
     def text(self, value: str) -> None:
         """Refuse assignment: ``text`` is derived, so there is no sound target."""
         raise NotImplementedError("CampaignEntry.text is read-only; set raw_text or raw_public instead")
+
+    def _listing_name(self) -> str | None:
+        """A page is named by its tag value, not by a ``title`` field."""
+        return self.tag_value
 
     def save(self) -> "CampaignEntry":
         """Save changes to this campaign entry."""

@@ -524,15 +524,7 @@ def list_entries(ctx, log_id):
             res = client.get_log_entries()
 
         for e in res:
-            text = e.raw_text.strip() if getattr(e, "raw_text", None) else ""
-
-            title = getattr(e, "title", "")
-            if not title and text:
-                title = text.splitlines()[0]
-
-            if not title:
-                continue
-            click.echo(f"{e.id}: {title}")
+            click.echo(f"{e.id}: {e.listing_label()}")
     except OSError as e:
         click.echo(f"Error: {e}", err=True)
     except json.JSONDecodeError as e:
@@ -549,16 +541,16 @@ def get_entry(ctx, entry_id, raw):
     try:
         entry_obj = client.get_log_entry(entry_id)
         if raw:
-            click.echo(entry_obj.raw_text or "")
+            click.echo(entry_obj.text or "")
         else:
             try:
                 from rich.console import Console
                 from rich.markdown import Markdown
 
                 console = Console()
-                console.print(Markdown(entry_obj.raw_text or ""))
+                console.print(Markdown(entry_obj.text or ""))
             except ImportError:
-                click.echo(entry_obj.raw_text or "")
+                click.echo(entry_obj.text or "")
     except OSError as e:
         click.echo(f"Error: {e}", err=True)
     except json.JSONDecodeError as e:
@@ -625,15 +617,7 @@ def list_player_entries(ctx, log_id):
             res = client.get_player_log_entries()
 
         for e in res:
-            text = e.raw_text.strip() if getattr(e, "raw_text", None) else ""
-
-            title = getattr(e, "title", "")
-            if not title and text:
-                title = text.splitlines()[0]
-
-            if not title:
-                continue
-            click.echo(f"{e.id}: {title}")
+            click.echo(f"{e.id}: {e.listing_label()}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -648,16 +632,16 @@ def get_player_entry(ctx, entry_id, raw):
     try:
         entry_obj = client.get_player_log_entry(entry_id)
         if raw:
-            click.echo(entry_obj.raw_text or "")
+            click.echo(entry_obj.text or "")
         else:
             try:
                 from rich.console import Console
                 from rich.markdown import Markdown
 
                 console = Console()
-                console.print(Markdown(entry_obj.raw_text or ""))
+                console.print(Markdown(entry_obj.text or ""))
             except ImportError:
-                click.echo(entry_obj.raw_text or "")
+                click.echo(entry_obj.text or "")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -731,15 +715,7 @@ def list_pages(ctx, campaign_id):
             res = client.get_campaign_entries()
 
         for p in res:
-            text = p.raw_text.strip() if getattr(p, "raw_text", None) else ""
-
-            title = getattr(p, "tag_value", "")
-            if not title and text:
-                title = text.splitlines()[0]
-
-            if not title:
-                continue
-            click.echo(f"{p.id}: {title}")
+            click.echo(f"{p.id}: {p.listing_label()}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -754,16 +730,16 @@ def get_page(ctx, page_id, raw):
     try:
         page_obj = client.get_campaign_entry(page_id)
         if raw:
-            click.echo(page_obj.raw_text or "")
+            click.echo(page_obj.text or "")
         else:
             try:
                 from rich.console import Console
                 from rich.markdown import Markdown
 
                 console = Console()
-                console.print(Markdown(page_obj.raw_text or ""))
+                console.print(Markdown(page_obj.text or ""))
             except ImportError:
-                click.echo(page_obj.raw_text or "")
+                click.echo(page_obj.text or "")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
