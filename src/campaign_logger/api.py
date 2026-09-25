@@ -17,6 +17,48 @@ from .models import PlayerLogEntry
 #: campaign content -- bounded here rather than printed whole (issue #62, 0.3).
 BODY_PREVIEW_CHARS = 100
 
+#: ``(connect, read)`` seconds applied to every request that does not set its own.
+#:
+#: ``requests`` applies **no** timeout unless asked, so a server that accepts a
+#: connection and then stops responding hangs the caller forever -- no exception,
+#: no progress. That is worse than an error for every caller here: the CLI looks
+#: frozen, the MCP server stops answering the assistant with no indication why,
+#: and a scripted export never returns (#43).
+#:
+#: Split rather than a single number, because the two failure modes have very
+#: different plausible durations. A connection that has not been accepted within
+#: 5 seconds is not going to be; a large collection legitimately takes longer than
+#: that to serialise, so the read half is far more generous.
+DEFAULT_TIMEOUT: tuple[float, float] = (5, 30)
+
+
+class TimeoutSession(requests.Session):
+    """A :class:`requests.Session` that gives every request a default timeout.
+
+    Applied in :meth:`send` rather than at each call site on purpose. There are
+    two dozen requests across the two clients, six of which had grown an ad-hoc
+    ``timeout=30`` while the rest had none -- and the unprotected ones were the
+    reads and the deletes, so the most-used paths were the exposed ones. A
+    per-call convention cannot be relied on: it has to be repeated
+    correctly every time a request is added, and nothing fails when it is not.
+
+    Doing it in ``send`` also covers redirects and any caller that prepares a
+    request and sends it directly, neither of which passes through the
+    ``get``/``post`` helpers.
+
+    An explicit ``timeout`` always wins, including ``timeout=None`` to wait
+    indefinitely -- so this sets a default, it does not impose a ceiling.
+    """
+
+    #: Applied when a request does not carry its own. Assignable per instance.
+    timeout: float | tuple[float, float] | None = DEFAULT_TIMEOUT
+
+    def send(self, request: requests.PreparedRequest, **kwargs: Any) -> requests.Response:
+        """Send ``request``, filling in :attr:`timeout` when the caller set none."""
+        if kwargs.get("timeout") is None:
+            kwargs["timeout"] = self.timeout
+        return super().send(request, **kwargs)
+
 
 class GeneratorClient:
     """Client for the Campaign Logger Generator API."""
@@ -25,10 +67,16 @@ class GeneratorClient:
         self,
         base_url: str = "https://generator.campaign-logger.com",
         token: str | None = None,
+        timeout: float | tuple[float, float] | None = DEFAULT_TIMEOUT,
     ):
-        """Initialize the Generator API client."""
+        """Initialize the Generator API client.
+
+        ``timeout`` is the ``(connect, read)`` default for every request; pass a
+        number for both halves, or ``None`` to wait indefinitely.
+        """
         self.base_url = base_url.rstrip("/")
-        self.session = requests.Session()
+        self.session = TimeoutSession()
+        self.session.timeout = timeout
 
         if token:
             self.session.headers.update({"Authorization": f"Bearer {token}"})
@@ -141,8 +189,8 @@ class GeneratorClient:
         response.raise_for_status()
 
 
-class LoggerSession(requests.Session):
-    """A :class:`requests.Session` that drops the logger API credentials on a cross-host redirect.
+class LoggerSession(TimeoutSession):
+    """A :class:`TimeoutSession` that drops the logger API credentials on a cross-host redirect.
 
     ``requests`` only protects the standard ``Authorization`` header: ``rebuild_auth``
     deletes it when a redirect crosses to a different host and leaves every other header
@@ -182,10 +230,16 @@ class LoggerClient:
         base_url: str = "https://logger.campaign-logger.com",
         client_id: str | None = None,
         client_secret: str | None = None,
+        timeout: float | tuple[float, float] | None = DEFAULT_TIMEOUT,
     ):
-        """Initialize the Logger API client."""
+        """Initialize the Logger API client.
+
+        ``timeout`` is the ``(connect, read)`` default for every request; pass a
+        number for both halves, or ``None`` to wait indefinitely.
+        """
         self.base_url = base_url.rstrip("/")
         self.session = LoggerSession()
+        self.session.timeout = timeout
 
         if client_id and client_secret:
             self.session.headers.update({"api-client": client_id, "api-secret": client_secret})
@@ -403,7 +457,7 @@ class LoggerClient:
             {"title": title, "description": description, "campaign-id": campaign_id},
             relationships={"campaign": self.relationship("campaigns", campaign_id)},
         )
-        response = self.session.post(url, json=payload, timeout=30)
+        response = self.session.post(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
         data = json_resp.get("data", {})
@@ -513,7 +567,7 @@ class LoggerClient:
             {"raw-text": raw_text, "campaign-id": campaign_id},
             relationships={"campaign": self.relationship("campaigns", campaign_id)},
         )
-        response = self.session.post(url, json=payload, timeout=30)
+        response = self.session.post(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
         data = json_resp.get("data", {})
@@ -562,7 +616,7 @@ class LoggerClient:
             {"title": title, "description": description, "campaign-id": campaign_id},
             relationships={"campaign": self.relationship("campaigns", campaign_id)},
         )
-        response = self.session.post(url, json=payload, timeout=30)
+        response = self.session.post(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
         data = json_resp.get("data", {})
@@ -580,7 +634,7 @@ class LoggerClient:
             attributes["description"] = description
 
         payload = self.write_payload("player-logs", attributes, object_id=log_id)
-        response = self.session.patch(url, json=payload, timeout=30)
+        response = self.session.patch(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
         data = json_resp.get("data", {})
@@ -623,7 +677,7 @@ class LoggerClient:
             {"raw-text": raw_text, "log-id": log_id},
             relationships={"player-log": self.relationship("player-logs", log_id)},
         )
-        response = self.session.post(url, json=payload, timeout=30)
+        response = self.session.post(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
         data = json_resp.get("data", {})
@@ -635,7 +689,7 @@ class LoggerClient:
         """Update the textual content of an existing player log entry."""
         url = f"{self.base_url}/player-log-entries/{entry_id}"
         payload = self.write_payload("player-log-entries", {"raw-text": raw_text}, object_id=entry_id)
-        response = self.session.patch(url, json=payload, timeout=30)
+        response = self.session.patch(url, json=payload)
         response.raise_for_status()
         json_resp = response.json()
         data = json_resp.get("data", {})
