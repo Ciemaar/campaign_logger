@@ -17,6 +17,7 @@ answered ``raw_text`` as readily as the real model would (#95).
 import ast
 import asyncio
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -36,6 +37,22 @@ PUBLIC_ONLY = CampaignEntry(
 )
 #: An ordinary page, for contrast.
 TAGGED = CampaignEntry(id="p1", type="campaign-entries", tag_value="Alice", raw_text="An NPC")
+
+
+def tool_text(result: Any) -> str:
+    """The text of an MCP tool result's first content block.
+
+    ``call_tool`` returns a union -- text, image, audio, a resource link or an
+    input-required result -- so the attribute access has to be narrowed rather
+    than assumed. Asserting the shape here says what this test requires and fails
+    loudly if a tool ever answers with something else, which a ``type: ignore``
+    would hide.
+    """
+    content = getattr(result, "content", None)
+    assert content, f"tool returned no content: {result!r}"
+    text = getattr(content[0], "text", None)
+    assert isinstance(text, str), f"first content block is not text: {content[0]!r}"
+    return text
 
 
 @pytest.fixture
@@ -115,7 +132,7 @@ def test_mcp_listing_includes_a_page_whose_body_is_only_public(mocker):
     client.get_campaign_entries.return_value = [TAGGED, PUBLIC_ONLY]
 
     server = create_mcp_server(read_only=True)
-    out = asyncio.run(server.call_tool("list_campaign_entries", {})).content[0].text
+    out = tool_text(asyncio.run(server.call_tool("list_campaign_entries", {})))
 
     assert "p1: Alice" in out
     assert "p2: A place with no tag value" in out
