@@ -12,6 +12,21 @@ from .api import LoggerClient
 from .models import GeneratorModel
 from .rag_export import rag_export_campaign
 
+#: Failures that mean "the request or the input was bad", not "this client has a
+#: defect". Only these are turned into a clean ``Error: ...`` message; anything
+#: else propagates, so a bug in this package produces a traceback instead of
+#: being flattened into the same one-liner a 404 produces (#96).
+#:
+#: ``ValueError`` is the broad one, and deliberate: the models raise it for a
+#: missing id, and both :class:`json.JSONDecodeError` and pydantic's
+#: ``ValidationError`` derive from it, so naming those separately would be
+#: decorative. It is still far narrower than ``except Exception``.
+EXPECTED_ERRORS = (
+    requests.exceptions.RequestException,
+    OSError,
+    ValueError,
+)
+
 
 def load_config():
     """Load config from ~/.campaign_logger.json and populate environment variables."""
@@ -70,8 +85,8 @@ def list_generators(ctx):
         generators = client.list_generators()
         for g in generators:
             click.echo(f"{g.id}: {g.name}")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @generator.command(name="get")
@@ -91,8 +106,8 @@ def get_generator(ctx, generator_id):
             else:
                 raise
         click.echo(generator_obj.model_dump_json(indent=2))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @generator.command(name="create")
@@ -106,8 +121,8 @@ def create_generator(ctx, json_file):
         model = GeneratorModel(**data)
         created = client.create_generator(model)
         click.echo(created.model_dump_json(indent=2))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @generator.command(name="update")
@@ -122,8 +137,8 @@ def update_generator(ctx, generator_id, json_file):
         model = GeneratorModel(**data)
         updated = client.update_generator(generator_id, model)
         click.echo(updated.model_dump_json(indent=2))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @generator.command(name="delete")
@@ -135,8 +150,8 @@ def delete_generator(ctx, generator_id):
     try:
         client.delete_generator(generator_id)
         click.echo(f"Generator {generator_id} deleted.")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @generator.command(name="generate")
@@ -165,8 +180,8 @@ def generate(ctx, target):
                     raise
 
         click.echo(json.dumps(result, indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @generator.command(name="validate")
@@ -195,8 +210,8 @@ def validate(ctx, target):
                 else:
                     raise
             click.echo(f"Generator {target} is valid.")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @main.command()
@@ -207,8 +222,11 @@ def mcp(write):
 
     try:
         run_mcp_server(read_only=not write)
-    except Exception as e:
-        click.echo(f"MCP Server Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        # The worst place to exit 0: a supervisor or an MCP client sees a clean
+        # exit and may not restart. KeyboardInterrupt is not an Exception, so
+        # Ctrl-C still leaves through the normal path.
+        raise click.ClickException(f"MCP server failed: {e}") from e
 
 
 @main.group()
@@ -239,8 +257,8 @@ def list_campaigns(ctx):
         res = client.get_campaigns()
         for c in res:
             click.echo(f"{c.id}: {c.title}")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @campaign.command(name="get")
@@ -251,8 +269,8 @@ def get_campaign(ctx, campaign_id):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.get_campaign(campaign_id).to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @campaign.command(name="create")
@@ -264,8 +282,8 @@ def create_campaign(ctx, title, description):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_campaign(title, description).to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @campaign.command(name="update")
@@ -283,8 +301,8 @@ def update_campaign(ctx, campaign_id, title, description):
         if description is not None:
             camp.description = description
         click.echo(json.dumps(camp.save().to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @campaign.command(name="rag-export")
@@ -321,8 +339,8 @@ def rag_export_command(ctx, campaign_id, output_dir, strip_code_from_notes):
     try:
         for path in rag_export_campaign(client, campaign_id, output_dir=output_dir, strip_code_from_notes=strip_code_from_notes):
             click.echo(str(path))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @campaign.command(name="delete")
@@ -334,8 +352,8 @@ def delete_campaign(ctx, campaign_id):
     try:
         client.delete_campaign(campaign_id)
         click.echo(f"Campaign {campaign_id} deleted.")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 # --- Log Commands ---
@@ -353,8 +371,8 @@ def list_logs(ctx):
         res = client.get_logs()
         for log_obj in res:
             click.echo(f"{log_obj.id}: {log_obj.title}")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @log.command(name="get")
@@ -365,8 +383,8 @@ def get_log(ctx, log_id):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.get_log(log_id).to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @log.command(name="create")
@@ -379,8 +397,8 @@ def create_log(ctx, campaign_id, title, description):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_log(campaign_id, title, description).to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @log.command(name="update")
@@ -398,8 +416,8 @@ def update_log(ctx, log_id, title, description):
         if description is not None:
             log_obj.description = description
         click.echo(json.dumps(log_obj.save().to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @log.command(name="delete")
@@ -411,8 +429,8 @@ def delete_log(ctx, log_id):
     try:
         client.delete_log(log_id)
         click.echo(f"Log {log_id} deleted.")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 # --- Player Log Commands ---
@@ -430,10 +448,8 @@ def list_player_logs(ctx):
         res = client.get_player_logs()
         for log_obj in res:
             click.echo(f"{log_obj.id}: {log_obj.title}")
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @player_log.command(name="get")
@@ -444,10 +460,8 @@ def get_player_log(ctx, log_id):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.get_player_log(log_id).to_dict(), indent=2))
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @player_log.command(name="create")
@@ -460,10 +474,8 @@ def create_player_log(ctx, campaign_id, title, description):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_player_log(campaign_id, title, description).to_dict(), indent=2))
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @player_log.command(name="update")
@@ -481,10 +493,8 @@ def update_player_log(ctx, log_id, title, description):
         if description is not None:
             log_obj.description = description
         click.echo(json.dumps(log_obj.save().to_dict(), indent=2))
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @player_log.command(name="delete")
@@ -496,10 +506,8 @@ def delete_player_log(ctx, log_id):
     try:
         client.delete_player_log(log_id)
         click.echo(f"Player Log {log_id} deleted.")
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 # --- Entry Commands ---
@@ -525,10 +533,8 @@ def list_entries(ctx, log_id):
 
         for e in res:
             click.echo(f"{e.id}: {e.listing_label()}")
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @entry.command(name="get")
@@ -551,10 +557,8 @@ def get_entry(ctx, entry_id, raw):
                 console.print(Markdown(entry_obj.text or ""))
             except ImportError:
                 click.echo(entry_obj.text or "")
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @entry.command(name="create")
@@ -566,8 +570,8 @@ def create_entry(ctx, log_id, text):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_log_entry(log_id, text).to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @entry.command(name="update")
@@ -581,8 +585,8 @@ def update_entry(ctx, entry_id, text):
         entry_obj = client.get_log_entry(entry_id)
         entry_obj.raw_text = text
         click.echo(json.dumps(entry_obj.save().to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @entry.command(name="delete")
@@ -594,8 +598,8 @@ def delete_entry(ctx, entry_id):
     try:
         client.delete_log_entry(entry_id)
         click.echo(f"Entry {entry_id} deleted.")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 # --- Player Entry Commands ---
@@ -618,8 +622,8 @@ def list_player_entries(ctx, log_id):
 
         for e in res:
             click.echo(f"{e.id}: {e.listing_label()}")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @player_entry.command(name="get")
@@ -642,8 +646,8 @@ def get_player_entry(ctx, entry_id, raw):
                 console.print(Markdown(entry_obj.text or ""))
             except ImportError:
                 click.echo(entry_obj.text or "")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @player_entry.command(name="create")
@@ -655,10 +659,8 @@ def create_player_entry(ctx, log_id, text):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_player_log_entry(log_id, text).to_dict(), indent=2))
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @player_entry.command(name="update")
@@ -672,10 +674,8 @@ def update_player_entry(ctx, entry_id, text):
         entry_obj = client.get_player_log_entry(entry_id)
         entry_obj.raw_text = text
         click.echo(json.dumps(entry_obj.save().to_dict(), indent=2))
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @player_entry.command(name="delete")
@@ -687,10 +687,8 @@ def delete_player_entry(ctx, entry_id):
     try:
         client.delete_player_log_entry(entry_id)
         click.echo(f"Player Entry {entry_id} deleted.")
-    except OSError as e:
-        click.echo(f"Error: {e}", err=True)
-    except json.JSONDecodeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 # --- Page Commands ---
@@ -716,8 +714,8 @@ def list_pages(ctx, campaign_id):
 
         for p in res:
             click.echo(f"{p.id}: {p.listing_label()}")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @page.command(name="get")
@@ -740,8 +738,8 @@ def get_page(ctx, page_id, raw):
                 console.print(Markdown(page_obj.text or ""))
             except ImportError:
                 click.echo(page_obj.text or "")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @page.command(name="create")
@@ -753,8 +751,8 @@ def create_page(ctx, campaign_id, text):
     client = ctx.obj["client"]
     try:
         click.echo(json.dumps(client.create_campaign_entry(campaign_id, text).to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @page.command(name="update")
@@ -768,8 +766,8 @@ def update_page(ctx, page_id, text):
         page_obj = client.get_campaign_entry(page_id)
         page_obj.raw_text = text
         click.echo(json.dumps(page_obj.save().to_dict(), indent=2, sort_keys=True))
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
 
 
 @page.command(name="delete")
@@ -781,5 +779,5 @@ def delete_page(ctx, page_id):
     try:
         client.delete_campaign_entry(page_id)
         click.echo(f"Page {page_id} deleted.")
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    except EXPECTED_ERRORS as e:
+        raise click.ClickException(str(e)) from e
