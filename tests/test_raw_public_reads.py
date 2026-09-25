@@ -58,8 +58,8 @@ def tool_text(result: Any) -> str:
 @pytest.fixture
 def cli(monkeypatch, mocker):
     """A CLI runner wired to a mocked logger client, with credentials present."""
-    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
-    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "not-a-real-id")
+    monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "not-a-real-secret")
     monkeypatch.delenv("CL_DEFAULT_CAMPAIGN_ID", raising=False)
     client = MagicMock()
     mocker.patch("campaign_logger.cli.LoggerClient", return_value=client)
@@ -122,7 +122,11 @@ def test_mcp_listing_includes_a_page_whose_body_is_only_public(mocker):
     mocker.patch("campaign_logger.mcp_server.load_config")
     mocker.patch.dict(
         "os.environ",
-        {"CL_LOGGER_CLIENT_ID": "id", "CL_LOGGER_CLIENT_SECRET": "secret"},
+        # B105 fires on the key name, not the value: any string under a key matching
+        # /secret/ trips it, so renaming the value cannot help. Suppressed inline
+        # below. The client is mocked out, so these only need to be non-empty for
+        # create_mcp_server to register the logger tools.
+        {"CL_LOGGER_CLIENT_ID": "not-a-real-id", "CL_LOGGER_CLIENT_SECRET": "not-a-real-secret"},  # nosec B105
         clear=True,
     )
     from campaign_logger.mcp_server import create_mcp_server
