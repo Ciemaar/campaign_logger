@@ -292,7 +292,8 @@ class LoggerClient:
                 warnings.warn(
                     f"Pagination of {resource_type} stopped at {len(items)} of {total} records: "
                     f"page {page_number} returned nothing new. The result is incomplete.",
-                    stacklevel=3,
+                    # _get_collection <- _get <- the public get_* method <- the caller.
+                    stacklevel=4,
                 )
                 break
             if len(items) >= total:
@@ -314,8 +315,8 @@ class LoggerClient:
         as they were verified live. ``requests`` percent-encodes the brackets on
         the wire -- ``page%5Bsize%5D`` -- and does so whether they are passed here
         or written into the URL string by hand, so there is no way to send the
-        unencoded form from this client. The server is expected to decode them;
-        that is the one part of this not yet confirmed against staging.
+        unencoded form from this client. Staging decodes them: encoded and
+        literal-bracket requests were checked live and return identical results.
         """
         return {"page[size]": PAGE_SIZE, "page[number]": page_number}
 
