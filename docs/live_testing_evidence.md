@@ -173,21 +173,20 @@ triggered a cursor at this volume.
 
 Follow-up against staging confirmed `page[size]` and `page[number]` both work
 even though the swagger documents no query parameters at all, and that
-`page[size]=1000` against a 551-record collection returned all 551 with no sign
-of a cap. `_get` now pages with those parameters until it holds
+`page[size]` up to 5000 is served unclamped (1000 against a 551-record collection
+returned all 551). `requests` percent-encodes the brackets (`page%5Bsize%5D`)
+whether they are passed as parameters or written into the URL by hand, and
+staging decodes that form: encoded and literal-bracket requests return
+byte-identical results, and a 551-record collection paged at 500 came back as
+551 unique ids in two requests. `_get` now pages with those parameters until it holds
 `meta.total-records` records (#77), so a collection larger than one page is no
 longer silently truncated.
 
-Two things remain unverified live:
-
-- The related-resource routes (`/campaigns/{id}/logs`, `/logs/{id}/log-entries`)
-  return **no** `meta` block, so there is no total to page against. `_get`
-  returns those responses exactly as they arrive; whether they truncate a large
-  relationship, and what they do with `page[...]`, is still unknown (#76).
-- `requests` percent-encodes the brackets (`page%5Bsize%5D`), whether they are
-  passed as parameters or written into the URL by hand. The hand-verified
-  requests used literal brackets, so the server decoding the encoded form is
-  assumed, not observed.
+One thing remains unverified live: the related-resource routes
+(`/campaigns/{id}/logs`, `/logs/{id}/log-entries`) accept `page[...]` with HTTP
+200 but return **no** `meta` block, so there is no total to page against. `_get`
+returns those responses exactly as they arrive; whether they truncate a large
+relationship is still unknown (#76).
 
 ## What was discarded
 

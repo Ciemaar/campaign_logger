@@ -130,6 +130,21 @@ def test_a_repeating_page_stops_instead_of_spinning(client):
     assert m.call_count == 2  # nosec
 
 
+def test_incomplete_warning_points_at_the_callers_code(client):
+    """The incomplete-collection warning names the line that called the public method.
+
+    Pointing inside ``api.py`` would tell the reader nothing about which of their
+    reads came back short.
+    """
+    stuck = wire.page("log-entries", [f"e{i}" for i in range(PAGE_SIZE)], total_records=PAGE_SIZE * 10)
+    with requests_mock.Mocker() as m:
+        m.get(f"{BASE_URL}/log-entries", json=stuck)
+        with pytest.warns(UserWarning, match="returned nothing new") as record:
+            client.get_log_entries()
+
+    assert record[0].filename == __file__  # nosec
+
+
 def short_server(available, promised):
     """A server promising ``promised`` records but only able to serve ``available``."""
 
