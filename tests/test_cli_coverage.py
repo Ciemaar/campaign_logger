@@ -94,6 +94,8 @@ def test_rich_import_error(runner, monkeypatch, mocker):
 
 
 def test_http_error_re_raised(runner, monkeypatch, mocker):
+    # Reversed deliberately (#96): these are error paths. They used to print an
+    # error and exit 0, which is the bug -- see the issue.
     import requests
 
     monkeypatch.setenv("CL_GENERATOR_TOKEN", "token")
@@ -106,16 +108,16 @@ def test_http_error_re_raised(runner, monkeypatch, mocker):
     mock_instance.get_generator_by_name.side_effect = requests.exceptions.HTTPError("Internal error", response=response)
 
     result = runner.invoke(main, ["generator", "get", "1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Internal error" in result.output
 
     mock_instance.execute_operation.side_effect = requests.exceptions.HTTPError("Internal error", response=response)
     result = runner.invoke(main, ["generator", "generate", "1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Internal error" in result.output
 
     result = runner.invoke(main, ["generator", "validate", "1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Internal error" in result.output
 
 
@@ -348,6 +350,8 @@ def test_list_player_entries_no_first_line(runner, monkeypatch, mocker):
 
 
 def test_logger_cli_error_handling_coverage(runner, monkeypatch, mocker):
+    # Reversed deliberately (#96): these are error paths. They used to print an
+    # error and exit 0, which is the bug -- see the issue.
     import requests
 
     monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
@@ -358,77 +362,77 @@ def test_logger_cli_error_handling_coverage(runner, monkeypatch, mocker):
     mock_instance.get_campaigns.side_effect = requests.exceptions.HTTPError("Internal error")
 
     result = runner.invoke(main, ["logger", "campaign", "list"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.get_campaign.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "campaign", "get", "c1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.create_campaign.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "campaign", "create", "test"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.get_campaign.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "campaign", "update", "c1", "--title", "new"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.delete_campaign.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "campaign", "delete", "c1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.get_player_logs.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-log", "list"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.get_player_log.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-log", "get", "c1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.create_player_log.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-log", "create", "c1", "title"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.get_player_log.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-log", "update", "c1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.delete_player_log.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-log", "delete", "c1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.get_player_log_entries.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-entry", "list"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.get_player_log_entry.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-entry", "get", "c1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.create_player_log_entry.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-entry", "create", "c1", "text"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.get_player_log_entry.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-entry", "update", "c1", "text"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
     mock_instance.delete_player_log_entry.side_effect = requests.exceptions.HTTPError("Internal error")
     result = runner.invoke(main, ["logger", "player-entry", "delete", "c1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error: Internal error" in result.output
 
 
@@ -467,6 +471,8 @@ def test_list_pages_no_first_line(runner, monkeypatch, mocker):
 
 
 def test_json_decode_error_in_cli_commands(runner, monkeypatch, mocker):
+    # Reversed deliberately (#96): these are error paths. They used to print an
+    # error and exit 0, which is the bug -- see the issue.
     import json
 
     monkeypatch.setenv("CL_LOGGER_CLIENT_ID", "id")
@@ -479,47 +485,47 @@ def test_json_decode_error_in_cli_commands(runner, monkeypatch, mocker):
     # Force a json.JSONDecodeError inside the mocked method
     mock_instance.get_player_logs.side_effect = json.JSONDecodeError("msg", "doc", 0)
     result = runner.invoke(main, ["logger", "player-log", "list"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
     assert "Error:" in result.output
 
     mock_instance.get_player_log.side_effect = json.JSONDecodeError("msg", "doc", 0)
     result = runner.invoke(main, ["logger", "player-log", "get", "1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
     mock_instance.create_player_log.side_effect = json.JSONDecodeError("msg", "doc", 0)
     result = runner.invoke(main, ["logger", "player-log", "create", "1", "title"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
     mock_instance.get_player_log.side_effect = None
     mock_log = mocker.MagicMock()
     mock_log.save.side_effect = json.JSONDecodeError("msg", "doc", 0)
     mock_instance.get_player_log.return_value = mock_log
     result = runner.invoke(main, ["logger", "player-log", "update", "1", "--title", "new"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
     mock_instance.delete_player_log.side_effect = json.JSONDecodeError("msg", "doc", 0)
     result = runner.invoke(main, ["logger", "player-log", "delete", "1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
     mock_instance.get_log_entries.side_effect = json.JSONDecodeError("msg", "doc", 0)
     result = runner.invoke(main, ["logger", "entry", "list", "1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
     mock_instance.get_log_entry.side_effect = json.JSONDecodeError("msg", "doc", 0)
     result = runner.invoke(main, ["logger", "entry", "get", "1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
     mock_instance.create_player_log_entry.side_effect = json.JSONDecodeError("msg", "doc", 0)
     result = runner.invoke(main, ["logger", "player-entry", "create", "1", "text"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
     mock_instance.get_player_log_entry.side_effect = None
     mock_entry = mocker.MagicMock()
     mock_entry.save.side_effect = json.JSONDecodeError("msg", "doc", 0)
     mock_instance.get_player_log_entry.return_value = mock_entry
     result = runner.invoke(main, ["logger", "player-entry", "update", "1", "new"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0
 
     mock_instance.delete_player_log_entry.side_effect = json.JSONDecodeError("msg", "doc", 0)
     result = runner.invoke(main, ["logger", "player-entry", "delete", "1"])
-    assert result.exit_code == 0
+    assert result.exit_code != 0

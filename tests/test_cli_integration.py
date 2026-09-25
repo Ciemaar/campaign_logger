@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+import requests
 from click.testing import CliRunner
 
 from campaign_logger.cli import main
@@ -91,34 +92,39 @@ def test_validate_from_id(runner, mock_client):
 
 
 def test_generator_cli_error_handling(runner, mock_client):
-    mock_client.list_generators.side_effect = Exception("API is down")
+    mock_client.list_generators.side_effect = requests.exceptions.RequestException("API is down")
     result = runner.invoke(main, ["generator", "list"])
-    assert result.exit_code == 0  # click's default behavior for caught errors here
+    # Reversed deliberately (#96): a failed command used to print an error and
+    # exit 0, so nothing calling the CLI could tell it had failed. The mocks now
+    # raise RequestException rather than a bare Exception, which is both what a
+    # real API failure looks like and what the CLI is willing to flatten into a
+    # one-line message -- a bare Exception now propagates as the bug it would be.
+    assert result.exit_code != 0
     assert "Error: API is down" in result.output  # nosec
 
-    mock_client.get_generator.side_effect = Exception("Not found")
+    mock_client.get_generator.side_effect = requests.exceptions.RequestException("Not found")
     result = runner.invoke(main, ["generator", "get", "1"])
     assert "Error: Not found" in result.output  # nosec
 
     with runner.isolated_filesystem():
         with open("new.json", "w") as f:
             f.write('{"name": "New Gen"}')
-        mock_client.create_generator.side_effect = Exception("Create failed")
+        mock_client.create_generator.side_effect = requests.exceptions.RequestException("Create failed")
         result = runner.invoke(main, ["generator", "create", "new.json"])
         assert "Error: Create failed" in result.output  # nosec
 
-        mock_client.update_generator.side_effect = Exception("Update failed")
+        mock_client.update_generator.side_effect = requests.exceptions.RequestException("Update failed")
         result = runner.invoke(main, ["generator", "update", "1", "new.json"])
         assert "Error: Update failed" in result.output  # nosec
 
-    mock_client.delete_generator.side_effect = Exception("Delete failed")
+    mock_client.delete_generator.side_effect = requests.exceptions.RequestException("Delete failed")
     result = runner.invoke(main, ["generator", "delete", "1"])
     assert "Error: Delete failed" in result.output  # nosec
 
-    mock_client.execute_operation.side_effect = Exception("Generate failed")
+    mock_client.execute_operation.side_effect = requests.exceptions.RequestException("Generate failed")
     result = runner.invoke(main, ["generator", "generate", "1"])
     assert "Error: Generate failed" in result.output  # nosec
 
-    mock_client.execute_operation.side_effect = Exception("Validate failed")
+    mock_client.execute_operation.side_effect = requests.exceptions.RequestException("Validate failed")
     result = runner.invoke(main, ["generator", "validate", "1"])
     assert "Error: Validate failed" in result.output  # nosec

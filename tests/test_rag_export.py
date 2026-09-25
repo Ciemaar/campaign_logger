@@ -413,7 +413,9 @@ def test_cli_split_reports_api_errors(runner, cli_client, tmp_path, monkeypatch)
     monkeypatch.setenv("CL_LOGGER_CLIENT_SECRET", "secret")
     cli_client.get_campaign.side_effect = json.JSONDecodeError("boom", "", 0)
     result = runner.invoke(main, ["logger", "campaign", "rag-export", "c1", "--output-dir", str(tmp_path)])
-    assert result.exit_code == 0  # nosec
+    # Reversed deliberately (#96): a partial or failed export reporting success is
+    # how a backup pipeline records a clean run over incomplete data.
+    assert result.exit_code != 0  # nosec
     assert "Error:" in result.output  # nosec
 
 
