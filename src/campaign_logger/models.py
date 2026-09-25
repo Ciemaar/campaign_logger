@@ -91,13 +91,32 @@ class GeneratorModel(BaseModel):
 
 
 class Player(BaseModel):
-    """A player invited to or joined into a campaign."""
+    """A player invited to or joined into a campaign.
+
+    ``joined_campaigns`` holds whole :class:`Campaign` objects, not ids -- the
+    swagger declares its items as ``$ref: Campaign``, and ``Campaign.joined_players``
+    is a list of ``Player``, so the two types are mutually recursive. It was typed
+    ``list[str]`` here, which would have raised ``ValidationError`` on a response
+    that actually carried the objects (#90).
+
+    Neither field has been observed on the wire: ``joined-players`` appears in
+    neither ``attributes`` nor ``relationships`` on either staging campaign. So
+    this is a latent mismatch rather than a live bug -- the sort that fires the day
+    the API starts including it, and fails as ``get_campaign()`` raising on a
+    perfectly good response.
+
+    The swagger also gives both player lists ``maxItems: 25``. That is deliberately
+    **not** enforced here: these models parse what the server sends, and a length
+    constraint on a read would turn an unexpected 26th player into a client-side
+    crash instead of data. Nullability and the timestamp types are worth matching
+    because they make parsing correct; a maximum only makes it refuse.
+    """
 
     model_config = ConfigDict(alias_generator=to_kebab, populate_by_name=True, extra="ignore")
 
     email_address: str | None = None
     email_address_case_insensitive: str | None = None
-    joined_campaigns: list[str] | None = None
+    joined_campaigns: list["Campaign"] | None = None
 
 
 class BaseEntity(BaseModel):
@@ -346,3 +365,8 @@ class PlayerLog(BaseEntity):
         """Delete this player log."""
         client = getattr(self, "_client")
         client.delete_player_log(self.id)
+
+
+# ``Player.joined_campaigns`` forward-references ``Campaign``, which is defined
+# below it, so the reference has to be resolved after both classes exist.
+Player.model_rebuild()
