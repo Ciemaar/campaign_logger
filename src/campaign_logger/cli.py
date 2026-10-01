@@ -524,7 +524,7 @@ def list_entries(ctx, log_id):
             res = client.get_log_entries()
 
         for e in res:
-            click.echo(f"{e.id}: {e.listing_label()}")
+            click.echo(f"{e.id}: {e.listing_label}")
     except OSError as e:
         click.echo(f"Error: {e}", err=True)
     except json.JSONDecodeError as e:
@@ -617,7 +617,7 @@ def list_player_entries(ctx, log_id):
             res = client.get_player_log_entries()
 
         for e in res:
-            click.echo(f"{e.id}: {e.listing_label()}")
+            click.echo(f"{e.id}: {e.listing_label}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 
@@ -715,7 +715,7 @@ def list_pages(ctx, campaign_id):
             res = client.get_campaign_entries()
 
         for p in res:
-            click.echo(f"{p.id}: {p.listing_label()}")
+            click.echo(f"{p.id}: {p.listing_label}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
 

@@ -146,7 +146,7 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
     ) -> str:
         """Retrieve all individual log entries, optionally filtering by a specific log ID."""
         entries = client.get_log_entries(log_id=log_id)
-        result = [f"{e.id}: {e.listing_label()}" for e in entries]
+        result = [f"{e.id}: {e.listing_label}" for e in entries]
         return "\n".join(result) if result else "No log entries found."
 
     @server.tool()
@@ -167,7 +167,7 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
     ) -> str:
         """Retrieve all top-level campaign pages, optionally filtering by campaign ID."""
         entries = client.get_campaign_entries(campaign_id=campaign_id)
-        result = [f"{p.id}: {p.listing_label()}" for p in entries]
+        result = [f"{p.id}: {p.listing_label}" for p in entries]
         return "\n".join(result) if result else "No campaign entries (pages) found."
 
     @server.tool()

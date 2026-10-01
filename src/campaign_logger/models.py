@@ -22,7 +22,7 @@ def to_kebab(field_name: str) -> str:
 
 #: Shown in a listing for an object that carries no title and no body to derive
 #: one from. A placeholder rather than a skipped row: see
-#: :meth:`BaseEntity.listing_label`.
+#: :attr:`BaseEntity.listing_label`.
 UNTITLED_LABEL = "(untitled)"
 
 
@@ -152,6 +152,7 @@ class BaseEntity(BaseModel):
         """
         return getattr(self, "raw_text", None) or None
 
+    @property
     def listing_label(self) -> str:
         """A single-line label for this object in a listing. Never empty.
 
@@ -165,18 +166,13 @@ class BaseEntity(BaseModel):
         part that matters -- an untitled page can still be fetched by id, but not
         if the listing never mentions it.
         """
-        for candidate in (self._listing_name(), self.text):
+        # Not a base-class ``title`` property: pydantic warns when the subclasses'
+        # ``title`` *fields* shadow one. Most resources declare the field;
+        # :class:`CampaignEntry` defines a property of the same name instead.
+        for candidate in (getattr(self, "title", None), self.text):
             if candidate and candidate.strip():
                 return candidate.strip().splitlines()[0]
         return UNTITLED_LABEL
-
-    def _listing_name(self) -> str | None:
-        """The field holding this object's own name, if it has one.
-
-        ``title`` for most resources; :class:`CampaignEntry` overrides it because
-        a page is named by its ``tag-value`` instead.
-        """
-        return getattr(self, "title", None)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the entity to a JSON-safe dictionary for CLI output.
@@ -242,8 +238,9 @@ class CampaignEntry(BaseEntity):
         """Refuse assignment: ``text`` is derived, so there is no sound target."""
         raise NotImplementedError("CampaignEntry.text is read-only; set raw_text or raw_public instead")
 
-    def _listing_name(self) -> str | None:
-        """A page is named by its tag value, not by a ``title`` field."""
+    @property
+    def title(self) -> str | None:
+        """A page is named by its tag value, so that is its title."""
         return self.tag_value
 
     def save(self) -> "CampaignEntry":

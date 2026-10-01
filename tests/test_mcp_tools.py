@@ -92,7 +92,7 @@ def test_get_log(mock_logger_client, auth_env, mocker):
 def test_list_log_entries(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=True)
 
-    # A real model, so listing_label() is the one the MCP server actually calls.
+    # A real model, so listing_label is the one the MCP server actually calls.
     mock_logger_client.get_log_entries.return_value = [LogEntry(id="e1", type="log-entries", title="Entry 1", raw_text="text")]
 
     result = asyncio.run(server.call_tool("list_log_entries", {}))

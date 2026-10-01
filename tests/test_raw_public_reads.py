@@ -26,6 +26,7 @@ from click.testing import CliRunner
 from campaign_logger.cli import main
 from campaign_logger.models import UNTITLED_LABEL
 from campaign_logger.models import CampaignEntry
+from campaign_logger.models import LogEntry
 
 SRC = Path(__file__).parent.parent / "src" / "campaign_logger"
 
@@ -161,6 +162,21 @@ def _display_reads_of_raw_text(path):
     return [
         node.lineno for node in ast.walk(tree) if isinstance(node, ast.Attribute) and node.attr == "raw_text" and id(node) not in targets
     ]
+
+
+def test_a_campaign_entry_is_titled_by_its_tag_value():
+    assert TAGGED.title == "Alice"
+    assert PUBLIC_ONLY.title is None
+    # Derived, not stored: serialisation must not gain a key.
+    assert "title" not in TAGGED.model_dump()
+
+
+def test_listing_label_is_a_property_that_reads_title_then_text():
+    assert TAGGED.listing_label == "Alice"
+    assert PUBLIC_ONLY.listing_label == "A place with no tag value"
+    assert CampaignEntry(id="p3", type="campaign-entries").listing_label == UNTITLED_LABEL
+    # Types that store ``title`` as a field are read the same way.
+    assert LogEntry(id="e1", type="log-entries", title="Entry 1", raw_text="body").listing_label == "Entry 1"
 
 
 @pytest.mark.parametrize("module", ["cli.py", "mcp_server.py"])
