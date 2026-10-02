@@ -34,6 +34,28 @@ jobs:
           exit 1
         fi
 
+  action-versions:
+    # audit.yml was silently reverted to older action pins by two pull requests that
+    # were not about CI (issue #61). The bootstrap drift job cannot catch it: audit.yml
+    # has no template. This compares the *merge result* against the base, because a
+    # branch's own diff shows nothing -- the version lines appear as unchanged context.
+    name: 'action versions'
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        # merge-tree needs both sides of the merge, so the full history is required.
+        fetch-depth: 0
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.14'
+    - name: fail if merging would downgrade a pinned action
+      run: python ci/check_action_versions.py "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}"
+
   test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
