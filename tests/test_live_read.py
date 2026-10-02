@@ -121,4 +121,4 @@ def test_pagination_signal_captured(live_read_client):
     meta = body.get("meta", {}) if isinstance(body, dict) else {}
     print(f"\n[pagination] links keys={sorted(links)} meta keys={sorted(meta)}")
     if "next" in links:
-        print("[pagination] WARNING: a 'next' link exists -- listings paginate, _get does not follow it")
+        print("[pagination] a 'next' link exists -- _get pages by page[number] against meta.total-records, not by links")

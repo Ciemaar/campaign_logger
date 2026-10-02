@@ -40,9 +40,44 @@ def document(resource_type: str, resource_id: str, **attrs: Any) -> dict[str, An
     return {"data": resource(resource_type, resource_id, **attrs)}
 
 
-def collection(resource_type: str, *ids_and_attrs: tuple[str, dict[str, Any]]) -> dict[str, Any]:
-    """A JSON:API document wrapping a list of resources."""
-    return {"data": [resource(resource_type, rid, **attrs) for rid, attrs in ids_and_attrs]}
+def collection(
+    resource_type: str,
+    *ids_and_attrs: tuple[str, dict[str, Any]],
+    total_records: int | None = None,
+) -> dict[str, Any]:
+    """A JSON:API document wrapping a list of resources.
+
+    Args:
+        resource_type: The JSON:API ``type`` every resource carries.
+        ids_and_attrs: One ``(id, attributes)`` pair per resource.
+        total_records: The ``meta.total-records`` a top-level listing sends. Pass
+            it whenever the test is about paging; leave it out to mimic a
+            related-resource route, which sends no ``meta`` block at all (#77).
+    """
+    document: dict[str, Any] = {"data": [resource(resource_type, rid, **attrs) for rid, attrs in ids_and_attrs]}
+    if total_records is not None:
+        document["meta"] = {"total-records": total_records}
+    return document
+
+
+def page(
+    resource_type: str,
+    ids: list[str],
+    total_records: int | None = None,
+    attributes: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """One page of a listing: ``ids`` as resources, plus ``meta.total-records``.
+
+    The shorthand for a paging test, where the ids matter and the attributes do
+    not vary from one resource to the next.
+
+    ``attributes`` is an explicit dict rather than ``**attrs``: the wire keys are
+    kebab-case and so are never valid Python identifiers, meaning every caller
+    had to splat a dict anyway -- and splatting an untyped dict past the
+    ``total_records: int | None`` parameter is something a type checker cannot
+    prove safe.
+    """
+    return collection(resource_type, *((rid, dict(attributes or {})) for rid in ids), total_records=total_records)
 
 
 def realistic_campaign(campaign_id: str = "c1", title: str = "A Campaign") -> dict[str, Any]:
