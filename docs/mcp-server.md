@@ -224,7 +224,15 @@ npx @google/gemini-cli
 
 ### Configuration
 
-Edit `~/.gemini/settings.json` to register the MCP server:
+The easiest way to register the MCP server is using the CLI's built-in `mcp add` command. Run this in your current workspace:
+
+```bash
+gemini mcp add campaign-logger campaign-logger mcp
+```
+
+*(If using `npx`, run `npx @google/gemini-cli mcp add campaign-logger campaign-logger mcp`)*
+
+This will automatically create or update a `.gemini/settings.json` file in your current directory with the following structure:
 
 ```json
 {
@@ -239,7 +247,7 @@ Edit `~/.gemini/settings.json` to register the MCP server:
 }
 ```
 
-*Make sure `campaign-logger` is on your path. If it isn't, you can provide an absolute path, or use `uvx` just like in the Claude Desktop configuration.*
+*Make sure `campaign-logger` is on your path. If it isn't, you can provide an absolute path to the `mcp add` command, or use `uvx` just like in the Claude Desktop configuration.*
 
 ### Usage
 
