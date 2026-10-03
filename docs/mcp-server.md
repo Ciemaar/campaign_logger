@@ -203,3 +203,54 @@ full text, regardless of the `is-shared` flag, which these tools ignore.
 | "Generator client not authenticated" | Same, for `token` / `CL_GENERATOR_TOKEN`. Only affects the generator tools. |
 | Write tools missing | Expected — that is read-only mode. Add `--write` if you genuinely want them. |
 | A large log looks truncated | The listing tools fetch everything and filter client-side, and pagination is not followed yet. See issues #76 and #77. |
+
+## Gemini CLI
+
+You can also use the MCP server with the Gemini CLI. The Gemini CLI lets you interact with our local MCP server via standard input/output (stdio). It authenticates directly with a Google account, meaning users with a Google AI Pro subscription can access the Gemini 3 Pro model without needing a separate developer API key.
+
+### Installation
+
+Install the Gemini CLI globally via npm:
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Or use it dynamically with `npx`:
+
+```bash
+npx @google/gemini-cli
+```
+
+### Configuration
+
+Edit `~/.gemini/settings.json` to register the MCP server:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "campaign-logger": {
+        "command": "campaign-logger",
+        "args": [
+          "mcp"
+        ]
+      }
+    }
+  }
+}
+```
+
+*Make sure `campaign-logger` is on your path. If it isn't, you can provide an absolute path, or use `uvx` just like in the Claude Desktop configuration.*
+
+### Usage
+
+Start a chat session with the Gemini CLI:
+
+```bash
+gemini chat
+```
+
+*(Or `npx @google/gemini-cli chat`)*
+
+Once in the chat, the Campaign Logger tools will be available for Gemini to use. Ask it to read your campaigns or logs!
