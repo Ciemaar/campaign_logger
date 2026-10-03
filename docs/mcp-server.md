@@ -228,14 +228,12 @@ Edit `~/.gemini/settings.json` to register the MCP server:
 
 ```json
 {
-  "mcp": {
-    "servers": {
-      "campaign-logger": {
-        "command": "campaign-logger",
-        "args": [
-          "mcp"
-        ]
-      }
+  "mcpServers": {
+    "campaign-logger": {
+      "command": "campaign-logger",
+      "args": [
+        "mcp"
+      ]
     }
   }
 }
@@ -248,9 +246,9 @@ Edit `~/.gemini/settings.json` to register the MCP server:
 Start a chat session with the Gemini CLI:
 
 ```bash
-gemini chat
+gemini
 ```
 
-*(Or `npx @google/gemini-cli chat`)*
+*(Or `npx @google/gemini-cli`)*
 
 Once in the chat, the Campaign Logger tools will be available for Gemini to use. Ask it to read your campaigns or logs!
