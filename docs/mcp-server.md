@@ -206,7 +206,9 @@ full text, regardless of the `is-shared` flag, which these tools ignore.
 
 ## Gemini CLI
 
-You can also use the MCP server with the Gemini CLI. The Gemini CLI lets you interact with our local MCP server via standard input/output (stdio). It authenticates directly with a Google account, meaning users with a Google AI Pro subscription can access the Gemini 3 Pro model without needing a separate developer API key.
+You can also use the MCP server with the Gemini CLI. The Gemini CLI lets you interact with our local MCP server behind the scenes (via stdio, meaning no network ports to configure!). It authenticates directly with a standard Google account, meaning users with a Google AI Pro subscription can access the Gemini 3 Pro model without needing a separate developer API key.
+
+*Prerequisites: You will need [Node.js and npm](https://nodejs.org/) installed to run the Gemini CLI.*
 
 ### Installation
 
@@ -216,7 +218,7 @@ Install the Gemini CLI globally via npm:
 npm install -g @google/gemini-cli
 ```
 
-Or use it dynamically with `npx`:
+Or use it dynamically with `npx` (which downloads and runs it on the fly):
 
 ```bash
 npx @google/gemini-cli
@@ -224,30 +226,22 @@ npx @google/gemini-cli
 
 ### Configuration
 
-The easiest way to register the MCP server is using the CLI's built-in `mcp add` command. Run this in your current workspace:
+The easiest way to register the MCP server is using the CLI's built-in `mcp add` command.
+
+To configure it globally for your user account, run:
 
 ```bash
-gemini mcp add campaign-logger campaign-logger mcp
+gemini mcp add campaign-logger campaign-logger mcp --scope user
 ```
 
-*(If using `npx`, run `npx @google/gemini-cli mcp add campaign-logger campaign-logger mcp`)*
+*(If using `npx`, run `npx @google/gemini-cli mcp add campaign-logger campaign-logger mcp --scope user`)*
 
-This will automatically create or update a `.gemini/settings.json` file in your current directory with the following structure:
-
-```json
-{
-  "mcpServers": {
-    "campaign-logger": {
-      "command": "campaign-logger",
-      "args": [
-        "mcp"
-      ]
-    }
-  }
-}
+**If `campaign-logger` is not installed globally on your system path**, you can use `uvx` to run it automatically instead:
+```bash
+gemini mcp add campaign-logger uvx --scope user -- --from git+https://github.com/Ciemaar/campaign_logger campaign-logger mcp
 ```
 
-*Make sure `campaign-logger` is on your path. If it isn't, you can provide an absolute path to the `mcp add` command, or use `uvx` just like in the Claude Desktop configuration.*
+This command will automatically create or update a `~/.gemini/settings.json` file on your computer, telling Gemini exactly how to start our server.
 
 ### Usage
 
@@ -259,4 +253,4 @@ gemini
 
 *(Or `npx @google/gemini-cli`)*
 
-Once in the chat, the Campaign Logger tools will be available for Gemini to use. Ask it to read your campaigns or logs!
+Once in the chat, the Campaign Logger tools will be available for Gemini to use. Try asking it: *"List all the campaigns in my Campaign Logger account!"*
