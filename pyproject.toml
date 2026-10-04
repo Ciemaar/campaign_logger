@@ -6,6 +6,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.ruff]
+exclude = ["src/*", "tests/*"]
 line-length = 140
 target-version = "py315"
 
