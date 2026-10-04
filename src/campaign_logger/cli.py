@@ -5,7 +5,7 @@ lazy import os
 lazy from pathlib import Path
 
 lazy import click
-lazy import requests
+import requests
 
 lazy from .api import GeneratorClient
 lazy from .api import LoggerClient
