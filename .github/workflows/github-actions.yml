@@ -20,7 +20,8 @@ jobs:
     - uses: actions/checkout@v7
     - uses: actions/setup-python@v7
       with:
-        python-version: '3.15'
+        python-version: "3.15"
+        allow-prereleases: true
     - name: install bootstrap dependencies
       run: python -mpip install --progress-bar=off jinja2 matrix
     - name: regenerate from ci/templates
