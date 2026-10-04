@@ -203,3 +203,54 @@ full text, regardless of the `is-shared` flag, which these tools ignore.
 | "Generator client not authenticated" | Same, for `token` / `CL_GENERATOR_TOKEN`. Only affects the generator tools. |
 | Write tools missing | Expected — that is read-only mode. Add `--write` if you genuinely want them. |
 | A large log looks truncated | The listing tools fetch everything and filter client-side, and pagination is not followed yet. See issues #76 and #77. |
+
+## Gemini CLI
+
+You can also use the MCP server with the Gemini CLI. The Gemini CLI lets you interact with our local MCP server behind the scenes (via stdio, meaning no network ports to configure!). It authenticates directly with a standard Google account, meaning users with a Google AI Pro subscription can access the Gemini 3 Pro model without needing a separate developer API key.
+
+*Prerequisites: You will need [Node.js and npm](https://nodejs.org/) installed to run the Gemini CLI.*
+
+### Installation
+
+Install the Gemini CLI globally via npm:
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Or use it dynamically with `npx` (which downloads and runs it on the fly):
+
+```bash
+npx @google/gemini-cli
+```
+
+### Configuration
+
+The easiest way to register the MCP server is using the CLI's built-in `mcp add` command.
+
+To configure it globally for your user account, run:
+
+```bash
+gemini mcp add campaign-logger campaign-logger mcp --scope user
+```
+
+*(If using `npx`, run `npx @google/gemini-cli mcp add campaign-logger campaign-logger mcp --scope user`)*
+
+**If `campaign-logger` is not installed globally on your system path**, you can use `uvx` to run it automatically instead:
+```bash
+gemini mcp add campaign-logger uvx --scope user -- --from git+https://github.com/Ciemaar/campaign_logger campaign-logger mcp
+```
+
+This command will automatically create or update a `~/.gemini/settings.json` file on your computer, telling Gemini exactly how to start our server.
+
+### Usage
+
+Start a chat session with the Gemini CLI:
+
+```bash
+gemini
+```
+
+*(Or `npx @google/gemini-cli`)*
+
+Once in the chat, the Campaign Logger tools will be available for Gemini to use. Try asking it: *"List all the campaigns in my Campaign Logger account!"*

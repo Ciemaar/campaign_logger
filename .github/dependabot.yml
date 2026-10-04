@@ -16,3 +16,14 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+  # `uv.lock` pins transitive dependencies that are not in `pyproject.toml`, so the
+  # `pip` entry above never sees them. `urllib3` is one: `requests` brings it in, and
+  # a vulnerable pin sat in the lock until `uv audit` failed CI. `indirect` limits this
+  # entry to exactly those, so it does not duplicate the direct bumps `pip` already
+  # opens. Dependabot alerts and security updates are repository settings, not this file.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "indirect"

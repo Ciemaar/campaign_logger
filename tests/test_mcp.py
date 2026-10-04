@@ -115,7 +115,10 @@ def test_mcp_cli_command_error(runner, mocker):
     from campaign_logger.cli import main
 
     mock_run = mocker.patch("campaign_logger.mcp_server.MCPServer.run")
-    mock_run.side_effect = Exception("Test Error")
+    mock_run.side_effect = OSError("Test Error")
     result = runner.invoke(main, ["mcp"])
-    assert result.exit_code == 0
-    assert "MCP Server Error: Test Error" in result.output
+    # Reversed deliberately (#96): the server exiting 0 on a crash is the worst
+    # case of all -- a supervisor or an MCP client sees a clean exit and may not
+    # restart it.
+    assert result.exit_code != 0
+    assert "MCP server failed: Test Error" in result.output
