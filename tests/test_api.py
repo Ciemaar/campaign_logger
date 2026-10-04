@@ -1,10 +1,10 @@
-import secrets
+lazy import secrets
 
-import pytest
-import requests_mock
+lazy import pytest
+lazy import requests_mock
 
-from campaign_logger.api import GeneratorClient
-from campaign_logger.models import GeneratorModel
+lazy from campaign_logger.api import GeneratorClient
+lazy from campaign_logger.models import GeneratorModel
 
 BASE_URL = "https://api.preview.campaign-logger.com"
 

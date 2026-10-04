@@ -32,13 +32,13 @@ The writers are ported from ``rag.ipynb`` and are intended to stay byte-comparab
 with it for the same campaign content.
 """
 
-import re
-from pathlib import Path
+lazy import re
+lazy from pathlib import Path
 
-from pathvalidate import sanitize_filename
+lazy from pathvalidate import sanitize_filename
 
-from .tags import NOTE_TAG_SYMBOL
-from .tags import SYMBOL_LEGEND
+lazy from .tags import NOTE_TAG_SYMBOL
+lazy from .tags import SYMBOL_LEGEND
 
 #: Matches pasted Python import lines and ``%autoreload`` magics inside notes.
 #:

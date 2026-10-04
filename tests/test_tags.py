@@ -4,18 +4,18 @@ A consumer asking for "the NPCs" is really asking for campaign entries whose
 ``tag_symbol`` is ``@``. That makes this mapping an interface, not a detail.
 """
 
-import re
-from pathlib import Path
+lazy import re
+lazy from pathlib import Path
 
-import pytest
+lazy import pytest
 
-from campaign_logger.rag_export import SYMBOL_LEGEND as EXPORTER_LEGEND
-from campaign_logger.tags import NOTE_TAG_SYMBOL
-from campaign_logger.tags import SYMBOL_LEGEND
-from campaign_logger.tags import TAG_NAMES
-from campaign_logger.tags import TAG_TYPES
-from campaign_logger.tags import render_legend
-from campaign_logger.tags import tag_name
+lazy from campaign_logger.rag_export import SYMBOL_LEGEND as EXPORTER_LEGEND
+lazy from campaign_logger.tags import NOTE_TAG_SYMBOL
+lazy from campaign_logger.tags import SYMBOL_LEGEND
+lazy from campaign_logger.tags import TAG_NAMES
+lazy from campaign_logger.tags import TAG_TYPES
+lazy from campaign_logger.tags import render_legend
+lazy from campaign_logger.tags import tag_name
 
 
 def test_legend_is_byte_identical_to_the_historical_header():

@@ -5,29 +5,29 @@ Nothing here touches the network: the client is either mocked at the HTTP layer 
 by a recording stub that also proves the command never writes to the server.
 """
 
-import json
-from pathlib import Path
-from unittest.mock import MagicMock
+lazy import json
+lazy from pathlib import Path
+lazy from unittest.mock import MagicMock
 
-import pytest
-import requests_mock
-import wire
-from click.testing import CliRunner
+lazy import pytest
+lazy import requests_mock
+lazy import wire
+lazy from click.testing import CliRunner
 
-from campaign_logger.api import LoggerClient
-from campaign_logger.cli import main
-from campaign_logger.models import CampaignEntry
-from campaign_logger.models import Log
-from campaign_logger.models import LogEntry
-from campaign_logger.rag_export import FALLBACK_CAMPAIGN_STEM
-from campaign_logger.rag_export import FALLBACK_LOG_STEM
-from campaign_logger.rag_export import SYMBOL_LEGEND
-from campaign_logger.rag_export import normalise_spaces
-from campaign_logger.rag_export import rag_export_campaign
-from campaign_logger.rag_export import sanitise_filename
-from campaign_logger.rag_export import strip_code
-from campaign_logger.rag_export import write_campaign_entries
-from campaign_logger.rag_export import write_logs
+lazy from campaign_logger.api import LoggerClient
+lazy from campaign_logger.cli import main
+lazy from campaign_logger.models import CampaignEntry
+lazy from campaign_logger.models import Log
+lazy from campaign_logger.models import LogEntry
+lazy from campaign_logger.rag_export import FALLBACK_CAMPAIGN_STEM
+lazy from campaign_logger.rag_export import FALLBACK_LOG_STEM
+lazy from campaign_logger.rag_export import SYMBOL_LEGEND
+lazy from campaign_logger.rag_export import normalise_spaces
+lazy from campaign_logger.rag_export import rag_export_campaign
+lazy from campaign_logger.rag_export import sanitise_filename
+lazy from campaign_logger.rag_export import strip_code
+lazy from campaign_logger.rag_export import write_campaign_entries
+lazy from campaign_logger.rag_export import write_logs
 
 BASE_URL = "https://logger-staging.campaign-logger.com"
 

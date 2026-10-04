@@ -10,7 +10,7 @@ Attribute keys here are kebab-case, matching the wire (see
 docs/live_testing_evidence.md). Values are shaped after a real staging response.
 """
 
-from typing import Any
+lazy from typing import Any
 
 #: The audit/soft-delete/revision block every resource carries.
 AUDIT_ATTRIBUTES: dict[str, Any] = {

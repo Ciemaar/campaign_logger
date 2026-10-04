@@ -1,21 +1,21 @@
 """MCP server integration for Campaign Logger."""
 
-import functools
-import json
-import os
-import typing
+lazy import functools
+lazy import json
+lazy import os
+lazy import typing
 
-from mcp.server.mcpserver import MCPServer
-from mcp.server.mcpserver.exceptions import ToolError
-from pydantic import Field
+lazy from mcp.server.mcpserver import MCPServer
+lazy from mcp.server.mcpserver.exceptions import ToolError
+lazy from pydantic import Field
 
-from .api import GeneratorClient
-from .api import LoggerClient
-from .cli import load_config
-from .tags import NOTE_TAG_SYMBOL
-from .tags import TAG_NAMES
-from .tags import TAG_TYPES
-from .tags import render_legend
+lazy from .api import GeneratorClient
+lazy from .api import LoggerClient
+lazy from .cli import load_config
+lazy from .tags import NOTE_TAG_SYMBOL
+lazy from .tags import TAG_NAMES
+lazy from .tags import TAG_TYPES
+lazy from .tags import render_legend
 
 
 def create_mcp_server(read_only: bool = True) -> MCPServer:

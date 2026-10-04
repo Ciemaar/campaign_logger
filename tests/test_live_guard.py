@@ -5,15 +5,15 @@ more than its permissive ones: a guard that silently allows everything passes
 every happy-path test. Nothing here touches the network.
 """
 
-import pytest
-import requests
-import requests_mock
-from live_guard import DEFAULT_TIMEOUT
-from live_guard import DELETE
-from live_guard import READ
-from live_guard import WRITE
-from live_guard import HttpEffectGuard
-from live_guard import LiveGuardViolation
+lazy import pytest
+lazy import requests
+lazy import requests_mock
+lazy from live_guard import DEFAULT_TIMEOUT
+lazy from live_guard import DELETE
+lazy from live_guard import READ
+lazy from live_guard import WRITE
+lazy from live_guard import HttpEffectGuard
+lazy from live_guard import LiveGuardViolation
 
 LOGGER = "https://logger-staging.campaign-logger.com"
 GENERATOR = "https://api.preview.campaign-logger.com"

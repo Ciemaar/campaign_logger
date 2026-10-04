@@ -1,18 +1,18 @@
-import asyncio
-import json
-import os
+lazy import asyncio
+lazy import json
+lazy import os
 
-import pytest
+lazy import pytest
 
-from campaign_logger.api import GeneratorClient
-from campaign_logger.api import LoggerClient
-from campaign_logger.mcp_server import create_mcp_server
-from campaign_logger.models import CampaignEntry
-from campaign_logger.models import LogEntry
-from campaign_logger.tags import NOTE_TAG_SYMBOL
-from campaign_logger.tags import TAG_NAMES
-from campaign_logger.tags import TAG_TYPES
-from campaign_logger.tags import render_legend
+lazy from campaign_logger.api import GeneratorClient
+lazy from campaign_logger.api import LoggerClient
+lazy from campaign_logger.mcp_server import create_mcp_server
+lazy from campaign_logger.models import CampaignEntry
+lazy from campaign_logger.models import LogEntry
+lazy from campaign_logger.tags import NOTE_TAG_SYMBOL
+lazy from campaign_logger.tags import TAG_NAMES
+lazy from campaign_logger.tags import TAG_TYPES
+lazy from campaign_logger.tags import render_legend
 
 
 @pytest.fixture

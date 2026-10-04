@@ -14,19 +14,19 @@ which is the thing that was missing -- the suite used ``MagicMock`` stubs that
 answered ``raw_text`` as readily as the real model would (#95).
 """
 
-import ast
-import asyncio
-from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock
+lazy import ast
+lazy import asyncio
+lazy from pathlib import Path
+lazy from typing import Any
+lazy from unittest.mock import MagicMock
 
-import pytest
-from click.testing import CliRunner
+lazy import pytest
+lazy from click.testing import CliRunner
 
-from campaign_logger.cli import main
-from campaign_logger.models import UNTITLED_LABEL
-from campaign_logger.models import CampaignEntry
-from campaign_logger.models import LogEntry
+lazy from campaign_logger.cli import main
+lazy from campaign_logger.models import UNTITLED_LABEL
+lazy from campaign_logger.models import CampaignEntry
+lazy from campaign_logger.models import LogEntry
 
 SRC = Path(__file__).parent.parent / "src" / "campaign_logger"
 

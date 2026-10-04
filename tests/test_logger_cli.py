@@ -1,15 +1,15 @@
-from unittest.mock import MagicMock
+lazy from unittest.mock import MagicMock
 
-import pytest
-from click.testing import CliRunner
+lazy import pytest
+lazy from click.testing import CliRunner
 
-from campaign_logger.cli import main
-from campaign_logger.models import Campaign
-from campaign_logger.models import CampaignEntry
-from campaign_logger.models import Log
-from campaign_logger.models import LogEntry
-from campaign_logger.models import PlayerLog
-from campaign_logger.models import PlayerLogEntry
+lazy from campaign_logger.cli import main
+lazy from campaign_logger.models import Campaign
+lazy from campaign_logger.models import CampaignEntry
+lazy from campaign_logger.models import Log
+lazy from campaign_logger.models import LogEntry
+lazy from campaign_logger.models import PlayerLog
+lazy from campaign_logger.models import PlayerLogEntry
 
 
 @pytest.fixture

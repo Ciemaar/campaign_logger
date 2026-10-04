@@ -1,6 +1,6 @@
-from click.testing import CliRunner
+lazy from click.testing import CliRunner
 
-from campaign_logger.cli import main
+lazy from campaign_logger.cli import main
 
 
 def test_main():

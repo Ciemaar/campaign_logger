@@ -1,9 +1,9 @@
-import json
-import os
+lazy import json
+lazy import os
 
-import pytest
+lazy import pytest
 
-from campaign_logger.api import LoggerClient
+lazy from campaign_logger.api import LoggerClient
 
 
 def test_parse_log_entry_from_fixture():

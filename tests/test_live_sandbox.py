@@ -9,20 +9,20 @@ unset variables, a title that disagrees with the id, and a target equal to
 Nothing here touches the network.
 """
 
-import json
+lazy import json
 
-import pytest
-from live_guard import DELETE
-from live_guard import WRITE
-from live_guard import HttpEffectGuard
-from live_guard import LiveGuardViolation
-from live_sandbox import CreatedLedger
-from live_sandbox import SandboxConfig
-from live_sandbox import SandboxConfigError
-from live_sandbox import load_sandbox_config
-from live_sandbox import make_ledger_predicate
-from live_sandbox import make_sacrificial_predicate
-from live_sandbox import preflight
+lazy import pytest
+lazy from live_guard import DELETE
+lazy from live_guard import WRITE
+lazy from live_guard import HttpEffectGuard
+lazy from live_guard import LiveGuardViolation
+lazy from live_sandbox import CreatedLedger
+lazy from live_sandbox import SandboxConfig
+lazy from live_sandbox import SandboxConfigError
+lazy from live_sandbox import load_sandbox_config
+lazy from live_sandbox import make_ledger_predicate
+lazy from live_sandbox import make_sacrificial_predicate
+lazy from live_sandbox import preflight
 
 SANDBOX_ID = "f" * 32
 OTHER_ID = "a" * 32

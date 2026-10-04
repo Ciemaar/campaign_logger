@@ -10,14 +10,14 @@ Attribute keys are the kebab-case the wire uses, which is exactly what each
 model's alias generator produces from its snake_case field names.
 """
 
-import pytest
+lazy import pytest
 
-from campaign_logger.models import Campaign
-from campaign_logger.models import CampaignEntry
-from campaign_logger.models import Log
-from campaign_logger.models import LogEntry
-from campaign_logger.models import PlayerLog
-from campaign_logger.models import PlayerLogEntry
+lazy from campaign_logger.models import Campaign
+lazy from campaign_logger.models import CampaignEntry
+lazy from campaign_logger.models import Log
+lazy from campaign_logger.models import LogEntry
+lazy from campaign_logger.models import PlayerLog
+lazy from campaign_logger.models import PlayerLogEntry
 
 # Scalar attributes per resource, kebab-case, from the swagger definition.
 EXPECTED_SCALARS = {

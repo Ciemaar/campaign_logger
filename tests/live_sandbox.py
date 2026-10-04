@@ -15,9 +15,9 @@ Failures here are :class:`SandboxConfigError`, never ``skip``. A write run that
 is misconfigured must be loud: a silent skip looks like a pass.
 """
 
-import json
-import re
-from urllib.parse import urlsplit
+lazy import json
+lazy import re
+lazy from urllib.parse import urlsplit
 
 #: Prefix stamped on every object a live run creates, and required at the start
 #: of the sacrificial campaign's own title so an ordinary campaign cannot be

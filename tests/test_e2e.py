@@ -1,11 +1,11 @@
-import os
+lazy import os
 
-import pytest
-import requests_mock
-from conftest import live_phase_enabled
+lazy import pytest
+lazy import requests_mock
+lazy from conftest import live_phase_enabled
 
-from campaign_logger.api import GeneratorClient
-from campaign_logger.api import LoggerClient
+lazy from campaign_logger.api import GeneratorClient
+lazy from campaign_logger.api import LoggerClient
 
 
 @pytest.fixture

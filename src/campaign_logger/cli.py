@@ -1,16 +1,16 @@
 """Module that contains the command line app."""
 
-import json
-import os
-from pathlib import Path
+lazy import json
+lazy import os
+lazy from pathlib import Path
 
-import click
-import requests
+lazy import click
+lazy import requests
 
-from .api import GeneratorClient
-from .api import LoggerClient
-from .models import GeneratorModel
-from .rag_export import rag_export_campaign
+lazy from .api import GeneratorClient
+lazy from .api import LoggerClient
+lazy from .models import GeneratorModel
+lazy from .rag_export import rag_export_campaign
 
 
 def load_config():

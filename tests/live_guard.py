@@ -15,7 +15,7 @@ See issue #62 section 2 (G2). The sacrificial-campaign and ledger predicates
 are discovered; both default to refusing everything.
 """
 
-from urllib.parse import urlsplit
+lazy from urllib.parse import urlsplit
 
 #: (connect, read) timeout forced onto every live request -- Phase 0.1.
 #: No request in ``api.py`` sets a timeout and the ``Session`` is built

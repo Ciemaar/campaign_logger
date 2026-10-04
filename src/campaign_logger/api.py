@@ -1,16 +1,16 @@
 """API clients for interacting with Campaign Logger."""
 
-from typing import Any
+lazy from typing import Any
 
-import requests
+lazy import requests
 
-from .models import Campaign
-from .models import CampaignEntry
-from .models import GeneratorModel
-from .models import Log
-from .models import LogEntry
-from .models import PlayerLog
-from .models import PlayerLogEntry
+lazy from .models import Campaign
+lazy from .models import CampaignEntry
+lazy from .models import GeneratorModel
+lazy from .models import Log
+lazy from .models import LogEntry
+lazy from .models import PlayerLog
+lazy from .models import PlayerLogEntry
 
 #: How much of an unparseable response body goes into the raised error message.
 #: The message reaches pytest output and CI logs, so on a live run this is real

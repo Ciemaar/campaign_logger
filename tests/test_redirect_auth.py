@@ -12,13 +12,13 @@ unchanged through 0809ece, so the logger test below fails at every commit in tha
 which is what shows the failure is the header choice and not the test harness.
 """
 
-import secrets
+lazy import secrets
 
-import requests_mock
+lazy import requests_mock
 
-from campaign_logger.api import GeneratorClient
-from campaign_logger.api import LoggerClient
-from campaign_logger.api import LoggerSession
+lazy from campaign_logger.api import GeneratorClient
+lazy from campaign_logger.api import LoggerClient
+lazy from campaign_logger.api import LoggerSession
 
 API_HOST = "https://logger-staging.campaign-logger.com"
 GENERATOR_HOST = "https://api.preview.campaign-logger.com"

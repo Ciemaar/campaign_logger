@@ -1,9 +1,9 @@
-import asyncio
+lazy import asyncio
 
-import pytest
-from click.testing import CliRunner
+lazy import pytest
+lazy from click.testing import CliRunner
 
-from campaign_logger.mcp_server import create_mcp_server
+lazy from campaign_logger.mcp_server import create_mcp_server
 
 
 @pytest.fixture

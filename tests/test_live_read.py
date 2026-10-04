@@ -12,11 +12,11 @@ Run against the staging sandbox:
     pytest tests/test_live_read.py --run-live-read
 """
 
-import json
-import pathlib
-from typing import Any
+lazy import json
+lazy import pathlib
+lazy from typing import Any
 
-import pytest
+lazy import pytest
 
 pytestmark = [pytest.mark.live_read, pytest.mark.timeout(60)]
 

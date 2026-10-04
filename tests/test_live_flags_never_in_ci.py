@@ -10,10 +10,10 @@ someone typing the flag: a workflow passing it, a tox environment passing it, or
 a live credential sitting in repository secrets.
 """
 
-import pathlib
-import re
+lazy import pathlib
+lazy import re
 
-import pytest
+lazy import pytest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 WORKFLOWS = sorted((REPO_ROOT / ".github" / "workflows").glob("*.yml"))

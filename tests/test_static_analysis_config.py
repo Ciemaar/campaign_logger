@@ -6,10 +6,10 @@ These tests pin the file-based half of that resolution so the two tools cannot
 silently diverge again.
 """
 
-import configparser
-import re
-import tomllib
-from pathlib import Path
+lazy import configparser
+lazy import re
+lazy import tomllib
+lazy from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

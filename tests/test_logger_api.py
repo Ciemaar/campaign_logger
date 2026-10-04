@@ -1,12 +1,12 @@
-import pathlib
+lazy import pathlib
 
-import pytest
-import requests
-import requests_mock
-import wire
+lazy import pytest
+lazy import requests
+lazy import requests_mock
+lazy import wire
 
-from campaign_logger.api import BODY_PREVIEW_CHARS
-from campaign_logger.api import LoggerClient
+lazy from campaign_logger.api import BODY_PREVIEW_CHARS
+lazy from campaign_logger.api import LoggerClient
 
 BASE_URL = "https://logger-staging.campaign-logger.com"
 

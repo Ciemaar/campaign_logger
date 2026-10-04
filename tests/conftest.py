@@ -19,10 +19,10 @@ into a shell and forgotten, or ride through a ``passenv = *`` in tox; a
 command-line flag has to be typed for the run it applies to.
 """
 
-import os
-from pathlib import Path
+lazy import os
+lazy from pathlib import Path
 
-import pytest
+lazy import pytest
 
 #: Marker name -> flag that enables it. Deliberately not a hierarchy.
 LIVE_PHASES = {

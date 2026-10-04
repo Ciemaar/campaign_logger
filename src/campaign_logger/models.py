@@ -1,13 +1,13 @@
 """Pydantic models for Campaign Logger APIs."""
 
-from datetime import datetime
-from typing import Any
+lazy from datetime import datetime
+lazy from typing import Any
 
-from pydantic import BaseModel
-from pydantic import ConfigDict
-from pydantic import Field
-from pydantic import PrivateAttr
-from pydantic import field_validator
+lazy from pydantic import BaseModel
+lazy from pydantic import ConfigDict
+lazy from pydantic import Field
+lazy from pydantic import PrivateAttr
+lazy from pydantic import field_validator
 
 
 def to_kebab(field_name: str) -> str:

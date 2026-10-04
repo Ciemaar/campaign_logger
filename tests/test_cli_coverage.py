@@ -1,18 +1,18 @@
-import json
-import os
-import sys
-from pathlib import Path
-from unittest.mock import MagicMock
-from unittest.mock import patch
+lazy import json
+lazy import os
+lazy import sys
+lazy from pathlib import Path
+lazy from unittest.mock import MagicMock
+lazy from unittest.mock import patch
 
-import pytest
-from click.testing import CliRunner
+lazy import pytest
+lazy from click.testing import CliRunner
 
-from campaign_logger.cli import load_config
-from campaign_logger.cli import main
-from campaign_logger.models import CampaignEntry
-from campaign_logger.models import LogEntry
-from campaign_logger.models import PlayerLogEntry
+lazy from campaign_logger.cli import load_config
+lazy from campaign_logger.cli import main
+lazy from campaign_logger.models import CampaignEntry
+lazy from campaign_logger.models import LogEntry
+lazy from campaign_logger.models import PlayerLogEntry
 
 
 @pytest.fixture
