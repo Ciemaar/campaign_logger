@@ -20,7 +20,8 @@ jobs:
     - uses: actions/checkout@v7
     - uses: actions/setup-python@v7
       with:
-        python-version: '3.14'
+        python-version: "3.15"
+        allow-prereleases: true
     - name: install bootstrap dependencies
       run: python -mpip install --progress-bar=off jinja2 matrix
     - name: regenerate from ci/templates
@@ -52,7 +53,8 @@ jobs:
         fetch-depth: 0
     - uses: actions/setup-python@v7
       with:
-        python-version: '3.14'
+        python-version: "3.15"
+        allow-prereleases: true
     - name: fail if merging would downgrade a pinned action
       run: python ci/check_action_versions.py "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}"
 
