@@ -11,22 +11,22 @@ that inspected the call sites instead would pass while the value was dropped
 somewhere in between.
 """
 
-import ast
-from pathlib import Path
+lazy import ast
+lazy from pathlib import Path
 
-import pytest
-import requests
+lazy import pytest
+lazy import requests
 
 # ``requests/__init__.py`` does not re-export the ``adapters`` submodule, so
 # ``import requests`` alone leaves ``requests.adapters`` invisible to a type
 # checker even though it resolves at runtime.
-import requests.adapters  # noqa: F401
+lazy import requests.adapters  # noqa: F401
 
-from campaign_logger.api import DEFAULT_TIMEOUT
-from campaign_logger.api import GeneratorClient
-from campaign_logger.api import LoggerClient
-from campaign_logger.api import LoggerSession
-from campaign_logger.api import TimeoutSession
+lazy from campaign_logger.api import DEFAULT_TIMEOUT
+lazy from campaign_logger.api import GeneratorClient
+lazy from campaign_logger.api import LoggerClient
+lazy from campaign_logger.api import LoggerSession
+lazy from campaign_logger.api import TimeoutSession
 
 API_SOURCE = Path(__file__).parent.parent / "src" / "campaign_logger" / "api.py"
 

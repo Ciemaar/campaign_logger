@@ -12,16 +12,16 @@ which walks the whole command tree rather than a list someone has to remember to
 extend. That is the difference between fixing 48 sites and keeping them fixed.
 """
 
-import ast
-from pathlib import Path
+lazy import ast
+lazy from pathlib import Path
 
-import click
-import pytest
-import requests
-from click.testing import CliRunner
+lazy import click
+lazy import pytest
+lazy import requests
+lazy from click.testing import CliRunner
 
-from campaign_logger.cli import EXPECTED_ERRORS
-from campaign_logger.cli import main
+lazy from campaign_logger.cli import EXPECTED_ERRORS
+lazy from campaign_logger.cli import main
 
 CLI_SOURCE = Path(__file__).parent.parent / "src" / "campaign_logger" / "cli.py"
 

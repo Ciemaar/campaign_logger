@@ -150,6 +150,14 @@ returns nothing.
 - **Player logs are second-class here.** The client models them, the CLI covers
   them, the MCP server does not expose them at all, and their parent id cannot
   be read back.
+- **The player lists are declared but unobserved.** `Campaign.joined_players`
+  and `Player.joined_campaigns` are in the swagger, and the two types are
+  mutually recursive — a joined player carries whole campaign objects, not ids.
+  Neither has ever appeared on the wire: `joined-players` is absent from both
+  `attributes` and `relationships` on every campaign checked. Treat them as
+  shapes the API may start sending rather than data you can rely on. The swagger
+  caps both at 25 items; the models do not enforce that, because a length limit
+  on a read turns an unexpected extra entry into a crash instead of data.
 - **Ids are opaque.** 32 lowercase hex, confirmed across two accounts. Useful
   for telling an id from a name without a round trip, but do not assume more
   than that.
