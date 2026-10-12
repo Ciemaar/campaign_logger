@@ -217,7 +217,8 @@ def test_generate_result_not_found(mock_generator_client, auth_env, mocker):
 
 
 # Write tools
-def test_create_campaign(mock_logger_client, auth_env, mocker):
+def test_create_campaign(mock_logger_client, auth_env, mocker, caplog):
+    caplog.set_level("INFO", logger="mcp_edit_logger")
     server = create_mcp_server(read_only=False)
 
     mock_campaign = mocker.MagicMock()
@@ -230,7 +231,8 @@ def test_create_campaign(mock_logger_client, auth_env, mocker):
     assert "c1" in str(result)
 
 
-def test_update_campaign(mock_logger_client, auth_env, mocker):
+def test_update_campaign(mock_logger_client, auth_env, mocker, caplog):
+    caplog.set_level("INFO", logger="mcp_edit_logger")
     server = create_mcp_server(read_only=False)
 
     mock_campaign = mocker.MagicMock()
@@ -244,7 +246,8 @@ def test_update_campaign(mock_logger_client, auth_env, mocker):
     assert "c1" in str(result)
 
 
-def test_delete_campaign(mock_logger_client, auth_env, mocker):
+def test_delete_campaign(mock_logger_client, auth_env, mocker, caplog):
+    caplog.set_level("INFO", logger="mcp_edit_logger")
     server = create_mcp_server(read_only=False)
 
     mock_campaign = mocker.MagicMock()
