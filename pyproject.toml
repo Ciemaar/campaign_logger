@@ -88,7 +88,7 @@ version = "0.0.1"
 description = "A module to support interaction with campaign logger https://campaign-logger.com/."
 authors = [{name = "Andy Fundinger", email = "andy@ciemaar.com"}]
 license = {file = "LICENSE"}
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
