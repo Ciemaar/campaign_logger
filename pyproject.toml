@@ -79,7 +79,11 @@ ignore = [
     "AGENTS.md",
     "SESSION_INSTRUCTIONS.md",
     "PYPI_UPLOAD_INSTRUCTIONS.md",
-    ".env.example"
+    ".env.example",
+    ".claude/**",
+    "plans/**",
+    "prompts/**",
+    "reports/**",
 ]
 
 [project]
