@@ -23,7 +23,14 @@ What this repository runs to verify a unit.
 
 How a unit prompt reaches an implementing agent.
 
-None. The artifact discipline (plan, prompt, report) works without any delegation. `AGENTS.md` names Jules as an expected implementer, but the repository does not document how a task is sent to it; delegation is an optional layer, not a requirement.
+```bash
+agent-repo-tools prompt-repos Ciemaar/campaign_logger \
+    --prompt-file prompts/<N>-NN-<slug>.md
+```
+
+This repository adopts the plugin's Jules dispatch. Always pass the target repository explicitly (the prompt's `repo:` value) and pass the prompt file, not inline text, so what is dispatched is byte-identical to what is committed. Use `--dry-run` first to see the target list without sending anything. Jules opens its work as a draft pull request. `prompt-repos` records the session in `.dispatch-state.json` (gitignored); read it back with `agent-repo-tools sessions list`, and never commit a session id.
+
+Requirements on the machine that dispatches: the `agent-repo-tools` CLI and the `jules` CLI. Dispatch consumes Jules quota: stop and ask before opening an eleventh session in one Claude session. Units with `assignee: claude` are worked in-session and are not dispatched.
 
 ## 3. The sensitive-path list
 
@@ -62,7 +69,7 @@ The agents' own instruction files:
 
 ## 4. How repository identity reaches a prompt
 
-There are no prompt templates or generation scripts yet, so identity is not injected anywhere. The only sources are the git remote (`https://github.com/Ciemaar/campaign_logger.git`) and `[project.urls]` in `pyproject.toml`. Until a template injects it, prompts state `Ciemaar/campaign_logger` explicitly.
+Through the `repo:` frontmatter field of each prompt (`prompts/TEMPLATE.md`), set to `Ciemaar/campaign_logger`. Dispatch passes that value to `agent-repo-tools prompt-repos` as the target repository; nothing is hardcoded in the body of the prompt, and the plugin strips the frontmatter before sending.
 
 ## 5. Templates to copy
 

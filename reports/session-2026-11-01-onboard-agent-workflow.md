@@ -28,8 +28,8 @@ ______________________________________________________________________
 ### What changed, and why
 
 Adopts the agent-repo-workflow: `.claude/reference/local-conventions.md` records
-the real check commands, the sensitive paths, the (absent) dispatch and how repo
-identity reaches a prompt; the six plan/prompt/report templates are copied
+the real check commands, the sensitive paths, the Jules dispatch invocation
+(`agent-repo-tools prompt-repos`) and how repo identity reaches a prompt; the six plan/prompt/report templates are copied
 verbatim from the plugin; runtime state files are gitignored; `AGENTS.md` gains
 a Reporting section requiring a committed report before a PR opens. While
 reading `AGENTS.md` for that, it was found to contradict practice, and the owner
@@ -93,6 +93,9 @@ dependency manifest) is touched, but only in `[tool.check-manifest]`.
 
 ### Uncertain about
 
+- Dispatch is documented from the plugin's `dispatch` command, but
+  `agent-repo-tools` is not installed on the machine this was written on, so the
+  invocation was not run, even with `--dry-run`.
 - Whether `bumpversion patch` is the release step the owner actually uses
   (`PYPI_UPLOAD_INSTRUCTIONS.md` now says so, based on `.bumpversion.cfg`).
 - Whether listing whole files (`api.py`, `cli.py`) as sensitive is too coarse;
