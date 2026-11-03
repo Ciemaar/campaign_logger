@@ -32,7 +32,7 @@ This repository adopts the plugin's Jules dispatch. Always pass the target repos
 
 Requirements on the machine that dispatches:
 
-- The `agent-repo-tools` CLI. It comes from a checkout of `Ciemaar/AgenticRulesAndTools` (entry point `agent_repo_tools.cli:cli`), run as `uv run agent-repo-tools ...` from that checkout or via its `.venv/bin/agent-repo-tools`. It is not on `PATH` by default.
+- The `agent-repo-tools` CLI. Plugin `agent-repo-workflow` 1.1.1 or newer puts it on the Bash tool's `PATH` through its own launcher (`bin/agent-repo-tools`, which runs the pinned release via `uvx`). That needs `uv` and git credentials for the private `Ciemaar/AgenticRulesAndTools` repository (`gh auth setup-git`). Check with `agent-repo-tools --version`. A session that started before the plugin was upgraded does not have it on `PATH`; restart the session. Plugin 1.0.0 shipped no CLI at all.
 - The `jules` CLI, logged in (`jules remote list --session` should work).
 - `GH_TOKEN` in the environment, e.g. `GH_TOKEN=$(gh auth token)` inline; never print it.
 - Redirect stdin (`</dev/null`) when running from a non-interactive session, or the CLI can block.

@@ -95,10 +95,11 @@ dependency manifest) is touched, but only in `[tool.check-manifest]`.
 
 - Dispatch is documented from the plugin's `dispatch` command, but
   `agent-repo-tools` is not installed on the machine this was written on, so the
-  invocation was not run with a real prompt (none exists yet). The CLI lives in
-  the AgenticRulesAndTools checkout; its `prompt-repos --help`, the `gh` login
-  and `jules remote list --session` were confirmed working, and the flags were
-  confirmed by that repo's own session.
+  invocation was not run with a real prompt (none exists yet). The plugin's
+  1.1.1 launcher printed `agent-repo-tools, version 0.2.0`; `prompt-repos --help`,
+  the `gh` login and `jules remote list --session` also worked, and the flags
+  were confirmed by the hub's own session. This session started on plugin 1.0.0,
+  so the CLI was not yet on its `PATH`.
 - Whether `bumpversion patch` is the release step the owner actually uses
   (`PYPI_UPLOAD_INSTRUCTIONS.md` now says so, based on `.bumpversion.cfg`).
 - Whether listing whole files (`api.py`, `cli.py`) as sensitive is too coarse;
