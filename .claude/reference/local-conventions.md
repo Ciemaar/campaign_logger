@@ -30,7 +30,16 @@ agent-repo-tools prompt-repos Ciemaar/campaign_logger \
 
 This repository adopts the plugin's Jules dispatch. Always pass the target repository explicitly (the prompt's `repo:` value) and pass the prompt file, not inline text, so what is dispatched is byte-identical to what is committed. Use `--dry-run` first to see the target list without sending anything. Jules opens its work as a draft pull request. `prompt-repos` records the session in `.dispatch-state.json` (gitignored); read it back with `agent-repo-tools sessions list`, and never commit a session id.
 
-Requirements on the machine that dispatches: the `agent-repo-tools` CLI and the `jules` CLI. Dispatch consumes Jules quota: stop and ask before opening an eleventh session in one Claude session. Units with `assignee: claude` are worked in-session and are not dispatched.
+Requirements on the machine that dispatches:
+
+- The `agent-repo-tools` CLI. It comes from a checkout of `Ciemaar/AgenticRulesAndTools` (entry point `agent_repo_tools.cli:cli`), run as `uv run agent-repo-tools ...` from that checkout or via its `.venv/bin/agent-repo-tools`. It is not on `PATH` by default.
+- The `jules` CLI, logged in (`jules remote list --session` should work).
+- `GH_TOKEN` in the environment, e.g. `GH_TOKEN=$(gh auth token)` inline; never print it.
+- Redirect stdin (`</dev/null`) when running from a non-interactive session, or the CLI can block.
+- Never pass `--force`. Without it, dispatch refuses unless the prompt's plan is `approved` on `origin/main` of the target repo, which is the gate we want.
+- `.dispatch-state.json` is per working directory. `sessions list` only shows dispatches made from the directory you run it in, so run dispatch from this repository's checkout (a dispatch run from the hub checkout will not appear in this ledger).
+
+Other rules: dispatch consumes Jules quota: stop and ask before opening an eleventh session in one Claude session. Units with `assignee: claude` are worked in-session and are not dispatched.
 
 ## 3. The sensitive-path list
 
