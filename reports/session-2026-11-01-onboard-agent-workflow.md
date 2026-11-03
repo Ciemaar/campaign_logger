@@ -91,6 +91,13 @@ dependency manifest) is touched, but only in `[tool.check-manifest]`.
 - No version bump: `docs/requirements.md` 7.1 asks for one per PR but recent
   merged PRs do not do it.
 
+### Re-run against plugin 1.1.1
+
+The onboarding was first done on plugin 1.0.0. Diffing against 1.1.1 showed three
+changes, applied here: `prompts/TEMPLATE.md` re-copied byte for byte (the
+git-staging example changed), `gathered_support_files/` added to the ignore list,
+and the dispatch section now states the launcher check from the new step 3a.
+
 ### Uncertain about
 
 - Dispatch is documented from the plugin's `dispatch` command, but

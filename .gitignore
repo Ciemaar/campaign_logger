@@ -89,3 +89,4 @@ src/campaign_logger/*.ipynb
 .claude/.watch-status.json
 .claude/.open-pr-cache
 .claude/.watch-polls-cache
+gathered_support_files/

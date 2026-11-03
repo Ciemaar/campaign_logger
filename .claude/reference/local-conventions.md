@@ -23,6 +23,8 @@ What this repository runs to verify a unit.
 
 How a unit prompt reaches an implementing agent.
 
+The plugin brings dispatch; CLI ok (`agent-repo-tools --version` printed `0.2.0` through the plugin's launcher on 2026-11-03).
+
 ```bash
 agent-repo-tools prompt-repos Ciemaar/campaign_logger \
     --prompt-file prompts/<N>-NN-<slug>.md
@@ -96,3 +98,4 @@ Through the `repo:` frontmatter field of each prompt (`prompts/TEMPLATE.md`), se
 - `.claude/.watch-status.json`
 - `.claude/.open-pr-cache`
 - `.claude/.watch-polls-cache`
+- `gathered_support_files/`

@@ -176,7 +176,8 @@ inspected. Run the checks, write the report, and then:
 ```bash
 # Example for a pre-commit formatting hook:
 uvx pre-commit run --all-files   # again, last
-git add -A                       # stage whatever it rewrote
+git add -u                       # stage whatever the hooks rewrote
+git add reports/<N>-NN-<slug>.md # the report is new, so -u does not see it
 uvx pre-commit run --all-files   # until clean
 ```
 
