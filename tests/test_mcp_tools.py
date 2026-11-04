@@ -58,6 +58,8 @@ def test_get_campaign(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=True)
 
     mock_campaign = mocker.MagicMock()
+    mock_campaign.id = "c1"
+    mock_campaign.model_dump.return_value = {"id": "c1"}
     mock_campaign.model_dump_json.return_value = '{"id": "c1"}'
     mock_logger_client.get_campaign.return_value = mock_campaign
 
@@ -82,6 +84,8 @@ def test_get_log(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=True)
 
     mock_log = mocker.MagicMock()
+    mock_log.id = "l1"
+    mock_log.model_dump.return_value = {"id": "l1"}
     mock_log.model_dump_json.return_value = '{"id": "l1"}'
     mock_logger_client.get_log.return_value = mock_log
 
@@ -103,6 +107,8 @@ def test_get_log_entry(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=True)
 
     mock_entry = mocker.MagicMock()
+    mock_entry.id = "e1"
+    mock_entry.model_dump.return_value = {"id": "e1"}
     mock_entry.model_dump_json.return_value = '{"id": "e1"}'
     mock_logger_client.get_log_entry.return_value = mock_entry
 
@@ -125,6 +131,8 @@ def test_get_campaign_entry(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=True)
 
     mock_entry = mocker.MagicMock()
+    mock_entry.id = "ce1"
+    mock_entry.model_dump.return_value = {"id": "ce1"}
     mock_entry.model_dump_json.return_value = '{"id": "ce1"}'
     mock_logger_client.get_campaign_entry.return_value = mock_entry
 
@@ -209,10 +217,13 @@ def test_generate_result_not_found(mock_generator_client, auth_env, mocker):
 
 
 # Write tools
-def test_create_campaign(mock_logger_client, auth_env, mocker):
+def test_create_campaign(mock_logger_client, auth_env, mocker, caplog):
+    caplog.set_level("INFO", logger="mcp_edit_logger")
     server = create_mcp_server(read_only=False)
 
     mock_campaign = mocker.MagicMock()
+    mock_campaign.id = "c1"
+    mock_campaign.model_dump.return_value = {"id": "c1"}
     mock_campaign.model_dump_json.return_value = '{"id": "c1"}'
     mock_logger_client.create_campaign.return_value = mock_campaign
 
@@ -220,19 +231,29 @@ def test_create_campaign(mock_logger_client, auth_env, mocker):
     assert "c1" in str(result)
 
 
-def test_update_campaign(mock_logger_client, auth_env, mocker):
+def test_update_campaign(mock_logger_client, auth_env, mocker, caplog):
+    caplog.set_level("INFO", logger="mcp_edit_logger")
     server = create_mcp_server(read_only=False)
 
     mock_campaign = mocker.MagicMock()
+    mock_campaign.id = "c1"
+    mock_campaign.model_dump.return_value = {"id": "c1"}
     mock_campaign.model_dump_json.return_value = '{"id": "c1"}'
     mock_logger_client.update_campaign.return_value = mock_campaign
+    mock_logger_client.get_campaign.return_value = mock_campaign
 
     result = asyncio.run(server.call_tool("update_campaign", {"campaign_id": "c1"}))
     assert "c1" in str(result)
 
 
-def test_delete_campaign(mock_logger_client, auth_env, mocker):
+def test_delete_campaign(mock_logger_client, auth_env, mocker, caplog):
+    caplog.set_level("INFO", logger="mcp_edit_logger")
     server = create_mcp_server(read_only=False)
+
+    mock_campaign = mocker.MagicMock()
+    mock_campaign.id = "c1"
+    mock_campaign.model_dump.return_value = {"id": "c1"}
+    mock_logger_client.get_campaign.return_value = mock_campaign
 
     result = asyncio.run(server.call_tool("delete_campaign", {"campaign_id": "c1"}))
     assert "deleted" in str(result).lower()
@@ -242,6 +263,8 @@ def test_create_log(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
 
     mock_log = mocker.MagicMock()
+    mock_log.id = "l1"
+    mock_log.model_dump.return_value = {"id": "l1"}
     mock_log.model_dump_json.return_value = '{"id": "l1"}'
     mock_logger_client.create_log.return_value = mock_log
 
@@ -253,8 +276,11 @@ def test_update_log(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
 
     mock_log = mocker.MagicMock()
+    mock_log.id = "l1"
+    mock_log.model_dump.return_value = {"id": "l1"}
     mock_log.model_dump_json.return_value = '{"id": "l1"}'
     mock_logger_client.update_log.return_value = mock_log
+    mock_logger_client.get_log.return_value = mock_log
 
     result = asyncio.run(server.call_tool("update_log", {"log_id": "l1"}))
     assert "l1" in str(result)
@@ -262,6 +288,11 @@ def test_update_log(mock_logger_client, auth_env, mocker):
 
 def test_delete_log(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
+
+    mock_log = mocker.MagicMock()
+    mock_log.id = "l1"
+    mock_log.model_dump.return_value = {"id": "l1"}
+    mock_logger_client.get_log.return_value = mock_log
 
     result = asyncio.run(server.call_tool("delete_log", {"log_id": "l1"}))
     assert "deleted" in str(result).lower()
@@ -271,6 +302,8 @@ def test_create_log_entry(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
 
     mock_entry = mocker.MagicMock()
+    mock_entry.id = "e1"
+    mock_entry.model_dump.return_value = {"id": "e1"}
     mock_entry.model_dump_json.return_value = '{"id": "e1"}'
     mock_logger_client.create_log_entry.return_value = mock_entry
 
@@ -282,8 +315,11 @@ def test_update_log_entry(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
 
     mock_entry = mocker.MagicMock()
+    mock_entry.id = "e1"
+    mock_entry.model_dump.return_value = {"id": "e1"}
     mock_entry.model_dump_json.return_value = '{"id": "e1"}'
     mock_logger_client.update_log_entry.return_value = mock_entry
+    mock_logger_client.get_log_entry.return_value = mock_entry
 
     result = asyncio.run(server.call_tool("update_log_entry", {"entry_id": "e1", "text": "T2"}))
     assert "e1" in str(result)
@@ -291,6 +327,11 @@ def test_update_log_entry(mock_logger_client, auth_env, mocker):
 
 def test_delete_log_entry(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
+
+    mock_entry = mocker.MagicMock()
+    mock_entry.id = "e1"
+    mock_entry.model_dump.return_value = {"id": "e1"}
+    mock_logger_client.get_log_entry.return_value = mock_entry
 
     result = asyncio.run(server.call_tool("delete_log_entry", {"entry_id": "e1"}))
     assert "deleted" in str(result).lower()
@@ -300,6 +341,8 @@ def test_create_campaign_entry(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
 
     mock_entry = mocker.MagicMock()
+    mock_entry.id = "ce1"
+    mock_entry.model_dump.return_value = {"id": "ce1"}
     mock_entry.model_dump_json.return_value = '{"id": "ce1"}'
     mock_logger_client.create_campaign_entry.return_value = mock_entry
 
@@ -311,8 +354,11 @@ def test_update_campaign_entry(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
 
     mock_entry = mocker.MagicMock()
+    mock_entry.id = "ce1"
+    mock_entry.model_dump.return_value = {"id": "ce1"}
     mock_entry.model_dump_json.return_value = '{"id": "ce1"}'
     mock_logger_client.update_campaign_entry.return_value = mock_entry
+    mock_logger_client.get_campaign_entry.return_value = mock_entry
 
     result = asyncio.run(server.call_tool("update_campaign_entry", {"entry_id": "ce1", "text": "T2"}))
     assert "ce1" in str(result)
@@ -320,6 +366,11 @@ def test_update_campaign_entry(mock_logger_client, auth_env, mocker):
 
 def test_delete_campaign_entry(mock_logger_client, auth_env, mocker):
     server = create_mcp_server(read_only=False)
+
+    mock_entry = mocker.MagicMock()
+    mock_entry.id = "ce1"
+    mock_entry.model_dump.return_value = {"id": "ce1"}
+    mock_logger_client.get_campaign_entry.return_value = mock_entry
 
     result = asyncio.run(server.call_tool("delete_campaign_entry", {"entry_id": "ce1"}))
     assert "deleted" in str(result).lower()
