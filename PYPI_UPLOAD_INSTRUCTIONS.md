@@ -49,7 +49,7 @@ ______________________________________________________________________
 Before uploading, you need to bundle your code into distributable formats (a
 source archive and a built distribution).
 
-Run the following command in the root of the project (where `setup.py` is
+Run the following command in the root of the project (where `pyproject.toml` is
 located):
 
 ```bash
@@ -135,8 +135,9 @@ ______________________________________________________________________
 When you make changes to the code in the future and want to release a new
 version:
 
-1. Update the `version="0.0.1"` number in `setup.py` to a higher number (e.g.,
-   `"0.0.2"`).
+1. Bump the version with `bumpversion patch` (configured in `.bumpversion.cfg`;
+   it updates `pyproject.toml`, `src/campaign_logger/__init__.py`,
+   `docs/conf.py` and `README.rst` together).
 1. Delete the old files inside the `dist/` directory to avoid uploading them
    again.
 1. Repeat **Step 3** (`python -m build`) and **Step 6** (`twine upload dist/*`).

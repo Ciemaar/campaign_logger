@@ -157,8 +157,8 @@ the next time anyone regenerates.
 
 Their source is ``ci/templates/``, rendered by ``ci/bootstrap.py`` from
 the matrix defined in the ``[matrix]`` section of ``setup.cfg``. That
-matrix (``py311``-``py314`` x ``cover``/``nocov``) expands to eight tox
-environments and twenty-six CI matrix entries, which is what the
+matrix (``py314``-``py315`` x ``cover``/``nocov``) expands to four tox
+environments and twelve test CI matrix entries, which is what the
 generator buys you.
 
 To change either file:

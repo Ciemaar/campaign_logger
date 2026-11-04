@@ -13,3 +13,4 @@ acknowledge the assistance of the following AI agents in the development
 of this project:
 
 -  Jules
+-  Claude Code (Anthropic)

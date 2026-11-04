@@ -82,3 +82,11 @@ docs/_build
 # campaign ids and are not part of the package.
 .ipynb_checkpoints/
 src/campaign_logger/*.ipynb
+
+# agent-repo-workflow runtime state
+.dispatch-state.json
+.claude/.watch-heartbeat
+.claude/.watch-status.json
+.claude/.open-pr-cache
+.claude/.watch-polls-cache
+gathered_support_files/
