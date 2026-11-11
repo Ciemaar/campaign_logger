@@ -1,9 +1,13 @@
 """MCP server integration for Campaign Logger."""
 
+import datetime
 import functools
 import json
+import logging
+import logging.handlers
 import os
 import typing
+from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
@@ -18,8 +22,44 @@ from .tags import TAG_TYPES
 from .tags import render_legend
 
 
+def setup_edit_logger() -> logging.Logger:
+    """Configure a rotating JSON logger for MCP edit operations."""
+    log_dir = Path.home() / ".campaign_logger"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "mcp_edits.log"
+
+    logger = logging.getLogger("mcp_edit_logger")
+    logger.setLevel(logging.INFO)
+
+    # Avoid adding duplicate handlers if setup multiple times
+    if not logger.handlers:
+        handler = logging.handlers.TimedRotatingFileHandler(
+            log_file,
+            when="D",
+            interval=1,
+            backupCount=30,
+        )
+        logger.addHandler(handler)
+    return logger
+
+
+def log_edit(action: str, resource_type: str, resource_id: str | None, before: dict | None = None, after: dict | None = None) -> None:
+    """Log an edit operation as a JSON payload."""
+    logger = logging.getLogger("mcp_edit_logger")
+    payload = {
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "action": action,
+        "resource_type": resource_type,
+        "resource_id": resource_id,
+        "before": before,
+        "after": after,
+    }
+    logger.info(json.dumps(payload, sort_keys=True, default=str))
+
+
 def create_mcp_server(read_only: bool = True) -> MCPServer:
     """Create and configure the Campaign Logger MCP server."""
+    setup_edit_logger()
     server = MCPServer("campaign-logger")
 
     load_config()
@@ -232,6 +272,7 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
         ) -> str:
             """Create a new top-level campaign."""
             campaign = client.create_campaign(title, description)
+            log_edit("create", "campaign", campaign.id, before=None, after=campaign.model_dump())
             return f"Campaign created successfully:\n{campaign.model_dump_json(indent=2)}"
 
         @server.tool()
@@ -243,7 +284,9 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             client: typing.Any = Field(default=None, exclude=True),
         ) -> str:
             """Modify the metadata attributes (title/description) of a campaign."""
+            before = client.get_campaign(campaign_id)
             campaign = client.update_campaign(campaign_id, title=title, description=description)
+            log_edit("update", "campaign", campaign.id, before=before.model_dump(), after=campaign.model_dump())
             return f"Campaign updated successfully:\n{campaign.model_dump_json(indent=2)}"
 
         @server.tool()
@@ -253,7 +296,9 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             client: typing.Any = Field(default=None, exclude=True),
         ) -> str:
             """Permanently delete a campaign and its associated contents."""
+            before = client.get_campaign(campaign_id)
             client.delete_campaign(campaign_id)
+            log_edit("delete", "campaign", campaign_id, before=before.model_dump(), after=None)
             return f"Campaign {campaign_id} deleted successfully."
 
         @server.tool()
@@ -266,6 +311,7 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
         ) -> str:
             """Create a new child log attached to a specific campaign."""
             log = client.create_log(campaign_id, title, description)
+            log_edit("create", "log", log.id, before=None, after=log.model_dump())
             return f"Log created successfully:\n{log.model_dump_json(indent=2)}"
 
         @server.tool()
@@ -277,7 +323,9 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             client: typing.Any = Field(default=None, exclude=True),
         ) -> str:
             """Modify the metadata attributes (title/description) of a log."""
+            before = client.get_log(log_id)
             log = client.update_log(log_id, title=title, description=description)
+            log_edit("update", "log", log.id, before=before.model_dump(), after=log.model_dump())
             return f"Log updated successfully:\n{log.model_dump_json(indent=2)}"
 
         @server.tool()
@@ -287,7 +335,9 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             client: typing.Any = Field(default=None, exclude=True),
         ) -> str:
             """Permanently delete a log and its associated entries."""
+            before = client.get_log(log_id)
             client.delete_log(log_id)
+            log_edit("delete", "log", log_id, before=before.model_dump(), after=None)
             return f"Log {log_id} deleted successfully."
 
         @server.tool()
@@ -299,6 +349,7 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
         ) -> str:
             """Append a new text entry to a specific log."""
             entry = client.create_log_entry(log_id, text)
+            log_edit("create", "log_entry", entry.id, before=None, after=entry.model_dump())
             return f"Log entry created successfully:\n{entry.model_dump_json(indent=2)}"
 
         @server.tool()
@@ -309,7 +360,9 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             client: typing.Any = Field(default=None, exclude=True),
         ) -> str:
             """Modify the text content of a specific log entry."""
+            before = client.get_log_entry(entry_id)
             entry = client.update_log_entry(entry_id, text)
+            log_edit("update", "log_entry", entry.id, before=before.model_dump(), after=entry.model_dump())
             return f"Log entry updated successfully:\n{entry.model_dump_json(indent=2)}"
 
         @server.tool()
@@ -319,7 +372,9 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             client: typing.Any = Field(default=None, exclude=True),
         ) -> str:
             """Permanently delete a log entry."""
+            before = client.get_log_entry(entry_id)
             client.delete_log_entry(entry_id)
+            log_edit("delete", "log_entry", entry_id, before=before.model_dump(), after=None)
             return f"Log entry {entry_id} deleted successfully."
 
         @server.tool()
@@ -331,6 +386,7 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
         ) -> str:
             """Create a new top-level page (Campaign Entry) attached to a specific campaign."""
             entry = client.create_campaign_entry(campaign_id, text)
+            log_edit("create", "campaign_entry", entry.id, before=None, after=entry.model_dump())
             return f"Campaign entry (page) created successfully:\n{entry.model_dump_json(indent=2)}"
 
         @server.tool()
@@ -341,7 +397,9 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             client: typing.Any = Field(default=None, exclude=True),
         ) -> str:
             """Modify the text content of a specific campaign page."""
+            before = client.get_campaign_entry(entry_id)
             entry = client.update_campaign_entry(entry_id, text)
+            log_edit("update", "campaign_entry", entry.id, before=before.model_dump(), after=entry.model_dump())
             return f"Campaign entry (page) updated successfully:\n{entry.model_dump_json(indent=2)}"
 
         @server.tool()
@@ -351,7 +409,9 @@ def create_mcp_server(read_only: bool = True) -> MCPServer:
             client: typing.Any = Field(default=None, exclude=True),
         ) -> str:
             """Permanently delete a campaign page."""
+            before = client.get_campaign_entry(entry_id)
             client.delete_campaign_entry(entry_id)
+            log_edit("delete", "campaign_entry", entry_id, before=before.model_dump(), after=None)
             return f"Campaign entry (page) {entry_id} deleted successfully."
 
     return server
