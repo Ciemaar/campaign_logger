@@ -447,3 +447,13 @@ def test_get_tag_types_campaign_is_optional(no_auth_env):
     """Omitting the campaign is valid and reports no campaign requested."""
     payload = call_tag_types(create_mcp_server(read_only=True))
     assert payload["campaign-requested"] is None
+
+
+def test_update_campaign_fails_when_prefetch_fails(mock_logger_client, auth_env, mocker, caplog):
+    caplog.set_level("INFO", logger="mcp_edit_logger")
+    server = create_mcp_server(read_only=False)
+
+    mock_logger_client.get_campaign.side_effect = Exception("Not found")
+
+    with pytest.raises(Exception, match="Error executing tool update_campaign"):
+        asyncio.run(server.call_tool("update_campaign", {"campaign_id": "c1"}))
