@@ -185,10 +185,12 @@ it is reviewed by a human even though it is new.
   real user manager; this is a manual step in the PR description.
 - Locating the installation's `campaign-logger` executable (`shutil.which` vs
   `sys.argv[0]`) when run under `uv run` or a venv is a guess until tried.
-- Hub plan 570's own prompt for this unit (`prompts/570-07-…`, possibly
-  renumbered) may change while its PR is under review; this plan does not track
-  it.
-- Whether `assignee: agent` becomes valid is unknown.
+- Hub plan 570's own prompt for this unit is now
+  `prompts/570-06-campaign-logger-bridge.md` (renumbered from 07 on 2026-11-13,
+  assignee `claude`, a reference for this plan and not a dispatch). It may change
+  while PR 584 is under review; this plan does not track it.
+- Whether `assignee: agent` becomes valid is unknown; the hub reverted to
+  `claude` too.
 
 ## Not doing
 
