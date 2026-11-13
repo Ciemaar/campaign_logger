@@ -16,7 +16,7 @@ partial:
 
 # Report — plan-167-mcp-bridge
 
-- **Diff:** five new files (plan, two unit prompts, session prompt and report)
+- **Diff:** plan, three unit prompts, session prompt and report
 - **Prompt:** `/prompts/session-2026-11-13-plan-167-mcp-bridge.md`
 - **Implemented by:** claude — **Verified by:** human (PR review)
 
@@ -26,11 +26,12 @@ ______________________________________________________________________
 
 ### What changed, and why
 
-Adds plan 167 for the opt-in MCP bridge, two unit prompts, and this session
-pair. Because Jules is shut down, both units are `claude`, and the Cost section
-says 0 Jules sessions. The assignee and cost conventions come from the hub
-session (AgenticRulesAndTools), which wrote hub plan 570, whose own unit for
-this issue is labelled `agent`.
+Adds plan 167 for the opt-in MCP bridge, three unit prompts (01 read-only
+command, 02 opt-in `--write` socket added on the owner's PR review, 03 docs),
+and this session pair. Because Jules is shut down, both units are `claude`, and
+the Cost section says 0 Jules sessions. The assignee and cost conventions come
+from the hub session (AgenticRulesAndTools), which wrote hub plan 570, whose own
+unit for this issue is labelled `agent`.
 
 ### Local checks at PR-open
 

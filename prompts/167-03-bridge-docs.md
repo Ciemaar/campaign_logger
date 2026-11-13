@@ -1,23 +1,24 @@
 ---
 plan: 167
-unit: 02
+unit: 03
 name: bridge-docs
 repo: Ciemaar/campaign_logger
 pr:
 iteration: 1
 ---
 
-# 167-02 bridge-docs — document the opt-in MCP bridge
+# 167-03 bridge-docs — document the opt-in MCP bridge
 
-Document `campaign-logger bridge start|stop|status` as merged by unit 01. Before
-writing, read `src/campaign_logger/bridge.py` and the merged tests; describe
-what the code does, not what the plan said. If unit 01 has not merged, stop.
+Document `campaign-logger bridge start|stop|status` as merged by units 01 and
+02\. Before writing, read `src/campaign_logger/bridge.py` and the merged tests;
+describe what the code does, not what the plan said. If units 01 and 02 have not
+merged, stop.
 
 # Scope
 
 **Modify only:** `docs/mcp_integration.rst` (follow its form),
 `docs/mcp-server.md` (a short pointer), and `CHANGELOG.rst` only if it has a
-place for an unreleased entry. Also `reports/167-02-bridge-docs.md` from
+place for an unreleased entry. Also `reports/167-03-bridge-docs.md` from
 `reports/TEMPLATE.md`, Part 1.
 
 **Do not modify:** code, tests, `.github/`, `ci/`, `tox.ini`, `AGENTS.md`,
@@ -32,7 +33,9 @@ that helps plan roleplaying games. It does not run a game; do not say it does.
 # Content
 
 - What `bridge start` writes and enables, stated before the reader runs it.
-- That it is read-only and that no write socket exists.
+- That the default is read-only. Document `--write` separately: a different
+  socket (`campaign-logger-write.sock`), what a connected agent can then change,
+  that it is never started unless asked for by name, and how to remove it.
 - The socket path and modes, and the sandbox-side line
   `socat STDIO UNIX-CONNECT:/run/mcp/campaign-logger.sock`.
 - How to check (`bridge status`) and how to remove it: `bridge stop`, delete the
