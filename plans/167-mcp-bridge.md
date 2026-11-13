@@ -13,7 +13,7 @@ units:
     pr:
     status: pending
     depends_on: []
-    - name: bridge-write-mode
+  - name: bridge-write-mode
     assignee: claude
     prompt: /prompts/167-02-bridge-write-mode.md
     report:
