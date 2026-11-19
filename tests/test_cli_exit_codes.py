@@ -31,7 +31,9 @@ PLACEHOLDER = "x"
 
 #: Commands that cannot reach the client, so an API failure is not their subject.
 #: ``mcp`` is covered by ``tests/test_mcp.py::test_mcp_cli_command_error``.
-NOT_CLIENT_BACKED = {("mcp",)}
+#: The ``bridge`` commands only run ``systemctl``; their failure paths are in
+#: ``tests/test_bridge.py``.
+NOT_CLIENT_BACKED = {("mcp",), ("bridge", "start"), ("bridge", "stop"), ("bridge", "status")}
 
 
 class FailingClient:
