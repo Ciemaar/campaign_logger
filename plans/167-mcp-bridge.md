@@ -2,16 +2,16 @@
 id: 167
 issues: [167]
 title: Ship an opt-in MCP bridge for sandboxes, started only on request
-status: approved
+status: in-review
 created: 2026-11-13
 updated: 2026-11-18
 units:
   - name: bridge-command
     assignee: claude   # Jules is shut down; see Approach. The hub's plan 570 calls this assignee `agent`.
     prompt: /prompts/167-01-bridge-command.md
-    report:
-    pr:
-    status: pending
+    report: /reports/167-01-bridge-command.md
+    pr: 174
+    status: in-review
     depends_on: []
   - name: bridge-write-mode
     assignee: claude

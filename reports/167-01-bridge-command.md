@@ -7,7 +7,7 @@ iteration: 1
 author: claude
 reviewer: human
 session: https://claude.ai/code/session_01EQrwqWNQndN1deQdS14gdE
-pr:
+pr: 174
 verdict:
 opened: 2026-11-18
 reviewed:
