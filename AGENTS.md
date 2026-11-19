@@ -16,6 +16,18 @@ This file contains instructions for AI agents working on this repository.
 1. **Build System:** Uses `setuptools`. All package configuration is in
    `pyproject.toml`. `setup.cfg` holds only the `[matrix]` that
    `ci/bootstrap.py` reads.
+1. **Security upgrades and `uv.lock`:** When you raise a version only to satisfy
+   `uv audit` or a security advisory, you must not edit
+   `[project] dependencies`. Run `uv lock --upgrade-package <package>`. Only if
+   a minimum must be enforced, add it to `[tool.uv] constraint-dependencies`. In
+   an application this applies to direct dependencies too. In a library that
+   others install, `constraint-dependencies` is not published in the package
+   metadata and binds only your own lock, so a minimum your users must honour
+   belongs in `[project] dependencies`. If the fixed version falls outside the
+   range you declare, or your library's users need the minimum, that is a real
+   dependency change: edit `[project] dependencies` and say so. You must never
+   resolve a `uv.lock` merge conflict by hand: take the default branch's
+   `uv.lock` and run `uv lock`.
 1. **CI/CD:** Configuration is generated via `ci/bootstrap.py`. If you modify
    `setup.cfg` or `ci/templates/`, run `tox -e bootstrap`.
 
