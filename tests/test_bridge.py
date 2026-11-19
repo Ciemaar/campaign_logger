@@ -129,7 +129,7 @@ def test_start_writes_units_then_reloads_then_enables(runner, config_home, fake_
     assert result.exit_code == 0, result.output
     unit_dir = config_home / "systemd" / "user"
     assert (unit_dir / bridge.SOCKET_UNIT).read_text() == bridge.render_socket()
-    assert (unit_dir / bridge.SERVICE_UNIT).read_text() == bridge.render_service("/opt/cl/bin/campaign-logger")
+    assert (unit_dir / bridge.SERVICE_UNIT).read_text() == bridge.render_service(bridge.executable())
     assert fake_systemctl == [
         [SYSTEMCTL, "--user", "daemon-reload"],
         [SYSTEMCTL, "--user", "enable", "--now", bridge.SOCKET_UNIT],
