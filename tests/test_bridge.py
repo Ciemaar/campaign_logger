@@ -296,7 +296,7 @@ def test_read_tool_works_over_the_socket_and_write_tools_are_absent():
 
     env = {k: v for k, v in os.environ.items() if not k.startswith("CL_")}
     # A short base keeps the socket path inside the 104-byte limit macOS imposes.
-    base = Path(tempfile.mkdtemp(prefix="clb", dir="/tmp"))
+    base = Path(tempfile.mkdtemp(prefix="clb", dir="/tmp"))  # nosec B108 - mkdtemp: unique name, mode 0700, created atomically
     try:
         directory = base / "agent-sandbox" / "mcp"
         directory.mkdir(parents=True, mode=0o700)
