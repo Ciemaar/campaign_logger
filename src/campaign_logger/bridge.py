@@ -21,6 +21,7 @@ No credential is written into a unit. The service runs as the user and reads
 ``~/.campaign_logger.json`` exactly as ``campaign-logger mcp`` does.
 """
 
+import errno
 import os
 import shutil
 import stat
@@ -138,10 +139,21 @@ def ensure_socket_dir() -> Path:
         pass
     except OSError as e:
         raise BridgeError(f"cannot create {directory}: {e.strerror or e}") from e
-    if directory.is_symlink() or not directory.is_dir():
-        raise BridgeError(f"{directory} exists and is not a directory; remove it and run `campaign-logger bridge start` again.")
-    if os.name == "posix":
-        info = directory.stat()
+    not_a_directory = BridgeError(f"{directory} exists and is not a directory; remove it and run `campaign-logger bridge start` again.")
+    if os.name != "posix":
+        if directory.is_symlink() or not directory.is_dir():
+            raise not_a_directory
+        return directory
+    # Check and tighten through one descriptor opened without following a
+    # symlink, so the directory checked is the directory changed.
+    try:
+        fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    except OSError as e:
+        if e.errno in (errno.ENOTDIR, errno.ELOOP):
+            raise not_a_directory from e
+        raise BridgeError(f"cannot open {directory}: {e.strerror or e}") from e
+    try:
+        info = os.fstat(fd)
         if info.st_uid != os.getuid():
             raise BridgeError(
                 f"{directory} is owned by uid {info.st_uid}, not by you (uid {os.getuid()}), so the socket cannot be created there;"
@@ -149,8 +161,32 @@ def ensure_socket_dir() -> Path:
                 " Remove it (as root) and run `campaign-logger bridge start` again."
             )
         if stat.S_IMODE(info.st_mode) != 0o700:
-            directory.chmod(0o700)
+            os.fchmod(fd, 0o700)
+    finally:
+        os.close(fd)
     return directory
+
+
+def check_socket_free(directory: Path) -> None:
+    """Refuse to start over a socket file this bridge is not serving.
+
+    The hand-run ``socat`` bridge this replaces used the same directory and
+    socket name. Nothing here deletes a socket or connects to one to test it:
+    the owner stops whatever holds it.
+
+    Raises:
+        BridgeError: the socket file exists and the bridge's socket unit is not active.
+    """
+    path = directory / SOCKET_NAME
+    if not os.path.lexists(path):
+        return
+    if systemctl("is-active", SOCKET_UNIT, check=False).stdout.strip() == "active":
+        return  # ours: ``bridge start`` run again
+    raise BridgeError(
+        f"{path} already exists and {SOCKET_UNIT} is not serving it."
+        " Stop whatever made it (the hand-run bridge: `systemctl --user stop campaign-logger-mcp-ro`),"
+        " delete the file if it remains, and run `campaign-logger bridge start` again."
+    )
 
 
 def _require_systemctl() -> str:
@@ -194,12 +230,13 @@ def write_units(directory: Path, exe: str) -> list[Path]:
 def start(echo: Callable[[str], None]) -> None:
     """Write the units, reload systemd, and enable and start the socket."""
     _require_systemctl()
+    # Checks first, so a refusal is never read as a half-started bridge.
+    check_socket_free(ensure_socket_dir())
     directory = unit_dir()
     exe = executable()
     echo(f"Writing {SOCKET_UNIT} and {SERVICE_UNIT} to {directory} (if changed).")
     echo(f"Each connection will run: {exe} mcp (read-only; no write tools).")
     echo(f"Enabling and starting {SOCKET_UNIT}, listening at {socket_path()}.")
-    ensure_socket_dir()
     write_units(directory, exe)
     systemctl("daemon-reload")
     systemctl("enable", "--now", SOCKET_UNIT)

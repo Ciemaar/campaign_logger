@@ -264,6 +264,7 @@ def test_a_directory_owned_by_someone_else_stops_start_with_one_line(runner, con
     assert len(error) == 1
     assert f"{directory} is owned by uid {directory.stat().st_uid}" in error[0]
     assert "Remove it" in error[0]
+    assert "Writing" not in result.output and "Enabling" not in result.output
     assert stat.S_IMODE(directory.stat().st_mode) == 0o755, "someone else's directory must be left as it was"
     assert fake_systemctl == []
     assert not (config_home / "systemd").exists()
@@ -287,25 +288,91 @@ def test_a_directory_that_cannot_be_created_stops_start_with_one_line(runner, co
     assert not (config_home / "systemd").exists()
 
 
-def test_a_file_in_the_way_is_refused(runtime_dir):
+def assert_refused_before_acting(result, config_home, fake_systemctl, message):
+    """One ``Error:`` line naming the problem, nothing announced, no unit written, no systemctl call."""
+    assert result.exit_code != 0
+    assert len(result.output.strip().splitlines()) == 1, result.output
+    assert result.output.startswith("Error:")
+    assert message in result.output
+    assert "Writing" not in result.output and "Enabling" not in result.output
+    assert not (config_home / "systemd").exists()
+    assert fake_systemctl == []
+
+
+def test_a_file_in_the_way_is_refused(runner, config_home, runtime_dir, fake_systemctl):
     (runtime_dir / bridge.SOCKET_DIR).write_text("")
-    with pytest.raises(bridge.BridgeError, match="exists and is not a directory"):
-        bridge.ensure_socket_dir()
+    result = runner.invoke(main, ["bridge", "start"])
+    assert_refused_before_acting(result, config_home, fake_systemctl, "exists and is not a directory")
 
 
 @POSIX_ONLY
-def test_a_symlink_in_the_way_is_refused(runtime_dir, tmp_path):
+def test_a_symlink_in_the_way_is_refused(runner, config_home, runtime_dir, fake_systemctl, tmp_path):
     elsewhere = tmp_path / "elsewhere"
-    elsewhere.mkdir(mode=0o700)
+    elsewhere.mkdir(mode=0o755)
     (runtime_dir / bridge.SOCKET_DIR).symlink_to(elsewhere)
-    with pytest.raises(bridge.BridgeError, match="exists and is not a directory"):
-        bridge.ensure_socket_dir()
+    result = runner.invoke(main, ["bridge", "start"])
+    assert_refused_before_acting(result, config_home, fake_systemctl, "exists and is not a directory")
+    assert stat.S_IMODE(elsewhere.stat().st_mode) == 0o755, "the symlink's target must not be touched"
 
 
-def test_no_runtime_dir_is_refused(monkeypatch):
+@POSIX_ONLY
+@pytest.mark.skipif(os.name == "posix" and os.geteuid() == 0, reason="root can open anything")
+def test_a_directory_that_cannot_be_opened_is_refused(runner, config_home, runtime_dir, fake_systemctl):
+    directory = runtime_dir / bridge.SOCKET_DIR
+    directory.mkdir()
+    directory.chmod(0o000)
+    try:
+        result = runner.invoke(main, ["bridge", "start"])
+    finally:
+        directory.chmod(0o700)
+    assert_refused_before_acting(result, config_home, fake_systemctl, f"cannot open {directory}: Permission denied")
+
+
+def test_no_runtime_dir_is_refused(runner, config_home, fake_systemctl, monkeypatch):
     monkeypatch.delenv("XDG_RUNTIME_DIR", raising=False)
-    with pytest.raises(bridge.BridgeError, match="XDG_RUNTIME_DIR is not set"):
-        bridge.ensure_socket_dir()
+    result = runner.invoke(main, ["bridge", "start"])
+    assert_refused_before_acting(result, config_home, fake_systemctl, "XDG_RUNTIME_DIR is not set")
+
+
+def test_a_leftover_socket_file_stops_start_with_one_line(runner, config_home, runtime_dir, mocker):
+    """The hand-run socat bridge used this same directory and socket name."""
+    mocker.patch("campaign_logger.bridge.shutil.which", return_value=SYSTEMCTL)
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 3, stdout="inactive\n", stderr="")
+
+    mocker.patch("campaign_logger.bridge.subprocess.run", side_effect=run)
+    directory = runtime_dir / bridge.SOCKET_DIR
+    directory.mkdir(mode=0o700)
+    leftover = directory / bridge.SOCKET_NAME
+    leftover.write_text("")
+
+    result = runner.invoke(main, ["bridge", "start"])
+
+    assert result.exit_code != 0
+    assert len(result.output.strip().splitlines()) == 1, result.output
+    assert f"{leftover} already exists and {bridge.SOCKET_UNIT} is not serving it" in result.output
+    assert "systemctl --user stop campaign-logger-mcp-ro" in result.output
+    assert leftover.exists(), "a socket that may be in use is never deleted"
+    assert calls == [[SYSTEMCTL, "--user", "is-active", bridge.SOCKET_UNIT]]
+    assert not (config_home / "systemd").exists()
+
+
+def test_start_again_over_its_own_socket_proceeds(runner, config_home, runtime_dir, fake_systemctl):
+    directory = runtime_dir / bridge.SOCKET_DIR
+    directory.mkdir(mode=0o700)
+    (directory / bridge.SOCKET_NAME).write_text("")
+
+    result = runner.invoke(main, ["bridge", "start"])
+
+    assert result.exit_code == 0, result.output
+    assert fake_systemctl == [
+        [SYSTEMCTL, "--user", "is-active", bridge.SOCKET_UNIT],
+        [SYSTEMCTL, "--user", "daemon-reload"],
+        [SYSTEMCTL, "--user", "enable", "--now", bridge.SOCKET_UNIT],
+    ]
 
 
 def test_bridge_is_registered_on_the_main_cli(runner):
