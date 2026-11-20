@@ -60,6 +60,17 @@ The last is what happened on the owner's machine, where Docker had made the old
 directories systemd creates, so it could not have caught it. `RemoveOnStop=yes`
 makes `bridge stop` remove the socket file, which its message already claimed.
 
+**From the hub's re-review at `9bd7e18`.** The checks now run before `start`
+announces anything, so a refusal never reads as a half-started bridge. On POSIX
+the directory is checked and tightened through one descriptor opened with
+`O_NOFOLLOW | O_DIRECTORY` (`fstat`, `fchmod`), so the directory checked is the
+directory changed. `check_socket_free()` stops `start` with one line when a
+socket file is already in the directory and the bridge's socket unit is not
+active, which is what the hand-run `socat` at the same path would leave; it
+never deletes or connects to that file. Every refusal test drives `bridge start`
+and asserts one line, nothing announced, no unit written and no `systemctl`
+call.
+
 ### Criteria as claimed
 
 <!-- mdformat off -->
@@ -67,12 +78,12 @@ makes `bridge stop` remove the socket file, which its message already claimed.
 | #   | criterion | command run | claimed result |
 | --- | --------- | ----------- | -------------- |
 | 1   | `tox -e check` passes | `tox -e check` (clean worktree at the PR head) | `check: OK`, `congratulations :)` |
-| 2   | `tox -e py314-cover` passes with the floor | `tox -e py314-cover` | `510 passed, 12 skipped`; `Total coverage: 97.44%`; `bridge.py` 99.26% (the non-POSIX branch of the ownership check) |
+| 2   | `tox -e py314-cover` passes with the floor | `tox -e py314-cover` | `513 passed, 12 skipped`; `Total coverage: 97.21%`; `bridge.py` 96.25% (lines 144-146, the non-POSIX branch, run on Windows CI) |
 | 3   | socket unit has path, `0600`, `0700`, `Accept=yes`; service has `campaign-logger … mcp`, no `--write` | `test_socket_unit_listens_where_the_sandbox_expects_with_private_modes`, `test_service_runs_this_installation_read_only` | PASSED |
 | 4   | `start` writes both files, then `daemon-reload`, then `enable --now`; `stop` calls `disable --now` | `test_start_writes_units_then_reloads_then_enables`, `test_start_says_what_it_will_do_before_doing_it`, `test_stop_disables` | PASSED |
 | 5   | stand-in accept loop, `0600` socket in `0700` dir, `get_tag_types` works, no write tools, write call refused | `test_read_tool_works_over_the_socket_and_write_tools_are_absent` | PASSED (ran, not skipped, on Linux) |
 | 6   | missing `systemctl` exits non-zero with one line | `test_without_systemctl_exits_non_zero_with_one_line[start/stop/status]` | PASSED |
-| —   | (#168 finding) `start` creates and checks its own directory; one line when it cannot | `test_start_creates_the_socket_directory_private`, `test_an_existing_directory_of_ours_is_tightened`, `test_a_directory_owned_by_someone_else_stops_start_with_one_line`, `test_a_directory_that_cannot_be_created_stops_start_with_one_line`, `test_a_file_in_the_way_is_refused`, `test_a_symlink_in_the_way_is_refused`, `test_no_runtime_dir_is_refused` | PASSED |
+| —   | (#168 finding) `start` creates and checks its own directory; one line when it cannot | `test_start_creates_the_socket_directory_private`, `test_an_existing_directory_of_ours_is_tightened`, `test_a_directory_owned_by_someone_else_stops_start_with_one_line`, `test_a_directory_that_cannot_be_created_stops_start_with_one_line`, `test_a_file_in_the_way_is_refused`, `test_a_symlink_in_the_way_is_refused`, `test_a_directory_that_cannot_be_opened_is_refused`, `test_no_runtime_dir_is_refused`, `test_a_leftover_socket_file_stops_start_with_one_line`, `test_start_again_over_its_own_socket_proceeds` | PASSED |
 | 7   | report carries verbatim check output | this section | below |
 
 <!-- mdformat on -->
@@ -86,11 +97,11 @@ holds many untracked generated files, and `ruff` and `pyright` would scan them.
 
 | check | command | result |
 | ----- | ------- | ------ |
-| tests | `tox -e py314-cover` | `510 passed, 12 skipped, 3 warnings in 6.11s`; `Required test coverage of 95% reached. Total coverage: 97.44%` |
+| tests | `tox -e py314-cover` | `513 passed, 12 skipped`; `Required test coverage of 95% reached. Total coverage: 97.21%` |
 | lint | `ruff check .` (in `tox -e check`) | `All checks passed!` |
 | formatting | `ruff format --check .` (in `tox -e check`) | `70 files already formatted` |
 | types | `pyright .` (in `tox -e check`) | `0 errors, 0 warnings, 0 informations` |
-| packaging | build, `twine check`, `check-manifest` (in `tox -e check`) | pass; `check: OK (25.53=…)`, `congratulations :)` |
+| packaging | build, `twine check`, `check-manifest` (in `tox -e check`) | pass; `check: OK (24.71=…)`, `congratulations :)` |
 | docs | `tox -e docs` | exit 0 |
 | pre-commit | `pre-commit run --files <the four changed files>` | **fails before checking anything**: the hook's pinned `ruff` rejects `target-version = "py314"` (`unknown variant py314, expected one of … py313`). This comes from `.pre-commit-config.yaml` and happens on `main` too, so this change did not cause it. I left the file alone because it is out of scope and a sensitive path. |
 
@@ -100,34 +111,37 @@ Verbatim `tests/test_bridge.py -v`:
 
 ```text
 tests/test_bridge.py::test_socket_unit_listens_where_the_sandbox_expects_with_private_modes PASSED [  3%]
-tests/test_bridge.py::test_service_runs_this_installation_read_only PASSED [  7%]
-tests/test_bridge.py::test_service_carries_no_credential PASSED          [ 10%]
-tests/test_bridge.py::test_service_quotes_a_path_systemd_would_split_or_expand PASSED [ 14%]
-tests/test_bridge.py::test_executable_is_the_one_on_path PASSED          [ 17%]
-tests/test_bridge.py::test_executable_falls_back_to_the_running_script PASSED [ 21%]
-tests/test_bridge.py::test_unit_dir_defaults_under_home PASSED           [ 25%]
-tests/test_bridge.py::test_socket_path_without_runtime_dir_names_the_variable PASSED [ 28%]
-tests/test_bridge.py::test_the_socket_directory_is_its_own PASSED        [ 32%]
-tests/test_bridge.py::test_write_units_leaves_unchanged_files_alone PASSED [ 35%]
-tests/test_bridge.py::test_start_writes_units_then_reloads_then_enables PASSED [ 39%]
-tests/test_bridge.py::test_start_says_what_it_will_do_before_doing_it PASSED [ 42%]
-tests/test_bridge.py::test_stop_disables PASSED                          [ 46%]
-tests/test_bridge.py::test_status_reports_state_and_path PASSED          [ 50%]
-tests/test_bridge.py::test_without_systemctl_exits_non_zero_with_one_line[start] PASSED [ 53%]
-tests/test_bridge.py::test_without_systemctl_exits_non_zero_with_one_line[stop] PASSED [ 57%]
-tests/test_bridge.py::test_without_systemctl_exits_non_zero_with_one_line[status] PASSED [ 60%]
-tests/test_bridge.py::test_failing_systemctl_surfaces_its_first_line PASSED [ 64%]
-tests/test_bridge.py::test_failing_systemctl_with_no_output_names_the_status PASSED [ 67%]
-tests/test_bridge.py::test_start_creates_the_socket_directory_private PASSED [ 71%]
-tests/test_bridge.py::test_an_existing_directory_of_ours_is_tightened PASSED [ 75%]
-tests/test_bridge.py::test_a_directory_owned_by_someone_else_stops_start_with_one_line PASSED [ 78%]
-tests/test_bridge.py::test_a_directory_that_cannot_be_created_stops_start_with_one_line PASSED [ 82%]
-tests/test_bridge.py::test_a_file_in_the_way_is_refused PASSED           [ 85%]
-tests/test_bridge.py::test_a_symlink_in_the_way_is_refused PASSED        [ 89%]
-tests/test_bridge.py::test_no_runtime_dir_is_refused PASSED              [ 92%]
+tests/test_bridge.py::test_service_runs_this_installation_read_only PASSED [  6%]
+tests/test_bridge.py::test_service_carries_no_credential PASSED          [  9%]
+tests/test_bridge.py::test_service_quotes_a_path_systemd_would_split_or_expand PASSED [ 12%]
+tests/test_bridge.py::test_executable_is_the_one_on_path PASSED          [ 16%]
+tests/test_bridge.py::test_executable_falls_back_to_the_running_script PASSED [ 19%]
+tests/test_bridge.py::test_unit_dir_defaults_under_home PASSED           [ 22%]
+tests/test_bridge.py::test_socket_path_without_runtime_dir_names_the_variable PASSED [ 25%]
+tests/test_bridge.py::test_the_socket_directory_is_its_own PASSED        [ 29%]
+tests/test_bridge.py::test_write_units_leaves_unchanged_files_alone PASSED [ 32%]
+tests/test_bridge.py::test_start_writes_units_then_reloads_then_enables PASSED [ 35%]
+tests/test_bridge.py::test_start_says_what_it_will_do_before_doing_it PASSED [ 38%]
+tests/test_bridge.py::test_stop_disables PASSED                          [ 41%]
+tests/test_bridge.py::test_status_reports_state_and_path PASSED          [ 45%]
+tests/test_bridge.py::test_without_systemctl_exits_non_zero_with_one_line[start] PASSED [ 48%]
+tests/test_bridge.py::test_without_systemctl_exits_non_zero_with_one_line[stop] PASSED [ 51%]
+tests/test_bridge.py::test_without_systemctl_exits_non_zero_with_one_line[status] PASSED [ 54%]
+tests/test_bridge.py::test_failing_systemctl_surfaces_its_first_line PASSED [ 58%]
+tests/test_bridge.py::test_failing_systemctl_with_no_output_names_the_status PASSED [ 61%]
+tests/test_bridge.py::test_start_creates_the_socket_directory_private PASSED [ 64%]
+tests/test_bridge.py::test_an_existing_directory_of_ours_is_tightened PASSED [ 67%]
+tests/test_bridge.py::test_a_directory_owned_by_someone_else_stops_start_with_one_line PASSED [ 70%]
+tests/test_bridge.py::test_a_directory_that_cannot_be_created_stops_start_with_one_line PASSED [ 74%]
+tests/test_bridge.py::test_a_file_in_the_way_is_refused PASSED           [ 77%]
+tests/test_bridge.py::test_a_symlink_in_the_way_is_refused PASSED        [ 80%]
+tests/test_bridge.py::test_a_directory_that_cannot_be_opened_is_refused PASSED [ 83%]
+tests/test_bridge.py::test_no_runtime_dir_is_refused PASSED              [ 87%]
+tests/test_bridge.py::test_a_leftover_socket_file_stops_start_with_one_line PASSED [ 90%]
+tests/test_bridge.py::test_start_again_over_its_own_socket_proceeds PASSED [ 93%]
 tests/test_bridge.py::test_bridge_is_registered_on_the_main_cli PASSED   [ 96%]
 tests/test_bridge.py::test_read_tool_works_over_the_socket_and_write_tools_are_absent PASSED [100%]
-============================== 28 passed in 1.07s ==============================
+============================== 31 passed in 1.13s ==============================
 ```
 
 Verbatim `tox -e check` tail:
@@ -141,8 +155,8 @@ check: commands[5]> pyright .
 0 errors, 0 warnings, 0 informations
 check: commands[6]> mdformat --check --wrap 80 README.md SESSION_INSTRUCTIONS.md PYPI_UPLOAD_INSTRUCTIONS.md AGENTS.md .github/copilot-instructions.md docs/tooling_evaluation.md
 check: commands[7]> rstfmt --check AUTHORS.rst CONTRIBUTING.rst README.rst CHANGELOG.rst docs/usage.rst docs/reference/index.rst docs/installation.rst docs/readme.rst docs/contributing.rst docs/authors.rst docs/changelog.rst docs/index.rst
-  check: OK (25.53=setup[0.02]+cmd[8.21,0.38,9.15,0.02,0.03,6.34,0.37,1.02] seconds)
-  congratulations :) (25.58 seconds)
+  check: OK (24.71=setup[0.01]+cmd[8.87,0.66,9.10,0.02,0.02,5.33,0.26,0.44] seconds)
+  congratulations :) (24.77 seconds)
 ```
 
 ### Deviations from the prompt
@@ -158,7 +172,7 @@ check: commands[7]> rstfmt --check AUTHORS.rst CONTRIBUTING.rst README.rst CHANG
   to do. `bee0ce3` records unit 01's state (`in-review`, `pr: 174`, the
   report), which is the orchestrator's bookkeeping. The 2026-11-20 commit
   records the directory-per-socket revision in the plan and in prompts 02 and
-  03, and fixes stale numbering: docs are unit 03, there are three units, and
+  03 (prompt 01 followed in the next iteration), and fixes stale numbering: docs are unit 03, there are three units, and
   removal deletes up to four unit files. The owner asked, through the hub
   session, for the #168 findings to be handled on this PR.
 - **The socket path differs from the prompt's**
@@ -200,8 +214,10 @@ check: commands[7]> rstfmt --check AUTHORS.rst CONTRIBUTING.rst README.rst CHANG
   describes, and says how to remove them.
 - The ownership check is skipped off POSIX (no `getuid`). That only matters in
   tests: without systemd the commands stop at the missing `systemctl`.
-- Whether systemd unlinks a stale socket file left by the hand-run `socat` at
-  the same path, or fails to bind. Either way, stop that `socat` first.
+- A leftover socket file is refused rather than removed, so a crash that leaves
+  one behind needs the owner to delete it; the message says so. Removing it
+  only when nothing listens would mean connecting to it, which starts a server
+  process behind the hand-run `socat`.
 
 ______________________________________________________________________
 

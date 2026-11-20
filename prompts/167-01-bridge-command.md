@@ -19,15 +19,20 @@ it.
 Today the bridge is a hand-typed host command that dies with its shell:
 
 ```bash
-socat UNIX-LISTEN:"$XDG_RUNTIME_DIR"/agent-sandbox/mcp/campaign-logger.sock,fork,mode=600,unlink-early \
+socat UNIX-LISTEN:"$XDG_RUNTIME_DIR"/campaign-logger-mcp-ro/campaign-logger.sock,fork,mode=600,unlink-early \
   EXEC:"$HOME/Dropbox/campaign_logger/.venv/bin/campaign-logger mcp"
 ```
 
-The sandbox side connects with
-`socat STDIO UNIX-CONNECT:/run/mcp/campaign-logger.sock` and **must not need to
-change**: keep the path
-`$XDG_RUNTIME_DIR/agent-sandbox/mcp/campaign-logger.sock`, directory mode
-`0700`, socket mode `0600`.
+A sandbox mounts the socket's directory read-only and connects with
+`socat STDIO UNIX-CONNECT:<mount>/campaign-logger.sock`. Use the path
+`$XDG_RUNTIME_DIR/campaign-logger-mcp-ro/campaign-logger.sock`, directory mode
+`0700`, socket mode `0600`. **That directory holds this socket and nothing
+else**, so a write socket added later can never be reached through the same
+mount.
+
+*Revised 2026-11-20, after the owner ran the bridge by hand (#168 comments):
+the path was `agent-sandbox/mcp/`, a directory shared with other sockets that
+Docker had already created as `root:root`.*
 
 # Scope
 
@@ -61,7 +66,7 @@ description instead of doing it.
   ```ini
   # campaign-logger-bridge.socket
   [Socket]
-  ListenStream=%t/agent-sandbox/mcp/campaign-logger.sock
+  ListenStream=%t/campaign-logger-mcp-ro/campaign-logger.sock
   SocketMode=0600
   DirectoryMode=0700
   Accept=yes
@@ -76,9 +81,15 @@ description instead of doing it.
   `%t` is `$XDG_RUNTIME_DIR`. Render the executable path from the running
   installation (`shutil.which("campaign-logger")` falling back to the resolved
   `sys.argv[0]`), never a fixed path. The service line must not contain
-  `--write`. Verify against `systemd.socket(5)` whether `DirectoryMode` covers
-  the intermediate `agent-sandbox` directory; if not, `bridge start` creates it
-  with mode `0700` first.
+  `--write`.
+
+- **The directory is created and checked by `bridge start`**, before it
+  announces or writes anything: create it `0700`, tighten one of the user's own
+  that is too open, and stop with one line, changing nothing, when it cannot be
+  created or opened, is not a directory, or belongs to another user.
+  `DirectoryMode=` only covers directories systemd creates. If a socket file is
+  already there and the bridge's socket unit is not active, stop with one line
+  naming it; never delete it.
 
 - **`bridge start`** prints what it is about to do, writes the two files under
   `~/.config/systemd/user/` if they differ, runs
