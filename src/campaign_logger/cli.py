@@ -9,6 +9,7 @@ import requests
 
 from .api import GeneratorClient
 from .api import LoggerClient
+from .bridge import bridge
 from .models import GeneratorModel
 from .rag_export import rag_export_campaign
 
@@ -227,6 +228,9 @@ def mcp(write):
         # exit and may not restart. KeyboardInterrupt is not an Exception, so
         # Ctrl-C still leaves through the normal path.
         raise click.ClickException(f"MCP server failed: {e}") from e
+
+
+main.add_command(bridge)
 
 
 @main.group()
