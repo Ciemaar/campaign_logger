@@ -5,11 +5,17 @@ connects to a unix socket instead, and systemd starts one ``campaign-logger mcp`
 per connection with stdin and stdout on that socket. Nothing idles between
 connections, and nothing is installed or enabled until ``bridge start`` asks.
 
-The socket path, ``$XDG_RUNTIME_DIR/agent-sandbox/mcp/campaign-logger.sock``,
-and its modes (directory ``0700``, socket ``0600``) are what the sandbox side
-already expects; changing them breaks the sandbox. ``DirectoryMode=`` applies
-to every parent directory systemd has to create, so it also covers the
-intermediate ``agent-sandbox`` directory (``systemd.socket(5)``).
+The socket is ``$XDG_RUNTIME_DIR/campaign-logger-mcp-ro/campaign-logger.sock``:
+directory ``0700``, socket ``0600``. **The directory holds this socket and
+nothing else**, so a sandbox mounts the directory read-only and can reach the
+read-only server and no other socket; a write socket, if one is ever added,
+gets a directory of its own that the sandbox does not mount.
+
+``bridge start`` creates that directory itself and checks it before anything
+is written. ``DirectoryMode=`` only applies to directories systemd creates, and
+a directory that already exists may not be ours: Docker creates a missing
+bind-mount source as ``root:root 0755``, which is how the shared
+``agent-sandbox`` directory this replaced became unusable.
 
 No credential is written into a unit. The service runs as the user and reads
 ``~/.campaign_logger.json`` exactly as ``campaign-logger mcp`` does.
@@ -17,6 +23,7 @@ No credential is written into a unit. The service runs as the user and reads
 
 import os
 import shutil
+import stat
 import subprocess  # nosec B404 - fixed argv to systemctl, never a shell
 import sys
 from collections.abc import Callable
@@ -26,7 +33,10 @@ import click
 
 SOCKET_UNIT = "campaign-logger-bridge.socket"
 SERVICE_UNIT = "campaign-logger-bridge@.service"
-SOCKET_RELATIVE = "agent-sandbox/mcp/campaign-logger.sock"
+#: Directly under ``$XDG_RUNTIME_DIR`` and used by this socket alone; see the module docstring.
+SOCKET_DIR = "campaign-logger-mcp-ro"
+SOCKET_NAME = "campaign-logger.sock"
+SOCKET_RELATIVE = f"{SOCKET_DIR}/{SOCKET_NAME}"
 
 
 class BridgeError(Exception):
@@ -69,6 +79,7 @@ def render_socket() -> str:
         f"ListenStream=%t/{SOCKET_RELATIVE}\n"
         "SocketMode=0600\n"
         "DirectoryMode=0700\n"
+        "RemoveOnStop=yes\n"
         "Accept=yes\n"
         "\n"
         "[Install]\n"
@@ -104,6 +115,42 @@ def socket_path() -> str:
     """Return the socket path as systemd will create it, for display."""
     runtime = os.environ.get("XDG_RUNTIME_DIR")
     return f"{runtime}/{SOCKET_RELATIVE}" if runtime else f"$XDG_RUNTIME_DIR/{SOCKET_RELATIVE}"
+
+
+def ensure_socket_dir() -> Path:
+    """Create the socket's directory, or check the one that exists, and return it.
+
+    The directory must be a real directory owned by this user. If it is ours
+    but too open, it is tightened to ``0700``; if it is someone else's, nothing
+    is changed and the error says what to do.
+
+    Raises:
+        BridgeError: ``XDG_RUNTIME_DIR`` is unset, or the directory cannot be
+            created, is not a directory, or belongs to another user.
+    """
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if not runtime:
+        raise BridgeError("XDG_RUNTIME_DIR is not set: the bridge needs a systemd user session.")
+    directory = Path(runtime) / SOCKET_DIR
+    try:
+        directory.mkdir(mode=0o700)
+    except FileExistsError:
+        pass
+    except OSError as e:
+        raise BridgeError(f"cannot create {directory}: {e.strerror or e}") from e
+    if directory.is_symlink() or not directory.is_dir():
+        raise BridgeError(f"{directory} exists and is not a directory; remove it and run `campaign-logger bridge start` again.")
+    if os.name == "posix":
+        info = directory.stat()
+        if info.st_uid != os.getuid():
+            raise BridgeError(
+                f"{directory} is owned by uid {info.st_uid}, not by you (uid {os.getuid()}), so the socket cannot be created there;"
+                " Docker makes a missing bind-mount source as root."
+                " Remove it (as root) and run `campaign-logger bridge start` again."
+            )
+        if stat.S_IMODE(info.st_mode) != 0o700:
+            directory.chmod(0o700)
+    return directory
 
 
 def _require_systemctl() -> str:
@@ -152,6 +199,7 @@ def start(echo: Callable[[str], None]) -> None:
     echo(f"Writing {SOCKET_UNIT} and {SERVICE_UNIT} to {directory} (if changed).")
     echo(f"Each connection will run: {exe} mcp (read-only; no write tools).")
     echo(f"Enabling and starting {SOCKET_UNIT}, listening at {socket_path()}.")
+    ensure_socket_dir()
     write_units(directory, exe)
     systemctl("daemon-reload")
     systemctl("enable", "--now", SOCKET_UNIT)

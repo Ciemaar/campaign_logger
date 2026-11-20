@@ -36,8 +36,18 @@ def runner():
 def config_home(tmp_path, monkeypatch):
     home = tmp_path / "xdg-config"
     monkeypatch.setenv("XDG_CONFIG_HOME", str(home))
-    monkeypatch.setenv("XDG_RUNTIME_DIR", "/run/user/1000")
+    runtime = tmp_path / "run"
+    runtime.mkdir(mode=0o700)
+    monkeypatch.setenv("XDG_RUNTIME_DIR", str(runtime))
     return home
+
+
+@pytest.fixture
+def runtime_dir(config_home):
+    return Path(os.environ["XDG_RUNTIME_DIR"])
+
+
+POSIX_ONLY = pytest.mark.skipif(os.name != "posix", reason="ownership and modes are POSIX")
 
 
 @pytest.fixture
@@ -63,9 +73,10 @@ def fake_systemctl(mocker):
 
 def test_socket_unit_listens_where_the_sandbox_expects_with_private_modes():
     text = bridge.render_socket()
-    assert "ListenStream=%t/agent-sandbox/mcp/campaign-logger.sock\n" in text
+    assert "ListenStream=%t/campaign-logger-mcp-ro/campaign-logger.sock\n" in text
     assert "SocketMode=0600\n" in text
     assert "DirectoryMode=0700\n" in text
+    assert "RemoveOnStop=yes\n" in text
     assert "Accept=yes\n" in text
     assert "WantedBy=sockets.target\n" in text
 
@@ -110,7 +121,14 @@ def test_unit_dir_defaults_under_home(monkeypatch):
 
 def test_socket_path_without_runtime_dir_names_the_variable(monkeypatch):
     monkeypatch.delenv("XDG_RUNTIME_DIR", raising=False)
-    assert bridge.socket_path() == "$XDG_RUNTIME_DIR/agent-sandbox/mcp/campaign-logger.sock"
+    assert bridge.socket_path() == "$XDG_RUNTIME_DIR/campaign-logger-mcp-ro/campaign-logger.sock"
+
+
+def test_the_socket_directory_is_its_own():
+    """A sandbox mounts the socket's directory, so nothing else may live in it (#168 review)."""
+    assert bridge.SOCKET_RELATIVE == f"{bridge.SOCKET_DIR}/{bridge.SOCKET_NAME}"
+    assert "/" not in bridge.SOCKET_DIR
+    assert bridge.SOCKET_DIR.endswith("-ro")
 
 
 def test_write_units_leaves_unchanged_files_alone(tmp_path):
@@ -128,7 +146,10 @@ def test_start_writes_units_then_reloads_then_enables(runner, config_home, fake_
 
     assert result.exit_code == 0, result.output
     unit_dir = config_home / "systemd" / "user"
-    assert (unit_dir / bridge.SOCKET_UNIT).read_text() == bridge.render_socket()
+    written_socket = (unit_dir / bridge.SOCKET_UNIT).read_text()
+    assert "ListenStream=%t/campaign-logger-mcp-ro/campaign-logger.sock\n" in written_socket
+    assert written_socket == bridge.render_socket()
+    assert " mcp\n" in (unit_dir / bridge.SERVICE_UNIT).read_text()
     assert (unit_dir / bridge.SERVICE_UNIT).read_text() == bridge.render_service(bridge.executable())
     assert fake_systemctl == [
         [SYSTEMCTL, "--user", "daemon-reload"],
@@ -150,7 +171,7 @@ def test_start_says_what_it_will_do_before_doing_it(runner, config_home, mocker)
     first_action = events.index("write")
     announced = " ".join(e for e in events[:first_action] if e.startswith("echo:"))
     assert "read-only" in announced
-    assert "/run/user/1000/agent-sandbox/mcp/campaign-logger.sock" in announced
+    assert f"{os.environ['XDG_RUNTIME_DIR']}/campaign-logger-mcp-ro/campaign-logger.sock" in announced
     assert events[first_action : first_action + 3] == ["write", "daemon-reload", "enable"]
 
 
@@ -168,7 +189,7 @@ def test_status_reports_state_and_path(runner, config_home, fake_systemctl):
     assert result.exit_code == 0, result.output
     assert fake_systemctl == [[SYSTEMCTL, "--user", "is-active", bridge.SOCKET_UNIT]]
     assert f"{bridge.SOCKET_UNIT}: active" in result.output
-    assert "/run/user/1000/agent-sandbox/mcp/campaign-logger.sock" in result.output
+    assert f"{os.environ['XDG_RUNTIME_DIR']}/campaign-logger-mcp-ro/campaign-logger.sock" in result.output
 
 
 @pytest.mark.parametrize("command", ["start", "stop", "status"])
@@ -203,6 +224,88 @@ def test_failing_systemctl_with_no_output_names_the_status(mocker):
     mocker.patch("campaign_logger.bridge.subprocess.run", return_value=subprocess.CompletedProcess([], 3, stdout="", stderr=""))
     with pytest.raises(bridge.BridgeError, match="exit status 3"):
         bridge.systemctl("daemon-reload")
+
+
+# --- the socket directory ---------------------------------------------------
+
+
+@POSIX_ONLY
+def test_start_creates_the_socket_directory_private(runner, runtime_dir, fake_systemctl):
+    result = runner.invoke(main, ["bridge", "start"])
+
+    assert result.exit_code == 0, result.output
+    directory = runtime_dir / bridge.SOCKET_DIR
+    assert directory.is_dir()
+    assert stat.S_IMODE(directory.stat().st_mode) == 0o700
+
+
+@POSIX_ONLY
+def test_an_existing_directory_of_ours_is_tightened(runtime_dir):
+    directory = runtime_dir / bridge.SOCKET_DIR
+    directory.mkdir()
+    directory.chmod(0o755)
+
+    assert bridge.ensure_socket_dir() == directory
+    assert stat.S_IMODE(directory.stat().st_mode) == 0o700
+
+
+@POSIX_ONLY
+def test_a_directory_owned_by_someone_else_stops_start_with_one_line(runner, config_home, runtime_dir, fake_systemctl, mocker):
+    """The owner's machine: Docker had made the directory ``root:root 0755`` (#168)."""
+    directory = runtime_dir / bridge.SOCKET_DIR
+    directory.mkdir()
+    directory.chmod(0o755)
+    mocker.patch("campaign_logger.bridge.os.getuid", return_value=directory.stat().st_uid + 1)
+
+    result = runner.invoke(main, ["bridge", "start"])
+
+    assert result.exit_code != 0
+    error = [line for line in result.output.splitlines() if line.startswith("Error:")]
+    assert len(error) == 1
+    assert f"{directory} is owned by uid {directory.stat().st_uid}" in error[0]
+    assert "Remove it" in error[0]
+    assert stat.S_IMODE(directory.stat().st_mode) == 0o755, "someone else's directory must be left as it was"
+    assert fake_systemctl == []
+    assert not (config_home / "systemd").exists()
+
+
+@POSIX_ONLY
+@pytest.mark.skipif(os.name == "posix" and os.geteuid() == 0, reason="root can create anywhere")
+def test_a_directory_that_cannot_be_created_stops_start_with_one_line(runner, config_home, tmp_path, fake_systemctl, monkeypatch):
+    locked = tmp_path / "locked-run"
+    locked.mkdir()
+    locked.chmod(0o500)
+    monkeypatch.setenv("XDG_RUNTIME_DIR", str(locked))
+    try:
+        result = runner.invoke(main, ["bridge", "start"])
+    finally:
+        locked.chmod(0o700)
+
+    assert result.exit_code != 0
+    assert f"Error: cannot create {locked / bridge.SOCKET_DIR}: Permission denied" in result.output
+    assert fake_systemctl == []
+    assert not (config_home / "systemd").exists()
+
+
+def test_a_file_in_the_way_is_refused(runtime_dir):
+    (runtime_dir / bridge.SOCKET_DIR).write_text("")
+    with pytest.raises(bridge.BridgeError, match="exists and is not a directory"):
+        bridge.ensure_socket_dir()
+
+
+@POSIX_ONLY
+def test_a_symlink_in_the_way_is_refused(runtime_dir, tmp_path):
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir(mode=0o700)
+    (runtime_dir / bridge.SOCKET_DIR).symlink_to(elsewhere)
+    with pytest.raises(bridge.BridgeError, match="exists and is not a directory"):
+        bridge.ensure_socket_dir()
+
+
+def test_no_runtime_dir_is_refused(monkeypatch):
+    monkeypatch.delenv("XDG_RUNTIME_DIR", raising=False)
+    with pytest.raises(bridge.BridgeError, match="XDG_RUNTIME_DIR is not set"):
+        bridge.ensure_socket_dir()
 
 
 def test_bridge_is_registered_on_the_main_cli(runner):
@@ -286,7 +389,7 @@ class LineClient:
 
 
 @pytest.mark.skipif(not hasattr(socket, "AF_UNIX") or sys.platform == "win32", reason="unix sockets and fd inheritance")
-def test_read_tool_works_over_the_socket_and_write_tools_are_absent():
+def test_read_tool_works_over_the_socket_and_write_tools_are_absent(monkeypatch):
     exe = shutil.which("campaign-logger")
     if exe is None:
         pytest.skip("campaign-logger is not installed on PATH")
@@ -298,11 +401,10 @@ def test_read_tool_works_over_the_socket_and_write_tools_are_absent():
     # A short base keeps the socket path inside the 104-byte limit macOS imposes.
     base = Path(tempfile.mkdtemp(prefix="clb", dir="/tmp"))  # nosec B108 - mkdtemp: unique name, mode 0700, created atomically
     try:
-        directory = base / "agent-sandbox" / "mcp"
-        directory.mkdir(parents=True, mode=0o700)
-        os.chmod(base / "agent-sandbox", 0o700)
-        os.chmod(directory, 0o700)
-        path = directory / "campaign-logger.sock"
+        # The directory is the one ``bridge start`` creates, not one this test makes.
+        monkeypatch.setenv("XDG_RUNTIME_DIR", str(base))
+        directory = bridge.ensure_socket_dir()
+        path = directory / bridge.SOCKET_NAME
         stand_in = StandInSocket(path, argv, env)
         try:
             assert stat.S_IMODE(directory.stat().st_mode) == 0o700
