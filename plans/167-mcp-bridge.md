@@ -4,7 +4,7 @@ issues: [167]
 title: Ship an opt-in MCP bridge for sandboxes, started only on request
 status: in-review
 created: 2026-11-13
-updated: 2026-11-18
+updated: 2026-11-20
 units:
   - name: bridge-command
     assignee: claude   # Jules is shut down; see Approach. The hub's plan 570 calls this assignee `agent`.
@@ -69,18 +69,36 @@ tooling changes here.
 
 **Design (the owner's, from the issue and hub plan 570):** a systemd user
 **socket-activated** unit. A `.socket` unit with `Accept=yes` listens at
-`$XDG_RUNTIME_DIR/agent-sandbox/mcp/campaign-logger.sock` (directory `0700`,
-socket `0600`, so the sandbox side does not change), and a `.service` template
+`$XDG_RUNTIME_DIR/campaign-logger-mcp-ro/campaign-logger.sock` (directory
+`0700`, socket `0600`), and a `.service` template
 runs `campaign-logger mcp` per connection with stdin and stdout on the socket.
 Nothing idles between connections. `campaign-logger bridge start|stop|status`
 writes the unit files, runs `systemctl --user enable --now` or `disable --now`,
 and reports. Installing the package enables nothing.
 
+**One directory per socket, created by `bridge start` (revised 2026-11-20).**
+The plan first used the shared `agent-sandbox/mcp/` directory the interim
+`socat` used. Running the bridge by hand on 2026-11-19
+([#168 comment](https://github.com/Ciemaar/campaign_logger/pull/168#issuecomment-7008272363))
+showed two problems with it. A sandbox mounts a socket's *directory*, so a write
+socket in the same directory as the read socket would be reachable from every
+sandbox that can reach the read one. And Docker had already created
+`agent-sandbox` as `root:root 0755` by bind-mounting it before it existed, so
+the socket could not be made there. Each socket therefore gets its own
+directory directly under `$XDG_RUNTIME_DIR`: `campaign-logger-mcp-ro` for the
+read socket, which is the directory the hand-run bridge moved to and the
+sandbox already mounts read-only, and `campaign-logger-mcp-rw` for the write
+socket, which no sandbox mounts unless the owner adds it. `bridge start`
+creates its directory `0700` and checks it before writing anything, and stops
+with one line when the directory belongs to someone else; `DirectoryMode=` only
+covers directories systemd creates itself.
+
 **Read-only is the default, and write is a separate, named opt-in.** Added on
 the owner's PR review (2026-11-13). `bridge start` serves only the read-only
 server and its service line never contains `--write`. A read-write mode is
-`bridge start --write`: a **separate** socket (`campaign-logger-write.sock`),
-with its own `.socket` and `.service` units whose service runs
+`bridge start --write`: a **separate** socket (`campaign-logger-write.sock`, in
+its own `campaign-logger-mcp-rw` directory), with its own `.socket` and
+`.service` units whose service runs
 `campaign-logger mcp --write`, so the write tools exist only on a socket whose
 name says so. The read socket is never upgraded in place, and nothing starts the
 write socket unless it is asked for by name. This follows the issue's own
@@ -100,14 +118,16 @@ The hub's replacement (Antigravity, hub plan 433) has no dispatch backend yet.
 Per the hub agent (2026-11-13), `claude` is the only assignee value known to
 work; `operator` is used in hub plans but its validator is unbuilt, and the hub
 plan 570 labels this unit `agent`, meaning the agent in this repository does it
-once the new dispatch framework is available here. So both units are `claude`.
+once the new dispatch framework is available here. So all three units are
+`claude`.
 If an Antigravity backend arrives before 01 starts, switching the value is a
 frontmatter edit and the prompt already reads as a self-contained brief.
 
-**Write mode and the sandbox.** The sandbox's allow rules name only read tools
-and the sandbox side must not change, so the write socket is invisible to it
-until the owner adds a second MCP registration and allow rules in the hub. That
-is hub work, out of scope here.
+**Write mode and the sandbox.** The write socket is invisible to a sandbox
+because it is in a directory the sandbox does not mount, not because of allow
+rules, which are advisory. Exposing it to a sandbox means mounting
+`campaign-logger-mcp-rw` and adding a second MCP registration and allow rules in
+the hub. That is hub work, out of scope here.
 
 **Testing a socket-activated service without systemd.** CI has no user manager.
 The tests therefore (a) mock `subprocess.run` for every `systemctl` call, (b)
@@ -125,14 +145,15 @@ tool works over the socket, and the write tools are absent.
   from the running installation's absolute path to `campaign-logger` (not a
   fixed path) and wraps `systemctl --user`. `cli.py` registers a `bridge` group
   with `start`, `stop` and `status`; each prints what it is about to do before
-  it does it. Where `systemctl --user` is unavailable the commands exit non-zero
+  it does it. `start` creates the socket's own directory `0700`, or checks the
+  existing one, before writing a unit, and stops with one line if it cannot. Where `systemctl --user` is unavailable the commands exit non-zero
   with one line saying so and fall back to nothing. No credential is copied into
   a unit file: the service runs as the owner and reads `~/.campaign_logger.json`
   as `campaign-logger mcp` already does.
 - **Scope:** `src/campaign_logger/bridge.py` (new), `src/campaign_logger/cli.py`
   (register the group only), `tests/test_bridge.py` (new).
 - **Out of scope:** `mcp_server.py`, `api.py`, existing tests, dependencies, CI,
-  docs (unit 02), the sandbox tooling.
+  docs (unit 03), the sandbox tooling.
 - **Acceptance criteria:** `tox -e check` and `tox -e py314-cover` pass; tests
   show the units contain the socket path, `SocketMode=0600`,
   `DirectoryMode=0700`, `Accept=yes` and no `--write`; `bridge start` writes the
@@ -147,8 +168,10 @@ tool works over the socket, and the write tools are absent.
   `start`, `stop` and `status`. `--write` selects a second, independent pair of
   units, `campaign-logger-bridge-write.socket` and
   `campaign-logger-bridge-write@.service`, listening at
-  `$XDG_RUNTIME_DIR/agent-sandbox/mcp/campaign-logger-write.sock` with the same
-  `0700`/`0600` modes, and the service runs `campaign-logger mcp --write`.
+  `$XDG_RUNTIME_DIR/campaign-logger-mcp-rw/campaign-logger-write.sock`, a
+  directory of its own that is never the read socket's, with the same
+  `0700`/`0600` modes and the same create-and-check before writing, and the
+  service runs `campaign-logger mcp --write`.
   Without `--write` every command behaves exactly as unit 01 left it.
   `start --write` prints, before it acts, that the socket lets a connected agent
   create, update and delete campaign data, and names the socket it is opening.
@@ -173,12 +196,14 @@ tool works over the socket, and the write tools are absent.
 - **Approach:** add a "Bridge for sandboxes" section to
   `docs/mcp_integration.rst` and a short pointer in `docs/mcp-server.md`. It
   states what `bridge start` will write and enable before the reader runs it,
-  how to check it, how to remove it (`bridge stop`, delete the two unit files,
-  `systemctl --user daemon-reload`), and that the default is read-only. It
+  how to check it, how to remove it (`bridge stop`, delete the unit files: two,
+  or four if write mode was ever started; `systemctl --user daemon-reload`), and
+  that the default is read-only. It
   documents `--write` separately: a different socket, what the agent can then
-  change, and that it is never started unless asked for by name. It shows the
-  sandbox-side `socat STDIO UNIX-CONNECT:/run/mcp/campaign-logger.sock` line and
-  links the hub for the sandbox setup. It describes Campaign Logger as a
+  change, and that it is never started unless asked for by name. It says each
+  socket has its own directory and a sandbox mounts only the read one, shows
+  the sandbox-side `socat STDIO UNIX-CONNECT:<mount>/campaign-logger.sock` line
+  and links the hub for the sandbox setup. It describes Campaign Logger as a
   structured database for planning roleplaying games.
 - **Scope:** `docs/mcp_integration.rst`, `docs/mcp-server.md`, and
   `CHANGELOG.rst` only if its form shows a place for an unreleased entry.
@@ -190,17 +215,18 @@ tool works over the socket, and the write tools are absent.
 
 **0 Jules sessions.** Jules has been read-only since 2026-11-11, so nothing in
 this plan is dispatched to it, and no unit counts against the ten-session
-ceiling in `.claude/reference/local-conventions.md`. Both units are `claude`
-units, worked in-session. Antigravity quota, were it used later, is not a Jules
+ceiling in `.claude/reference/local-conventions.md`. All three units are
+`claude` units, worked in-session. Antigravity quota, were it used later, is not a Jules
 session either.
 
 ## Success test
 
 On a machine where Campaign Logger is installed,
 `systemctl --user list-unit-files 'campaign-logger-bridge*'` shows nothing
-enabled and no socket exists. After `campaign-logger bridge start`, the
-unchanged sandbox-side `socat STDIO UNIX-CONNECT:/run/mcp/campaign-logger.sock`
-reaches a server whose tool list has no write tool. After `bridge stop` the
+enabled and no socket exists. After `campaign-logger bridge start`, a sandbox
+that mounts `$XDG_RUNTIME_DIR/campaign-logger-mcp-ro` read-only reaches, with
+`socat STDIO UNIX-CONNECT:<mount>/campaign-logger.sock`, a server whose tool
+list has no write tool. After `bridge stop` the
 socket is gone. Separately, only after `bridge start --write`, a second socket
 exists whose server lists the write tools, and `bridge stop --write` removes it;
 the read socket's tool list is unchanged throughout.
@@ -214,7 +240,7 @@ serious failure is exposing write tools or a credential: the default read units
 are asserted free of `--write` by a test, the write mode is a separate socket
 and unit pair so a mistake in it cannot widen the read socket, and the socket
 and directory modes are asserted for both. Undo is `bridge stop` plus deleting
-the two unit files; reverting the PR removes the command.
+the unit files (two per mode); reverting the PR removes the command.
 
 ## Sensitive paths
 
@@ -228,10 +254,9 @@ it is reviewed by a human even though it is new.
 
 ## Risks and unknowns
 
-- Whether `%t/agent-sandbox/mcp/` is created with `DirectoryMode=0700` by the
-  `.socket` unit for the intermediate directory, or only for the last component.
-  The unit-01 implementer must check `systemd.socket(5)` and, if needed, create
-  the parent with mode `0700` in `bridge start`.
+- ~~Whether `DirectoryMode=0700` covers the intermediate directory.~~ Moot since
+  the 2026-11-20 revision: the socket's directory sits directly under
+  `$XDG_RUNTIME_DIR`, and `bridge start` creates and checks it itself.
 - The stand-in accept loop is not systemd. It proves the server behaves over a
   socket, not that the units load. A human must run `bridge start` once on a
   real user manager; this is a manual step in the PR description.

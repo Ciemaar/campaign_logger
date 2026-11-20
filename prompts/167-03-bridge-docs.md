@@ -36,10 +36,13 @@ that helps plan roleplaying games. It does not run a game; do not say it does.
 - That the default is read-only. Document `--write` separately: a different
   socket (`campaign-logger-write.sock`), what a connected agent can then change,
   that it is never started unless asked for by name, and how to remove it.
-- The socket path and modes, and the sandbox-side line
-  `socat STDIO UNIX-CONNECT:/run/mcp/campaign-logger.sock`.
-- How to check (`bridge status`) and how to remove it: `bridge stop`, delete the
-  two unit files under `~/.config/systemd/user/`,
+- The socket paths and modes, that each socket has its own directory so a
+  sandbox mounts only the read one, and the sandbox-side line
+  `socat STDIO UNIX-CONNECT:<mount>/campaign-logger.sock` (take the mount point
+  from the hub's sandbox documentation rather than inventing one).
+- How to check (`bridge status`) and how to remove it: `bridge stop` (and
+  `bridge stop --write`), delete the unit files under `~/.config/systemd/user/`
+  (two for the read socket, two more if write mode was ever started),
   `systemctl --user daemon-reload`.
 - Nothing starts at install or login.
 - A link to the hub's sandbox documentation (Ciemaar/AgenticRulesAndTools) for

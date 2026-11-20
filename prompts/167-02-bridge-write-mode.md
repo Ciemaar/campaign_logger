@@ -46,7 +46,7 @@ description instead of doing it.
   ```ini
   # campaign-logger-bridge-write.socket
   [Socket]
-  ListenStream=%t/agent-sandbox/mcp/campaign-logger-write.sock
+  ListenStream=%t/campaign-logger-mcp-rw/campaign-logger-write.sock
   SocketMode=0600
   DirectoryMode=0700
   Accept=yes
@@ -59,6 +59,12 @@ description instead of doing it.
   ```
 
   Use the same executable-path resolution as unit 01.
+
+- **Its own directory, never the read socket's.** A sandbox mounts a socket's
+  directory, so the write socket must not share `campaign-logger-mcp-ro` with
+  the read socket. `start --write` creates and checks `campaign-logger-mcp-rw`
+  exactly as unit 01's `ensure_socket_dir` does for the read directory
+  (parameterise it; do not copy it).
 
 - **`--write` on `start`, `stop` and `status`** selects the write pair only. The
   read pair is never touched by a `--write` command, and a command without
@@ -90,6 +96,8 @@ Follow unit 01's code and tests for structure; mock `subprocess.run`; use
 - [ ] `tox -e py314-cover` passes, including the coverage floor
 - [ ] a test asserts the read units rendered after this change are
   byte-identical to unit 01's expected text
+- [ ] a test asserts the write socket's directory differs from the read
+  socket's
 - [ ] a test asserts the write socket unit has the write socket path,
   `SocketMode=0600`, `DirectoryMode=0700`, `Accept=yes`, and the write service
   ends `mcp --write`

@@ -47,7 +47,7 @@ change**: keep the path
 - `src/campaign_logger/mcp_server.py`, `src/campaign_logger/api.py`
 - `pyproject.toml`, `uv.lock`, `setup.cfg`, `tox.ini`, `ci/`, `.github/`,
   `AGENTS.md`, `.claude/`
-- docs (unit 02 does them)
+- docs (unit 03 does them)
 - any plan or prompt file
 - anything not listed above
 
