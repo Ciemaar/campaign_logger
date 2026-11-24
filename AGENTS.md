@@ -45,6 +45,16 @@ This file contains instructions for AI agents working on this repository.
    the build when they disagree. `.github/workflows/audit.yml` and
    `codacy.yml`-style hand-written workflows are *not* generated and have no
    template.
+1. **Versions.** This repository adopts the hub's release policy (hub plan 618),
+   adapted to one package. A feature, fix or dependency pull request **does not
+   change the version**; patch-level changes accumulate on `main`. A *release
+   pull request* does, and only it: it runs `bumpversion minor` (new commands or
+   features) or `bumpversion patch` (accumulated fixes), updates `uv.lock` and
+   `CHANGELOG.rst`, and changes nothing else. An agent may prepare it; **the
+   owner pushes the `vX.Y.Z` tag on its head commit before merging**, and it is
+   merged with a merge commit so the tag stays an ancestor of `main`. Never run
+   `git tag` or `git push --tags`. The first release is 0.1.0, after the MCP
+   bridge (#174) lands (#183).
 1. Agents should proactively monitor the tests on GitHub and autonomously
    address any CI failures (excluding codacy, which is only advisory).
 1. Review the code scanning results on your PR; do not assume a green upload

@@ -77,7 +77,7 @@ rows backed by prose — see [#52] for the guidance on converting them.
 
 | #   | Requirement                                                     | Status                                                                                                                                                                                    |
 | --- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 7.1 | Patch version increases with every PR                           | **Not met** — `.bumpversion.cfg` says `0.0.0` where the package says `0.0.1`, and targets a `setup.py` that no longer exists. [#48](https://github.com/Ciemaar/campaign_logger/issues/48) |
+| 7.1 | The version moves only in a release pull request, which the owner tags | **Partial** — the rule is in `AGENTS.md` and `.bumpversion.cfg` no longer tags; the files' agreement is tested (`tests/test_version_config.py`); a feature pull request that bumps is not caught. The first release is 0.1.0 ([#183](https://github.com/Ciemaar/campaign_logger/issues/183)). [#182](https://github.com/Ciemaar/campaign_logger/issues/182) |
 | 7.2 | `pyproject.toml` is the single source of configuration          | **Partial** — `setup.cfg` is retained because `ci/bootstrap.py` reads its `[matrix]` section                                                                                              |
 | 7.3 | Minimum Python 3.14                                             | **Met** — `requires-python = ">=3.14"`; matrix is 3.14–3.15                                                                                                                               |
 | 7.4 | CI on the newest available Ubuntu                               | **Met**                                                                                                                                                                                   |
@@ -105,7 +105,7 @@ Everything above marked **Not met** or **Partial**, with its issue:
 | 1.5 swagger attribute coverage  | [#44](https://github.com/Ciemaar/campaign_logger/issues/44) |
 | 3.6 config file secret handling | [#40](https://github.com/Ciemaar/campaign_logger/issues/40) |
 | 6.2 coverage ratchet            | [#46](https://github.com/Ciemaar/campaign_logger/issues/46) |
-| 7.1 version bump enforcement    | [#48](https://github.com/Ciemaar/campaign_logger/issues/48) |
+| 7.1 release policy enforcement  | [#182](https://github.com/Ciemaar/campaign_logger/issues/182) |
 | 7.5 ReadTheDocs                 | [#47](https://github.com/Ciemaar/campaign_logger/issues/47) |
 
 ## Keeping this current

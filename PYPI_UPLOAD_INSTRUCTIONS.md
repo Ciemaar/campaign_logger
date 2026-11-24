@@ -135,9 +135,12 @@ ______________________________________________________________________
 When you make changes to the code in the future and want to release a new
 version:
 
-1. Bump the version with `bumpversion patch` (configured in `.bumpversion.cfg`;
-   it updates `pyproject.toml`, `src/campaign_logger/__init__.py`,
-   `docs/conf.py` and `README.rst` together).
+1. Check out the merged release commit. The version is bumped only in a release
+   pull request (see `AGENTS.md`, "Versions"), with `bumpversion minor` or
+   `bumpversion patch` (configured in `.bumpversion.cfg`; it updates
+   `pyproject.toml`, `src/campaign_logger/__init__.py`, `docs/conf.py` and
+   `README.rst` together, and does not tag). Do not bump here; build the version
+   `main` already has, and confirm the owner's `vX.Y.Z` tag is on it.
 1. Delete the old files inside the `dist/` directory to avoid uploading them
    again.
 1. Repeat **Step 3** (`python -m build`) and **Step 6** (`twine upload dist/*`).

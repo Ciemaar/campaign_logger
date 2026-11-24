@@ -69,6 +69,15 @@ def test_every_declared_version_matches_the_config(current_version, path, patter
     assert found.group("version") == current_version, f"{path} declares {found.group('version')}, .bumpversion.cfg says {current_version}"
 
 
+def test_bumpversion_does_not_create_the_tag(config):
+    """The owner tags, so ``bumpversion`` must not (#182).
+
+    ``tag = True`` made a bare ``bumpversion minor`` create ``v0.1.0`` on the branch's
+    own commit, which is the outward-facing step the release policy reserves.
+    """
+    assert not config["bumpversion"].getboolean("tag", fallback=False)
+
+
 # --- every stanza must be able to do its job ---------------------------------
 
 
