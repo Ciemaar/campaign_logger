@@ -45,16 +45,6 @@ This file contains instructions for AI agents working on this repository.
    the build when they disagree. `.github/workflows/audit.yml` and
    `codacy.yml`-style hand-written workflows are *not* generated and have no
    template.
-1. **Versions.** This repository adopts the hub's release policy (hub plan 618),
-   adapted to one package. A feature, fix or dependency pull request **does not
-   change the version**; patch-level changes accumulate on `main`. A *release
-   pull request* does, and only it: it runs `bumpversion minor` (new commands or
-   features) or `bumpversion patch` (accumulated fixes), updates `uv.lock` and
-   `CHANGELOG.rst`, and changes nothing else. An agent may prepare it; **the
-   owner pushes the `vX.Y.Z` tag on its head commit before merging**, and it is
-   merged with a merge commit so the tag stays an ancestor of `main`. Never run
-   `git tag` or `git push --tags`. The first release is 0.1.0, after the MCP
-   bridge (#174) lands (#183).
 1. Agents should proactively monitor the tests on GitHub and autonomously
    address any CI failures (excluding codacy, which is only advisory).
 1. Review the code scanning results on your PR; do not assume a green upload
@@ -74,6 +64,34 @@ This file contains instructions for AI agents working on this repository.
    `AUTHORS.rst`, but the submitting user retains responsibility for the content
    submitted.
 1. Submit.
+
+## Versions
+
+This repository adopts the hub's release policy (hub plan 618 and
+`plugin-packaging-decisions.md` §3), adapted to one package. The version
+describes what a *user* of the package must do (the Python API, the
+`campaign-logger` CLI and the MCP tools), not how much changed:
+
+- **major** -- a user must change something they wrote: a renamed or removed
+  command, option, MCP tool or public function, a changed config-file or output
+  format. Before 1.0 a change like this is a **minor** bump, and whether to go
+  to 1.0 is the owner's decision.
+- **minor** -- new capability a user can ignore: a new command, option, MCP tool
+  or optional field.
+- **patch** -- fixes, wording, evidence, examples, dependency bumps and CI
+  changes. Patches accumulate on `main` **with no bump**.
+
+An agent landing a change classifies it. A feature, fix or dependency pull
+request **does not change the version itself**. If the classification is minor
+or major, the agent then **prepares a release pull request** without waiting to
+be asked: `bumpversion minor` (or `major`), `uv.lock` and `CHANGELOG.rst`,
+nothing else. When the call is close between two levels, **pick the higher**:
+calling a patch a minor costs a user a diff to read, while calling a major a
+patch breaks them silently. **The owner pushes the `vX.Y.Z` tag on the release
+pull request's head commit before merging**, and it merges with a merge commit
+so the tag stays an ancestor of `main`. Never run `git tag` or
+`git push --tags`. The first release is 0.1.0, after the MCP bridge (#174) lands
+(#183).
 
 ## Reporting
 

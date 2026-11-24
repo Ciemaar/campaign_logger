@@ -32,7 +32,7 @@ ______________________________________________________________________
 Adopts the hub's release policy (hub plan 618, Ciemaar/AgenticRulesAndTools#618)
 for this single package. Implements #182.
 
-- `AGENTS.md`, Workflow: a "Versions" rule. Feature, fix and dependency pull
+- `AGENTS.md`: a "Versions" section. Feature, fix and dependency pull
   requests do not change the version; a release pull request does, using
   `bumpversion minor` or `patch`; the owner tags `vX.Y.Z` on its head commit
   before merging, with a merge commit; agents never run `git tag`.
@@ -43,6 +43,14 @@ for this single package. Implements #182.
   every PR" to the release-pull-request rule and marked **Partial**.
 - `PYPI_UPLOAD_INSTRUCTIONS.md`: the upload steps no longer tell the uploader to
   run `bumpversion patch`.
+
+The classification criteria are the hub's, from `plugin-packaging-decisions.md`
+§3 (owner's request, 2026-11-24): the version describes what a user must do
+(major: change something they wrote; minor: new capability they can ignore;
+patch: wording, fixes, accumulates unbumped), an agent classifies a change as it
+lands and prepares the release pull request for a minor or major, and a close
+call takes the higher level. "Adopter" became "user of the API, CLI and MCP
+tools".
 
 Adapted, not copied: the hub has one tag for a CLI and a plugin; this has one
 package, so there is no lockstep and no plugin version. The hub's "minor when
@@ -82,6 +90,12 @@ There is no prompt. The "usable bridge" in the owner's instruction is read as
   was run.
 
 ### Uncertain about
+
+- Before 1.0, a breaking change is written as a **minor** bump, which departs
+  from the hub's "major" wording. §3 has no 0.x rule, so this is my adaptation.
+  The owner may prefer the hub's text exactly.
+- §3 lets an agent cut the release unsupervised; plan 618 narrowed that to
+  "prepare, owner tags". The sentence follows plan 618, as the hub now does.
 
 - Whether the owner wants "agents never run `git tag`" as a hard rule here or
   only for releases. It is written as a hard rule, as in the hub.
