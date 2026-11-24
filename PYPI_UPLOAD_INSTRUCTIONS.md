@@ -139,8 +139,9 @@ version:
    pull request (see `AGENTS.md`, "Versions"), with `bumpversion minor` or
    `bumpversion patch` (configured in `.bumpversion.cfg`; it updates
    `pyproject.toml`, `src/campaign_logger/__init__.py`, `docs/conf.py` and
-   `README.rst` together, and does not tag). Do not bump here; build the version
-   `main` already has, and confirm the owner's `vX.Y.Z` tag is on it.
+   `README.rst` together, and creates the local tag). Do not bump here; build
+   the version `main` already has, and confirm the owner's `vX.Y.Z` tag is on
+   it.
 1. Delete the old files inside the `dist/` directory to avoid uploading them
    again.
 1. Repeat **Step 3** (`python -m build`) and **Step 6** (`twine upload dist/*`).

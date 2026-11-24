@@ -1,18 +1,6 @@
----
-plan:
-unit:
-name: version-policy
-prompt:
-iteration: 1
-author: claude
-reviewer: Andy Fundinger
-session: https://claude.ai/code/session_01EQrwqWTKhaaQASKkvzhmr5
-pr:
-verdict:
-opened: 2026-11-24
-reviewed:
-partial:
----
+______________________________________________________________________
+
+## plan: unit: name: version-policy prompt: iteration: 1 author: claude reviewer: Andy Fundinger session: https://claude.ai/code/session_01EQrwqWTKhaaQASKkvzhmr5 pr: verdict: opened: 2026-11-24 reviewed: partial:
 
 # Report — version-policy
 
@@ -32,13 +20,16 @@ ______________________________________________________________________
 Adopts the hub's release policy (hub plan 618, Ciemaar/AgenticRulesAndTools#618)
 for this single package. Implements #182.
 
-- `AGENTS.md`: a "Versions" section. Feature, fix and dependency pull
-  requests do not change the version; a release pull request does, using
+- `AGENTS.md`: a "Versions" section. Feature, fix and dependency pull requests
+  do not change the version; a release pull request does, using
   `bumpversion minor` or `patch`; the owner tags `vX.Y.Z` on its head commit
   before merging, with a merge commit; agents never run `git tag`.
-- `.bumpversion.cfg`: `tag = False` (was `True`). With `True`, a bare
-  `bumpversion minor` would create the tag the policy reserves for the owner.
-  `tests/test_version_config.py` gains a test that pins it.
+- `.bumpversion.cfg`: keeps `commit = True` and `tag = True` (owner's request,
+  2026-11-24: "I like the idea of bump version creating the tag"), adds
+  `tag_name = v{new_version}` and a `uv.lock` stanza so the lock moves in the
+  same commit. `tests/test_version_config.py` pins the flags and the tag name
+  and checks `uv.lock` records the current version. An agent never *pushes* a
+  tag; the owner does, before merging.
 - `docs/requirements.md` 7.1 is reworded from "Patch version increases with
   every PR" to the release-pull-request rule and marked **Partial**.
 - `PYPI_UPLOAD_INSTRUCTIONS.md`: the upload steps no longer tell the uploader to
@@ -57,8 +48,11 @@ package, so there is no lockstep and no plugin version. The hub's "minor when
 the CLI gains commands, patch accumulates with no bump" is kept as is.
 
 The 0.1.0 release itself is not in this pull request. It waits for #174 and is
-tracked in #183. The hub-side follow-up, so onboarding documents and enforces a
-version policy for every adopter, is Ciemaar/AgenticRulesAndTools#643.
+tracked in #183. Hub follow-ups: onboarding documents and enforces a version
+policy for every adopter (Ciemaar/AgenticRulesAndTools#643), and whether the hub
+adopts a bump tool that creates the tag (#644). `AGENTS.md` also records that
+this repository intends to follow the hub's policy and lists its deliberate
+differences.
 
 ### Local checks at PR-open
 
@@ -85,20 +79,25 @@ There is no prompt. The "usable bridge" in the owner's instruction is read as
   agreement test catches inconsistent versions, not a premature bump.
 - `CHANGELOG.rst` stops at 0.0.0 (2022-02-08). The release pull request adds the
   first real entry; this one does not.
-- Whether `bumpversion` (which implementation is installed was not checked)
-  honours `tag = False`. It is standard `.bumpversion.cfg` syntax, but no bump
-  was run.
+- `bump2version minor` was run only in a throwaway clone (via `uvx`; it is not a
+  project dependency, and `bump-my-version` was not tried). It made one commit
+  and a local `v0.1.0` tag, and with the `uv.lock` stanza `uv lock` afterwards
+  changed nothing. It also rewrites `.bumpversion.cfg` on each run and drops its
+  comments. No bump was run in the repository.
 
 ### Uncertain about
 
 - Before 1.0, a breaking change is written as a **minor** bump, which departs
   from the hub's "major" wording. §3 has no 0.x rule, so this is my adaptation.
   The owner may prefer the hub's text exactly.
+
 - §3 lets an agent cut the release unsupervised; plan 618 narrowed that to
   "prepare, owner tags". The sentence follows plan 618, as the hub now does.
 
-- Whether the owner wants "agents never run `git tag`" as a hard rule here or
-  only for releases. It is written as a hard rule, as in the hub.
+- The rule is "agents never *push* a tag". An agent may create the local tag
+  (the bump tool does), and recreate it if the head moves. The hub's rule is
+  stricter ("never run `git tag`"); reconciling them is hub issue #644.
+
 - Sensitive paths touched (`.claude/reference/local-conventions.md` §3):
   **`AGENTS.md`**. Escalates to a human regardless of test results.
 

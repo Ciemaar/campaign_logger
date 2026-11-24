@@ -87,11 +87,30 @@ or major, the agent then **prepares a release pull request** without waiting to
 be asked: `bumpversion minor` (or `major`), `uv.lock` and `CHANGELOG.rst`,
 nothing else. When the call is close between two levels, **pick the higher**:
 calling a patch a minor costs a user a diff to read, while calling a major a
-patch breaks them silently. **The owner pushes the `vX.Y.Z` tag on the release
-pull request's head commit before merging**, and it merges with a merge commit
-so the tag stays an ancestor of `main`. Never run `git tag` or
-`git push --tags`. The first release is 0.1.0, after the MCP bridge (#174) lands
-(#183).
+patch breaks them silently.
+
+To prepare the release: commit the `CHANGELOG.rst` entry first (`bumpversion`
+refuses a dirty tree), then run `bumpversion minor` (or `major`). It commits the
+version change in `pyproject.toml`, `__init__.py`, `docs/conf.py`, `README.rst`
+and `uv.lock` together and **creates the local tag `vX.Y.Z` on that commit**.
+Push the branch and open the pull request. **Agents never push a tag.** The
+owner pushes it (`git push <remote> vX.Y.Z`) before merging, and the pull
+request merges with a merge commit so the tag stays an ancestor of `main`. If
+the head moves after the bump, the local tag is stale: delete it and recreate it
+on the new head before the owner pushes. `bumpversion` rewrites
+`.bumpversion.cfg` on each run and drops its comments, so the explanations live
+here and in `tests/test_version_config.py`. The first release is 0.1.0, after
+the MCP bridge (#174) lands (#183).
+
+This repository intends to follow the hub's version policy, not merely copy it.
+When the hub changes it, review the change here; a deliberate difference is
+listed below so it is not mistaken for drift:
+
+- A single package, so there is no lockstep with a plugin version.
+- Before 1.0, a breaking change is a minor bump (the hub's text has no 0.x
+  case).
+- The tag is created by `bumpversion` and pushed by the owner. The hub does not
+  use a bump tool today (hub issue #644 asks whether it should).
 
 ## Reporting
 
