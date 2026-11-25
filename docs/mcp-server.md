@@ -254,3 +254,23 @@ gemini
 *(Or `npx @google/gemini-cli`)*
 
 Once in the chat, the Campaign Logger tools will be available for Gemini to use. Try asking it: *"List all the campaigns in my Campaign Logger account!"*
+## Audit Logging
+
+Edit operations (creates, updates, deletes) triggered via the MCP server are automatically logged for auditing purposes.
+
+### Location
+Logs are saved locally in the `~/.campaign_logger/mcp_edits.log` file.
+
+### Format
+The log uses JSON Lines (`jsonl`), where each line is a serialized JSON object containing:
+- `timestamp`: The UTC time of the operation.
+- `action`: The type of operation (`create`, `update`, `delete`).
+- `resource_type`: The resource modified (`campaign`, `log`, `log_entry`, `campaign_entry`).
+- `resource_id`: The ID of the affected resource.
+- `before`: The JSON metadata of the resource before the edit (or `null` for creates).
+- `after`: The JSON metadata of the resource after the edit (or `null` for deletes).
+
+Note: Certain sensitive fields like `joined_players[].email_address` are masked.
+
+### Retention Policy
+The logger uses `TimedRotatingFileHandler` with a 30-day retention limit, rotating daily. **Note:** This rotating file handler may not correctly capture lines if multiple MCP servers are running simultaneously across different processes, especially on Windows where file locks may raise `PermissionError`.
