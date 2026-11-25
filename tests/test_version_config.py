@@ -69,6 +69,29 @@ def test_every_declared_version_matches_the_config(current_version, path, patter
     assert found.group("version") == current_version, f"{path} declares {found.group('version')}, .bumpversion.cfg says {current_version}"
 
 
+def test_bumpversion_commits_and_creates_the_local_tag(config):
+    """``bumpversion`` makes the release commit and the ``vX.Y.Z`` tag on it (#182).
+
+    The tag is created locally and never pushed by an agent: the owner pushes it
+    before merging the release pull request. Both flags have to stay on, or the
+    tag is made by hand and may land on the wrong commit.
+    """
+    section = config["bumpversion"]
+    assert section.getboolean("commit", fallback=False)
+    assert section.getboolean("tag", fallback=False)
+    assert section["tag_name"] == "v{new_version}"
+
+
+def test_the_lockfile_records_the_current_version():
+    """``uv.lock`` lagging the bump is what forces a commit after the tag."""
+    text = (ROOT / "uv.lock").read_text(encoding="utf-8")
+    found = re.search(r'^name = "campaign-logger"\nversion = "(?P<version>[^"]+)"$', text, re.M)
+    assert found, "uv.lock has no campaign-logger entry"
+    declared = re.search(r'^version = "(?P<version>[^"]+)"$', (ROOT / "pyproject.toml").read_text(encoding="utf-8"), re.M)
+    assert declared
+    assert found.group("version") == declared.group("version")
+
+
 # --- every stanza must be able to do its job ---------------------------------
 
 

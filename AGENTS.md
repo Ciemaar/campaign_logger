@@ -65,6 +65,53 @@ This file contains instructions for AI agents working on this repository.
    submitted.
 1. Submit.
 
+## Versions
+
+This repository adopts the hub's release policy (hub plan 618 and
+`plugin-packaging-decisions.md` §3), adapted to one package. The version
+describes what a *user* of the package must do (the Python API, the
+`campaign-logger` CLI and the MCP tools), not how much changed:
+
+- **major** -- a user must change something they wrote: a renamed or removed
+  command, option, MCP tool or public function, a changed config-file or output
+  format. Before 1.0 a change like this is a **minor** bump, and whether to go
+  to 1.0 is the owner's decision.
+- **minor** -- new capability a user can ignore: a new command, option, MCP tool
+  or optional field.
+- **patch** -- fixes, wording, evidence, examples, dependency bumps and CI
+  changes. Patches accumulate on `main` **with no bump**.
+
+An agent landing a change classifies it. A feature, fix or dependency pull
+request **does not change the version itself**. If the classification is minor
+or major, the agent then **prepares a release pull request** without waiting to
+be asked: `bumpversion minor` (or `major`), `uv.lock` and `CHANGELOG.rst`,
+nothing else. When the call is close between two levels, **pick the higher**:
+calling a patch a minor costs a user a diff to read, while calling a major a
+patch breaks them silently.
+
+To prepare the release: commit the `CHANGELOG.rst` entry first (`bumpversion`
+refuses a dirty tree), then run `bumpversion minor` (or `major`). It commits the
+version change in `pyproject.toml`, `__init__.py`, `docs/conf.py`, `README.rst`
+and `uv.lock` together and **creates the local tag `vX.Y.Z` on that commit**.
+Push the branch and open the pull request. **Agents never push a tag.** The
+owner pushes it (`git push <remote> vX.Y.Z`) before merging, and the pull
+request merges with a merge commit so the tag stays an ancestor of `main`. If
+the head moves after the bump, the local tag is stale: delete it and recreate it
+on the new head before the owner pushes. `bumpversion` rewrites
+`.bumpversion.cfg` on each run and drops its comments, so the explanations live
+here and in `tests/test_version_config.py`. The first release is 0.1.0, after
+the MCP bridge (#174) lands (#183).
+
+This repository intends to follow the hub's version policy, not merely copy it.
+When the hub changes it, review the change here; a deliberate difference is
+listed below so it is not mistaken for drift:
+
+- A single package, so there is no lockstep with a plugin version.
+- Before 1.0, a breaking change is a minor bump (the hub's text has no 0.x
+  case).
+- The tag is created by `bumpversion` and pushed by the owner. The hub does not
+  use a bump tool today (hub issue #644 asks whether it should).
+
 ## Reporting
 
 Before opening a pull request, write Part 1 of your report for the unit to
