@@ -504,3 +504,355 @@ def test_read_tool_works_over_the_socket_and_write_tools_are_absent(monkeypatch)
             stand_in.close()
     finally:
         shutil.rmtree(base, ignore_errors=True)
+
+
+# --- write mode: a separate pair, opt-in (plan 167 unit 02) -----------------
+
+EXE = "/opt/cl/bin/campaign-logger"
+
+#: Unit 01's rendered text, written out in full. Write mode must not change a byte of it.
+READ_SOCKET_UNIT_TEXT = """\
+[Unit]
+Description=Campaign Logger read-only MCP bridge for sandboxed agents
+
+[Socket]
+ListenStream=%t/campaign-logger-mcp-ro/campaign-logger.sock
+SocketMode=0600
+DirectoryMode=0700
+RemoveOnStop=yes
+Accept=yes
+
+[Install]
+WantedBy=sockets.target
+"""
+
+READ_SERVICE_UNIT_TEXT = """\
+[Unit]
+Description=Campaign Logger read-only MCP server for one bridge connection
+
+[Service]
+ExecStart=/opt/cl/bin/campaign-logger mcp
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+"""
+
+
+def test_the_read_units_are_byte_identical_to_unit_01s():
+    assert bridge.render_socket() == READ_SOCKET_UNIT_TEXT
+    assert bridge.render_service(EXE) == READ_SERVICE_UNIT_TEXT
+    assert bridge.render_socket(bridge.READ) == READ_SOCKET_UNIT_TEXT
+    assert bridge.render_service(EXE, bridge.READ) == READ_SERVICE_UNIT_TEXT
+
+
+def test_the_write_socket_has_a_directory_of_its_own():
+    """A sandbox mounts a socket's directory, so the write socket must never share the read one's."""
+    assert bridge.WRITE_SOCKET_DIR != bridge.SOCKET_DIR
+    assert bridge.WRITE.socket_dir == "campaign-logger-mcp-rw"
+    assert "/" not in bridge.WRITE_SOCKET_DIR
+    assert bridge.WRITE.socket_relative != bridge.READ.socket_relative
+    assert os.path.dirname(bridge.WRITE.socket_relative) != os.path.dirname(bridge.READ.socket_relative)
+    assert bridge.WRITE.socket_unit != bridge.READ.socket_unit
+    assert bridge.WRITE.service_unit != bridge.READ.service_unit
+
+
+def test_the_write_units_name_the_write_socket_and_run_the_write_server():
+    socket_text = bridge.render_socket(bridge.WRITE)
+    assert "ListenStream=%t/campaign-logger-mcp-rw/campaign-logger-write.sock\n" in socket_text
+    assert "SocketMode=0600\n" in socket_text
+    assert "DirectoryMode=0700\n" in socket_text
+    assert "Accept=yes\n" in socket_text
+    assert "RemoveOnStop=yes\n" in socket_text
+    assert "campaign-logger-mcp-ro" not in socket_text
+
+    service_text = bridge.render_service(EXE, bridge.WRITE)
+    exec_lines = [line for line in service_text.splitlines() if line.startswith("ExecStart=")]
+    assert exec_lines == [f"ExecStart={EXE} mcp --write"]
+    assert exec_lines[0].endswith("mcp --write")
+    assert "StandardInput=socket\n" in service_text
+    assert "StandardOutput=socket\n" in service_text
+    assert "--write" not in bridge.render_service(EXE), "only the write service may pass --write"
+
+
+def test_the_write_units_carry_no_credential():
+    text = bridge.render_socket(bridge.WRITE) + bridge.render_service(EXE, bridge.WRITE)
+    for forbidden in ("Environment", "CL_", "token", "secret", "client"):
+        assert forbidden not in text
+
+
+def test_write_units_are_written_beside_the_read_units_without_touching_them(tmp_path):
+    bridge.write_units(tmp_path, EXE)
+    read_before = {name: (tmp_path / name).read_text() for name in (bridge.SOCKET_UNIT, bridge.SERVICE_UNIT)}
+
+    written = bridge.write_units(tmp_path, EXE, bridge.WRITE)
+
+    assert {p.name for p in written} == {bridge.WRITE_SOCKET_UNIT, bridge.WRITE_SERVICE_UNIT}
+    assert {name: (tmp_path / name).read_text() for name in read_before} == read_before
+
+
+def systemctl_units(calls):
+    """The unit names every recorded ``systemctl`` call names."""
+    return {arg for call in calls for arg in call if arg.startswith("campaign-logger-bridge")}
+
+
+def test_start_without_write_never_names_a_write_unit(runner, config_home, fake_systemctl):
+    result = runner.invoke(main, ["bridge", "start"])
+
+    assert result.exit_code == 0, result.output
+    assert systemctl_units(fake_systemctl) == {bridge.SOCKET_UNIT}
+    assert not any("write" in " ".join(call) for call in fake_systemctl)
+    assert not (config_home / "systemd" / "user" / bridge.WRITE_SOCKET_UNIT).exists()
+    assert not (config_home / "systemd" / "user" / bridge.WRITE_SERVICE_UNIT).exists()
+
+
+def test_stop_without_write_never_names_a_write_unit(runner, config_home, fake_systemctl):
+    assert runner.invoke(main, ["bridge", "stop"]).exit_code == 0
+    assert systemctl_units(fake_systemctl) == {bridge.SOCKET_UNIT}
+
+
+def test_start_write_makes_the_expected_calls_on_the_write_unit_only(runner, config_home, runtime_dir, fake_systemctl):
+    result = runner.invoke(main, ["bridge", "start", "--write"])
+
+    assert result.exit_code == 0, result.output
+    assert fake_systemctl == [
+        [SYSTEMCTL, "--user", "daemon-reload"],
+        [SYSTEMCTL, "--user", "enable", "--now", bridge.WRITE_SOCKET_UNIT],
+    ]
+    unit_dir = config_home / "systemd" / "user"
+    assert (unit_dir / bridge.WRITE_SOCKET_UNIT).read_text() == bridge.render_socket(bridge.WRITE)
+    assert (unit_dir / bridge.WRITE_SERVICE_UNIT).read_text() == bridge.render_service(bridge.executable(), bridge.WRITE)
+    assert not (unit_dir / bridge.SOCKET_UNIT).exists(), "a --write command never writes the read pair"
+    assert not (unit_dir / bridge.SERVICE_UNIT).exists()
+    assert not (runtime_dir / bridge.SOCKET_DIR).exists(), "a --write command never creates the read directory"
+
+
+@POSIX_ONLY
+def test_start_write_creates_its_own_directory_private(runner, runtime_dir, fake_systemctl):
+    assert runner.invoke(main, ["bridge", "start", "--write"]).exit_code == 0
+    directory = runtime_dir / bridge.WRITE_SOCKET_DIR
+    assert directory.is_dir()
+    assert stat.S_IMODE(directory.stat().st_mode) == 0o700
+
+
+def test_stop_write_disables_the_write_unit_only(runner, config_home, fake_systemctl):
+    result = runner.invoke(main, ["bridge", "stop", "--write"])
+
+    assert result.exit_code == 0, result.output
+    assert fake_systemctl == [[SYSTEMCTL, "--user", "disable", "--now", bridge.WRITE_SOCKET_UNIT]]
+    assert f"{os.environ['XDG_RUNTIME_DIR']}/campaign-logger-mcp-rw/campaign-logger-write.sock" in result.output
+
+
+def test_start_write_says_what_it_does_before_the_first_systemctl_call(runner, config_home, mocker):
+    """No prompt (a supervisor may call this): the printed line is the disclosure, and it comes first."""
+    events = []
+    mocker.patch("campaign_logger.bridge.shutil.which", return_value=SYSTEMCTL)
+    mocker.patch("campaign_logger.bridge.write_units", side_effect=lambda *a: events.append("write") or [])
+    mocker.patch("campaign_logger.bridge.systemctl", side_effect=lambda *a, **k: events.append(f"systemctl:{a[0]}"))
+    mocker.patch("campaign_logger.bridge.click.echo", side_effect=lambda text: events.append(f"echo:{text}"))
+
+    result = runner.invoke(main, ["bridge", "start", "--write"])
+
+    assert result.exit_code == 0, result.output
+    first_systemctl = next(i for i, e in enumerate(events) if e.startswith("systemctl:"))
+    first_write = events.index("write")
+    disclosure = " ".join(e for e in events[:first_systemctl] if e.startswith("echo:"))
+    assert f"{os.environ['XDG_RUNTIME_DIR']}/campaign-logger-mcp-rw/campaign-logger-write.sock" in disclosure
+    assert "create, update and delete campaign data" in disclosure
+    assert "your credentials" in disclosure
+    assert events[first_write : first_write + 3] == ["write", "systemctl:daemon-reload", "systemctl:enable"]
+
+
+def test_start_write_is_refused_for_a_leftover_socket_without_naming_the_hand_run_bridge(runner, config_home, runtime_dir, mocker):
+    mocker.patch("campaign_logger.bridge.shutil.which", return_value=SYSTEMCTL)
+    mocker.patch(
+        "campaign_logger.bridge.subprocess.run",
+        return_value=subprocess.CompletedProcess([], 3, stdout="inactive\n", stderr=""),
+    )
+    directory = runtime_dir / bridge.WRITE_SOCKET_DIR
+    directory.mkdir(mode=0o700)
+    (directory / bridge.WRITE_SOCKET_NAME).write_text("")
+
+    result = runner.invoke(main, ["bridge", "start", "--write"])
+
+    assert result.exit_code != 0
+    assert f"{bridge.WRITE_SOCKET_UNIT} is not serving it" in result.output
+    assert "campaign-logger bridge start --write" in result.output
+    assert "campaign-logger-mcp-ro" not in result.output
+    assert not (config_home / "systemd").exists()
+
+
+def test_status_reports_both_sockets_labelled(runner, config_home, runtime_dir, mocker):
+    """An open write socket is never hidden: with units installed, both are asked about and both are shown."""
+    mocker.patch("campaign_logger.bridge.shutil.which", return_value=SYSTEMCTL)
+    states = {bridge.SOCKET_UNIT: "active\n", bridge.WRITE_SOCKET_UNIT: "inactive\n"}
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout=states[command[-1]], stderr="")
+
+    mocker.patch("campaign_logger.bridge.subprocess.run", side_effect=run)
+    (config_home / "systemd" / "user").mkdir(parents=True)
+    (config_home / "systemd" / "user" / bridge.WRITE_SOCKET_UNIT).write_text("")
+
+    result = runner.invoke(main, ["bridge", "status"])
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert lines.index("read-only:") < lines.index("read-write:")
+    assert f"{bridge.SOCKET_UNIT}: active" in lines
+    assert f"{bridge.WRITE_SOCKET_UNIT}: inactive" in lines
+    assert f"socket: {os.environ['XDG_RUNTIME_DIR']}/campaign-logger-mcp-ro/campaign-logger.sock" in lines
+    assert f"socket: {os.environ['XDG_RUNTIME_DIR']}/campaign-logger-mcp-rw/campaign-logger-write.sock" in lines
+    assert calls == [[SYSTEMCTL, "--user", "is-active", bridge.SOCKET_UNIT], [SYSTEMCTL, "--user", "is-active", bridge.WRITE_SOCKET_UNIT]]
+
+
+def test_status_with_nothing_installed_still_names_the_write_socket_without_asking_systemd(runner, config_home, fake_systemctl):
+    result = runner.invoke(main, ["bridge", "status"])
+
+    assert result.exit_code == 0, result.output
+    assert f"{bridge.WRITE_SOCKET_UNIT}: not installed" in result.output
+    assert "campaign-logger-mcp-rw/campaign-logger-write.sock" in result.output
+    assert fake_systemctl == [[SYSTEMCTL, "--user", "is-active", bridge.SOCKET_UNIT]]
+
+
+def test_status_asks_about_a_write_socket_whose_unit_file_was_deleted(runner, config_home, runtime_dir, fake_systemctl):
+    directory = runtime_dir / bridge.WRITE_SOCKET_DIR
+    directory.mkdir(mode=0o700)
+    (directory / bridge.WRITE_SOCKET_NAME).write_text("")
+
+    result = runner.invoke(main, ["bridge", "status"])
+
+    assert result.exit_code == 0, result.output
+    assert f"{bridge.WRITE_SOCKET_UNIT}: active" in result.output
+    assert [SYSTEMCTL, "--user", "is-active", bridge.WRITE_SOCKET_UNIT] in fake_systemctl
+
+
+def test_status_write_reports_only_the_write_socket(runner, config_home, fake_systemctl):
+    result = runner.invoke(main, ["bridge", "status", "--write"])
+
+    assert result.exit_code == 0, result.output
+    assert fake_systemctl == [[SYSTEMCTL, "--user", "is-active", bridge.WRITE_SOCKET_UNIT]]
+    assert f"{bridge.WRITE_SOCKET_UNIT}: active" in result.output
+    assert f"{bridge.SOCKET_UNIT}:" not in result.output
+
+
+@pytest.mark.parametrize("command", ["start", "stop", "status"])
+def test_write_commands_without_systemctl_exit_non_zero_with_one_line(runner, config_home, mocker, command):
+    mocker.patch("campaign_logger.bridge.shutil.which", return_value=None)
+    run = mocker.patch("campaign_logger.bridge.subprocess.run")
+
+    result = runner.invoke(main, ["bridge", command, "--write"])
+
+    assert result.exit_code != 0
+    assert result.output.strip().splitlines() == [
+        "Error: systemctl not found: the bridge needs a systemd user manager, and there is no fallback."
+    ]
+    run.assert_not_called()
+
+
+def test_there_is_no_way_to_start_the_write_socket_or_widen_the_read_one_without_the_flag(runner, config_home, fake_systemctl):
+    """No default, no upgrade path: only ``--write`` names the write pair, and the read service never says ``--write``."""
+    for args in (["start"], ["stop"], ["status"]):
+        runner.invoke(main, ["bridge", *args])
+    assert bridge.WRITE_SOCKET_UNIT not in {arg for call in fake_systemctl if call[2] in ("enable", "start") for arg in call}
+    assert "--write" not in bridge.render_service(bridge.executable())
+    params = {p.name for command in bridge.bridge.commands.values() for p in command.params}
+    assert params == {"write"}, "no config option or environment-variable switch is added"
+
+
+# --- write mode over real sockets, with a stand-in for systemd ----------------
+
+#: Launches the real server with the Logger API replaced by a stub, as ``campaign-logger`` would be launched.
+STUB_LAUNCHER = """\
+import sys
+from unittest import mock
+
+class Created:
+    def model_dump_json(self, indent=None):
+        return '{"id": "stub-campaign", "title": "from the stub"}'
+
+class StubLoggerClient:
+    def __init__(self, client_id=None, client_secret=None):
+        pass
+
+    def create_campaign(self, title, description=""):
+        return Created()
+
+with mock.patch("campaign_logger.mcp_server.LoggerClient", StubLoggerClient), mock.patch("campaign_logger.mcp_server.load_config"):
+    from campaign_logger.cli import main
+    main(sys.argv[1:], prog_name="campaign-logger")
+"""
+
+
+def initialised(path: Path) -> LineClient:
+    client = LineClient(path)
+    init = client.request(
+        "initialize",
+        {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "test-bridge", "version": "0"}},
+    )
+    assert "result" in init, init
+    client.notify("notifications/initialized")
+    return client
+
+
+@pytest.mark.skipif(not hasattr(socket, "AF_UNIX") or sys.platform == "win32", reason="unix sockets and fd inheritance")
+def test_the_write_socket_lists_write_tools_and_a_write_call_works_while_the_read_socket_still_has_none(tmp_path, monkeypatch):
+    launcher = tmp_path / "launcher.py"
+    launcher.write_text(STUB_LAUNCHER)
+
+    def argv_for(mode: bridge.Mode) -> list[str]:
+        """The rendered ``ExecStart``, with this installation's script swapped for the API-stubbing launcher."""
+        exec_start = next(x for x in bridge.render_service(EXE, mode).splitlines() if x.startswith("ExecStart="))
+        rendered = shlex.split(exec_start.removeprefix("ExecStart="))
+        assert rendered[0] == EXE
+        return [sys.executable, str(launcher), *rendered[1:]]
+
+    assert argv_for(bridge.WRITE)[2:] == ["mcp", "--write"]
+    assert argv_for(bridge.READ)[2:] == ["mcp"]
+
+    env = {k: v for k, v in os.environ.items() if not k.startswith("CL_")}
+    env.update({"CL_LOGGER_CLIENT_ID": "stub-id", "CL_LOGGER_CLIENT_SECRET": "stub-secret"})
+    base = Path(tempfile.mkdtemp(prefix="clb", dir="/tmp"))  # nosec B108 - mkdtemp: unique name, mode 0700, created atomically
+    try:
+        monkeypatch.setenv("XDG_RUNTIME_DIR", str(base))
+        read_dir = bridge.ensure_socket_dir(bridge.READ)
+        write_dir = bridge.ensure_socket_dir(bridge.WRITE)
+        assert read_dir != write_dir
+        read_path = read_dir / bridge.SOCKET_NAME
+        write_path = write_dir / bridge.WRITE_SOCKET_NAME
+        read_stand_in = StandInSocket(read_path, argv_for(bridge.READ), env)
+        write_stand_in = StandInSocket(write_path, argv_for(bridge.WRITE), env)
+        try:
+            for directory, path in ((read_dir, read_path), (write_dir, write_path)):
+                assert stat.S_IMODE(directory.stat().st_mode) == 0o700
+                assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+            write_client = initialised(write_path)
+            try:
+                write_tools = {t["name"] for t in write_client.request("tools/list")["result"]["tools"]}
+                assert {"create_campaign", "update_campaign", "delete_campaign"} <= write_tools
+                assert "get_tag_types" in write_tools, "the write server serves the read tools too"
+
+                created = write_client.request("tools/call", {"name": "create_campaign", "arguments": {"title": "from the test"}})["result"]
+                assert not created.get("isError"), created
+                assert "Campaign created successfully" in created["content"][0]["text"]
+                assert "stub-campaign" in created["content"][0]["text"]
+            finally:
+                write_client.close()
+
+            read_client = initialised(read_path)
+            try:
+                read_tools = {t["name"] for t in read_client.request("tools/list")["result"]["tools"]}
+                assert "get_tag_types" in read_tools
+                assert not {t for t in read_tools if t.startswith(("create_", "update_", "delete_"))}
+                assert read_tools < write_tools
+                refused = read_client.request("tools/call", {"name": "create_campaign", "arguments": {"title": "x"}})
+                assert "error" in refused or refused["result"].get("isError"), refused
+            finally:
+                read_client.close()
+        finally:
+            write_stand_in.close()
+            read_stand_in.close()
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
