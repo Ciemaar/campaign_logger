@@ -81,7 +81,7 @@ Run in a checkout of the branch at the commit that carries this report.
 
 Verbatim tail of the final `tox -e check` run:
 
-```
+```text
 check: commands[5]> pyright .
 0 errors, 0 warnings, 0 informations
 check: commands[6]> mdformat --check --wrap 80 README.md SESSION_INSTRUCTIONS.md PYPI_UPLOAD_INSTRUCTIONS.md AGENTS.md .github/copilot-instructions.md docs/tooling_evaluation.md
@@ -92,7 +92,7 @@ check: commands[7]> rstfmt --check AUTHORS.rst CONTRIBUTING.rst README.rst CHANG
 
 Verbatim tail of the final `tox -e py314-cover` run:
 
-```
+```text
 SKIPPED [1] tests/test_e2e.py:143: need --run-live-read option to run
 SKIPPED [4] tests/test_live_read.py: need --run-live-read option to run
 SKIPPED [6] tests/test_live_read.py:65: need --run-live-read option to run
@@ -106,6 +106,13 @@ insertions and no deletions. A mutation check, with the write service's
 `--write` temporarily removed from `render_service`, made
 `test_the_write_units_name_the_write_socket_and_run_the_write_server` and the
 over-the-socket test fail; the change was reverted.
+
+Codacy on the PR reported a Bandit `B105` (High) on the stub client secret
+`'stub-secret'` in `tests/test_bridge.py`. It is a false positive: the value is
+a fake passed to a stubbed API client in a test, not a credential. It is marked
+`# nosec B105` with that reason, as AGENTS.md directs. Codacy's other two
+findings were Info-level markdownlint on this report: MD040 (fixed by adding a
+language to the two fenced blocks) and MD043 (the template's own heading, left).
 
 The earlier `tox -e check` run failed on two E501 lines I had written (one in
 `bridge.py`, one in the new tests); both are wrapped and the run above is clean.

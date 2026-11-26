@@ -812,7 +812,7 @@ def test_the_write_socket_lists_write_tools_and_a_write_call_works_while_the_rea
     assert argv_for(bridge.READ)[2:] == ["mcp"]
 
     env = {k: v for k, v in os.environ.items() if not k.startswith("CL_")}
-    env.update({"CL_LOGGER_CLIENT_ID": "stub-id", "CL_LOGGER_CLIENT_SECRET": "stub-secret"})
+    env.update({"CL_LOGGER_CLIENT_ID": "stub-id", "CL_LOGGER_CLIENT_SECRET": "stub-secret"})  # nosec B105 - a stub value for a fake client, not a credential
     base = Path(tempfile.mkdtemp(prefix="clb", dir="/tmp"))  # nosec B108 - mkdtemp: unique name, mode 0700, created atomically
     try:
         monkeypatch.setenv("XDG_RUNTIME_DIR", str(base))
