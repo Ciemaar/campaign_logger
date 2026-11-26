@@ -50,6 +50,13 @@ argument exists now to keep the signature stable and the response reports
 `campaign-applied: null` and a `scope` of `campaign-logger-defaults`. Read those
 fields rather than assuming the answer was scoped to what you asked for.
 
+## Sandboxed agents
+
+An agent in a sandbox can reach this server through a systemd user socket that
+`campaign-logger bridge start` sets up, read-only by default, with a separate
+`--write` socket you must ask for by name. Nothing starts until you run it. See
+[Bridge for sandboxes](mcp_integration.rst) before running it.
+
 ## Credentials
 
 The server calls the same `load_config()` the CLI uses, so it reads

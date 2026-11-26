@@ -99,3 +99,68 @@ For Claude Desktop, modify your ``claude_desktop_config.json``:
 
 Once running, the AI model will dynamically discover the configured tools, and you can prompt it:
 *"What campaigns do I currently have in my Campaign Logger?"*
+
+Bridge for sandboxes
+====================
+
+An agent in a sandbox cannot start ``campaign-logger mcp`` on your machine itself. The ``bridge`` commands let a systemd *user* service on your machine do it for the sandbox, over a unix socket. Campaign Logger is a structured database that helps plan roleplaying games, and the bridge only gives a sandboxed assistant access to the same MCP tools described above.
+
+It needs a Linux systemd user session. On a machine without ``systemctl --user`` the commands exit with a one-line error and do nothing else.
+
+What ``bridge start`` does
+--------------------------
+
+Read this before you run it. ``campaign-logger bridge start``:
+
+#. creates the directory ``$XDG_RUNTIME_DIR/campaign-logger-mcp-ro`` (mode ``0700``), or checks the one that exists, and stops with one line if it belongs to someone else or something else is in the way;
+#. writes two unit files into ``~/.config/systemd/user/`` (``$XDG_CONFIG_HOME/systemd/user/`` if that is set), only where they differ: ``campaign-logger-bridge.socket`` and ``campaign-logger-bridge@.service``;
+#. runs ``systemctl --user daemon-reload`` and ``systemctl --user enable --now campaign-logger-bridge.socket``.
+
+The socket listens at ``$XDG_RUNTIME_DIR/campaign-logger-mcp-ro/campaign-logger.sock`` (mode ``0600``). systemd starts one ``campaign-logger mcp`` per connection, using the path of the ``campaign-logger`` you ran ``bridge start`` with, and nothing runs between connections. No credential is written into a unit; the service runs as you and reads ``~/.campaign_logger.json`` like any other ``campaign-logger mcp``.
+
+**Nothing starts by installing Campaign Logger, and nothing starts until you run** ``bridge start``. Once you have, the socket is *enabled*, so systemd starts it again at your next login until you run ``bridge stop``.
+
+Read-only is the default
+------------------------
+
+The default socket serves ``campaign-logger mcp``, which has read tools only. The write tools are never registered on it, so a connected agent cannot see them, let alone call them. Nothing in ``bridge start`` can make this socket serve write tools.
+
+Read-write is a separate socket
+-------------------------------
+
+``bridge start --write`` opens a second, independent socket for an agent that is allowed to change your data:
+
+* **Socket:** ``$XDG_RUNTIME_DIR/campaign-logger-mcp-rw/campaign-logger-write.sock``, in a directory of its own (mode ``0700``, socket ``0600``).
+* **Units:** ``campaign-logger-bridge-write.socket`` and ``campaign-logger-bridge-write@.service``, whose service runs ``campaign-logger mcp --write``.
+* **What a connected agent can then do:** create, update and delete campaigns, logs, log entries and pages, using your credentials.
+
+It is never started unless you name it: ``bridge start`` without ``--write`` does not touch it, and ``--write`` commands do not touch the read-only socket. ``bridge start --write`` prints the socket and what the agent can change before it does anything, and does not ask for confirmation. Like the read socket, once started it comes back at your next login until you run ``bridge stop --write``.
+
+Each socket has its own directory because a sandbox mounts a socket's *directory*, not the socket. Mount only ``campaign-logger-mcp-ro`` and the sandbox can reach the read-only server and nothing else. Nothing mounts ``campaign-logger-mcp-rw`` unless you add it.
+
+Checking it
+-----------
+
+.. code-block:: bash
+
+    campaign-logger bridge status
+
+This reports both sockets, labelled, and where each listens. A write socket that was never started is reported as ``not installed``. ``status --write`` reports only the write socket.
+
+Connecting from the sandbox
+---------------------------
+
+Mount ``$XDG_RUNTIME_DIR/campaign-logger-mcp-ro`` into the sandbox read-only, then register this as the MCP server command, where ``<mount>`` is where the directory appears inside the sandbox:
+
+.. code-block:: bash
+
+    socat STDIO UNIX-CONNECT:<mount>/campaign-logger.sock
+
+The mount, the registration and the allow rules belong to the sandbox tooling, which lives in the owner's AgenticRulesAndTools repository (``docs/sandbox_manual.md`` and ``docs/sandbox_example_agy_rpg.md``) and is not copied here. That repository is private, so there is no link. Its pages may still name an older host directory for the socket; use the paths on this page.
+
+Removing it
+-----------
+
+#. ``campaign-logger bridge stop`` disables and stops the read-only socket, and removes its socket file. For the write socket run ``campaign-logger bridge stop --write``.
+#. ``bridge stop`` leaves the unit files in place. To remove them, delete the two read-only units from ``~/.config/systemd/user/`` (``campaign-logger-bridge.socket`` and ``campaign-logger-bridge@.service``), plus the two write units (``campaign-logger-bridge-write.socket`` and ``campaign-logger-bridge-write@.service``) if you ever started write mode.
+#. Run ``systemctl --user daemon-reload``.
